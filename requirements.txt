@@ -1,0 +1,3 @@
+Required libraries:
+	+ puchikarui (For accessing SQLite database)
+	+ chirptext  (Common text features)

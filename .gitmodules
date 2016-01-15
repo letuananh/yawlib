@@ -1,0 +1,6 @@
+[submodule "modules/puchikarui"]
+	path = modules/puchikarui
+	url = git@github.com:letuananh/puchikarui.git
+[submodule "modules/chirptext"]
+	path = modules/chirptext
+	url = git@github.com:letuananh/chirptext.git
