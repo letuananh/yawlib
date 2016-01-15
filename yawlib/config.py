@@ -40,6 +40,7 @@ __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
 import os
+import inspect
 
 def full_path(a_path):
     return os.path.abspath(os.path.expanduser(a_path))
@@ -54,7 +55,7 @@ class YLConfig:
     # Gloss WordNet can be downloaded from: 
     #       http://wordnet.princeton.edu/glosstag.shtml
 
-    DB_INIT_SCRIPT           = full_path('./script/wngdb.sql')
+    DB_INIT_SCRIPT           = full_path('yawlib/script/wngdb.sql')
     # script used to initialise WordNet Gloss database 
 
     NTUMC_PRONOUNS = ['77000100-n', '77000057-n', '77000054-a', '77000054-n', '77000026-n', '77000065-n'
