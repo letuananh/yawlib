@@ -219,6 +219,13 @@ def convert(wng_loc, wng_db_loc, createdb):
     print("Path to output database: %s" % (wng_db_loc))
     print("Script to execute: %s" % (DB_INIT_SCRIPT))
 
+    if os.path.isfile(wng_db_loc):
+        print("DB file exists (%s | size: %s)" % (wng_db_loc,os.path.getsize(wng_db_loc)))
+        answer = input("If you want to overwrite this file, please type CONFIRM: ")
+        if answer != "CONFIRM":
+            print("Script aborted!")
+            exit()
+
     db = SQLiteGWordNet(wng_db_loc)
     if createdb:
         header('Preparing database file ...')
@@ -254,15 +261,10 @@ def export_ntumc(wng_loc, wng_db_loc):
 def main():
     '''Main entry of wntk
 
-    Available commands:
-        test: Run bank test
-        candidates -i CHOSEN_WORD: Find candidates for a given word
-        batch -i PATH_TO_FILE: Perform WSD on a batch file
-        batch -i PATH_TO_SEMCOR_TEST_FILE: Perform WSD on Semcor (e.g. semcor_wn30.txt)
     '''
     # It's easier to create a user-friendly console application by using argparse
     # See reference at the top of this script
-    parser = argparse.ArgumentParser(description="Convert Gloss WordNet from XML into SQLite DB.")
+    parser = argparse.ArgumentParser(description="WordNet Toolkit - For accessing and manipulating WordNet")
     
     # Positional argument(s)
     # parser.add_argument('task', help='Task to perform (create/import/synset)')
