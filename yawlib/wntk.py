@@ -190,6 +190,50 @@ def dev_mode(wng_db_loc):
     c = db.get_tagcount('100002684')
     print(c)
 
+    xml_file = os.path.expanduser('~/wordnet/glosstag/merged/test.xml')
+    xmlwn = XMLGWordNet()
+    xmlwn.read(xml_file)
+
+    print("First synset:")
+    ss = xmlwn.synsets[0]
+    dump_synset(ss)
+    
+    print(ss.raw_glosses[0].gloss)
+        
+    for gl in ss.glosses:
+        print("    > %s" % gl.items)
+        print("    > %s" % gl.tags)
+    smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
+
+    print("#------------------")
+
+    for ss in xmlwn.synsets:
+        sent = ss.raw_glosses[0].gloss
+        # print(sent)
+        smart_search(sent, [ x.text for x in ss.glosses[0].items ])
+    print("Done!")
+
+def smart_search(sentence, words):
+    pos = 0
+    prob = False
+    Word              = namedtuple("Word", "text cfrom cto")
+    AnnotatedSentence = namedtuple("AnnotatedSentence", "sent words")
+    asent = AnnotatedSentence(sentence, [])
+    for word in words:
+        if word == ";":
+            continue
+        idx = sentence.find(word, pos)
+        if idx == -1:
+            print('\tword=[%s] pos=Not found' % (word,))
+            prob = True
+        else:
+            # print("\tword=%s pos=%s" % (word, idx))
+            asent.words.append(Word(word, idx, idx + len(word)))
+            pos = idx + len(word)
+    if prob:
+        print(sentence)
+    return asent
+
 #--------------------------------------------------------
 
 def xml2db(xml_files, db):
@@ -204,7 +248,7 @@ def xml2db(xml_files, db):
         xmlgwn.read(xml_file)
         t.end("Extraction completed %s" % xml_file)
 
-    header("Inserting data into SQLite database")
+    header("Inserting data into đáng SQLite database")
     t.start()
     db.insert_synsets(xmlgwn.synsets)
     t.end('Insertion completed.')
@@ -254,7 +298,28 @@ def export_ntumc(wng_loc, wng_db_loc):
     print("Path to glosstag DB    : %s" % (wng_db_loc))
     print("Output file            : %s" % (glosstag_ntumc_script))
 
-    db = SQLiteGWordNet(wng_db_loc)
+    gwn = SQLiteGWordNet(wng_db_loc)
+    wn = WSQL(WORDNET_30_PATH)
+
+    t = Timer()
+    t.start("Retrieving synsets from DB")
+    synsets = gwn.all_synsets()
+    print("%s synsets found in %s" % (len(synsets), wng_db_loc))
+    t.end()
+    t.start("Generating cfrom cto ...")
+    with open(glosstag_ntumc_script, 'w') as outfile:
+        for ss in synsets:
+            sent = ss.raw_glosses[0].gloss
+            # print(sent)
+            words = []
+            for gl in ss.glosses:
+                words += [ x.text for x in gl.items ]
+            asent = smart_search(sent, words)
+            outfile.write("%s\n" % asent.sent)
+            for word in asent.words:
+                outfile.write("%s [%s:%s]\n" % (word.text, word.cfrom, word.cto))
+    t.end()
+    print("Done!")
     
     pass
 

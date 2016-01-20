@@ -151,6 +151,7 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
 
     gloss_count = itertools.count(1)
     for gloss in ss.glosses:
+        print()
         report_file.header("Gloss #%s: %s" % (next(gloss_count), gloss), 'h2')
 
         # Dump gloss items
