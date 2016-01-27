@@ -203,6 +203,9 @@ def dev_mode(wng_db_loc):
     for gl in ss.glosses:
         print("    > %s" % gl.items)
         print("    > %s" % gl.tags)
+    raw_text = ss.raw_glosses[0].gloss
+    print(ss.glosses)
+    print("--------------------")
     smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
 
     print("#------------------")
