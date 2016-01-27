@@ -219,12 +219,13 @@ def smart_search(sentence, words):
     Word              = namedtuple("Word", "text cfrom cto")
     AnnotatedSentence = namedtuple("AnnotatedSentence", "sent words")
     asent = AnnotatedSentence(sentence, [])
-    for word in words:
+    for wid, word in enumerate(words):
         if word == ";":
             continue
         idx = sentence.find(word, pos)
         if idx == -1:
-            print('\tword=[%s] pos=Not found' % (word,))
+            hint = sentence[pos:pos+10] + '...' if pos+10 < len(sentence) else sentence[pos:pos+10]
+            print('\t[%s] word=[%s] pos=Not found (starting at [%s] => [%s])' % (wid,word,pos,hint))
             prob = True
         else:
             # print("\tword=%s pos=%s" % (word, idx))
@@ -232,6 +233,7 @@ def smart_search(sentence, words):
             pos = idx + len(word)
     if prob:
         print(sentence)
+        print([ (idx,w) for idx,w in enumerate(asent.words) ])
     return asent
 
 #--------------------------------------------------------
@@ -303,7 +305,13 @@ def export_ntumc(wng_loc, wng_db_loc):
 
     t = Timer()
     t.start("Retrieving synsets from DB")
-    synsets = gwn.all_synsets()
+
+    # mockup data
+    xml_file = os.path.expanduser('~/wordnet/glosstag/merged/test.xml')
+    xmlwn = XMLGWordNet()
+    xmlwn.read(xml_file)
+    synsets = xmlwn.synsets
+#    synsets = gwn.all_synsets()
     print("%s synsets found in %s" % (len(synsets), wng_db_loc))
     t.end()
     t.start("Generating cfrom cto ...")
@@ -317,7 +325,10 @@ def export_ntumc(wng_loc, wng_db_loc):
             asent = smart_search(sent, words)
             outfile.write("%s\n" % asent.sent)
             for word in asent.words:
-                outfile.write("%s [%s:%s]\n" % (word.text, word.cfrom, word.cto))
+                testword = sent[word.cfrom:word.cto]
+                if testword != word.text:
+                    print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
+                outfile.write("%s [%s:%s] ==> |%s|\n" % (word.text, word.cfrom, word.cto, testword))
     t.end()
     print("Done!")
     
