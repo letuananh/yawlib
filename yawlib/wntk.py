@@ -59,7 +59,7 @@ import itertools
 from collections import defaultdict as dd
 from collections import namedtuple
 
-from chirptext.leutile import StringTool, Counter, Timer, uniquify, header
+from chirptext.leutile import StringTool, Counter, Timer, uniquify, header, FileTool
 
 from .config import YLConfig
 from .helpers import dump_synsets, dump_synset, get_synset_by_id, get_synset_by_sk, get_synsets_by_term
@@ -74,7 +74,8 @@ WORDNET_30_PATH          = YLConfig.WORDNET_30_PATH
 WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
 WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
 DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-
+MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
+GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
 #-----------------------------------------------------------------------
 
 def cache_all_synsets(wng_db_loc):
@@ -97,12 +98,19 @@ def cache_all_synsets(wng_db_loc):
 
 #-----------------------------------------------------------------------
 
+def mockup_synsets():
+    ''' Retrieve mockup synsets from ./data/test.xml
+    '''
+    xmlwn = XMLGWordNet()
+    xmlwn.read(MOCKUP_SYNSETS_DATA)
+    synsets = xmlwn.synsets
+    return synsets
+
 def test_extract_xml():
     ''' Test data extraction from XML file
     ''' 
-    xml_file = os.path.expanduser('~/wordnet/glosstag/merged/test.xml')
     xmlwn = XMLGWordNet()
-    xmlwn.read(xml_file)
+    xmlwn.read(MOCKUP_SYNSETS_DATA)
     
     for ss in xmlwn.synsets[:5]:
         dump_synset(ss)
@@ -190,9 +198,8 @@ def dev_mode(wng_db_loc):
     c = db.get_tagcount('100002684')
     print(c)
 
-    xml_file = os.path.expanduser('~/wordnet/glosstag/merged/test.xml')
     xmlwn = XMLGWordNet()
-    xmlwn.read(xml_file)
+    xmlwn.read(MOCKUP_SYNSETS_DATA)
 
     print("First synset:")
     ss = xmlwn.synsets[0]
@@ -213,27 +220,29 @@ def dev_mode(wng_db_loc):
     for ss in xmlwn.synsets:
         sent = ss.raw_glosses[0].gloss
         # print(sent)
-        smart_search(sent, [ x.text for x in ss.glosses[0].items ])
+        # smart_search(sent, [ x.text for x in ss.glosses[0].items ])
+        smart_search(sent, ss.glosses[0].items, lambda x : x.text)
     print("Done!")
 
-def smart_search(sentence, words):
+def smart_search(sentence, words, getitem=lambda x:x):
     pos = 0
     prob = False
-    Word              = namedtuple("Word", "text cfrom cto")
+    Word              = namedtuple("Word", "data cfrom cto")
     AnnotatedSentence = namedtuple("AnnotatedSentence", "sent words")
     asent = AnnotatedSentence(sentence, [])
     for wid, word in enumerate(words):
-        if word == ";":
+        word_text = getitem(word)
+        if word_text == ";":
             continue
-        idx = sentence.find(word, pos)
+        idx = sentence.find(word_text, pos)
         if idx == -1:
             hint = sentence[pos:pos+10] + '...' if pos+10 < len(sentence) else sentence[pos:pos+10]
             print('\t[%s] word=[%s] pos=Not found (starting at [%s] => [%s])' % (wid,word,pos,hint))
             prob = True
         else:
             # print("\tword=%s pos=%s" % (word, idx))
-            asent.words.append(Word(word, idx, idx + len(word)))
-            pos = idx + len(word)
+            asent.words.append(Word(word, idx, idx + len(word_text)))
+            pos = idx + len(word_text)
     if prob:
         print(sentence)
         print([ (idx,w) for idx,w in enumerate(asent.words) ])
@@ -281,7 +290,6 @@ def convert(wng_loc, wng_db_loc, createdb):
         db.setup(DB_INIT_SCRIPT)
     #--
     xmlfiles = [
-        #os.path.join(merged_folder, 'test.xml')
         os.path.join(merged_folder, 'adv.xml')
         ,os.path.join(merged_folder, 'adj.xml')
         ,os.path.join(merged_folder, 'verb.xml')
@@ -296,9 +304,12 @@ def export_ntumc(wng_loc, wng_db_loc):
     Export GlossTag to NTU-MC format
     '''
     print("Export GlossTag to NTU-MC")
-    merged_folder = os.path.join(wng_loc, 'merged')
+    merged_folder         = os.path.join(wng_loc, 'merged')
     glosstag_ntumc_script = wng_db_loc + ".ntumc.sql"
-    
+    sent_file_path        = GLOSSTAG_NTUMC_OUTPUT + '_sent.csv'
+    word_file_path        = GLOSSTAG_NTUMC_OUTPUT + '_word.csv'
+    concept_file_path     = GLOSSTAG_NTUMC_OUTPUT + '_concept.csv'    
+
     print("Path to glosstag folder: %s" % (merged_folder))
     print("Path to glosstag DB    : %s" % (wng_db_loc))
     print("Output file            : %s" % (glosstag_ntumc_script))
@@ -310,28 +321,34 @@ def export_ntumc(wng_loc, wng_db_loc):
     t.start("Retrieving synsets from DB")
 
     # mockup data
-    xml_file = os.path.expanduser('~/wordnet/glosstag/merged/test.xml')
-    xmlwn = XMLGWordNet()
-    xmlwn.read(xml_file)
-    synsets = xmlwn.synsets
-#    synsets = gwn.all_synsets()
+    synsets = mockup_synsets()
+    # synsets = gwn.all_synsets()
     print("%s synsets found in %s" % (len(synsets), wng_db_loc))
     t.end()
     t.start("Generating cfrom cto ...")
-    with open(glosstag_ntumc_script, 'w') as outfile:
+    with open(glosstag_ntumc_script, 'w') as outfile, open(sent_file_path, 'w') as sent_file, open(word_file_path, 'w') as word_file, open(concept_file_path, 'w') as concept_file:
+        sentid = 1000000
         for ss in synsets:
             sent = ss.raw_glosses[0].gloss
+            sent_file.write('%s\t%s\n' % (sentid, sent,))
             # print(sent)
             words = []
+            # [2016-02-01] There is an error in glossitem for synset 01179767-a (a01179767)
             for gl in ss.glosses:
-                words += [ x.text for x in gl.items ]
-            asent = smart_search(sent, words)
+                for item in gl.items:
+                    if item.origid == 'a01179767_wf37':
+                        item.text = "'T"
+                words += gl.items
+            asent = smart_search(sent, words, lambda x: x.text)
             outfile.write("%s\n" % asent.sent)
             for word in asent.words:
                 testword = sent[word.cfrom:word.cto]
-                if testword != word.text:
+                if testword != word.data.text:
                     print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
-                outfile.write("%s [%s:%s] ==> |%s|\n" % (word.text, word.cfrom, word.cto, testword))
+                outfile.write("%s [%s:%s] ==> |%s|\n" % (word.data.text, word.cfrom, word.cto, testword))
+                word_file.write('%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto))
+            sentid += 1
+        # end for synsets
     t.end()
     print("Done!")
     
