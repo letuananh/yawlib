@@ -346,7 +346,7 @@ def export_ntumc(wng_loc, wng_db_loc):
                 if testword != word.data.text:
                     print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
                 outfile.write("%s [%s:%s] ==> |%s|\n" % (word.data.text, word.cfrom, word.cto, testword))
-                word_file.write('%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto))
+                word_file.write('%s\t%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto, word.data.lemma))
             sentid += 1
         # end for synsets
     t.end()
