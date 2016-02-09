@@ -305,7 +305,8 @@ def export_ntumc(wng_loc, wng_db_loc):
     '''
     print("Export GlossTag to NTU-MC")
     merged_folder         = os.path.join(wng_loc, 'merged')
-    glosstag_ntumc_script = wng_db_loc + ".ntumc.sql"
+#    glosstag_ntumc_script = wng_db_loc + ".ntumc.sql"
+    glosstag_ntumc_script = GLOSSTAG_NTUMC_OUTPUT + ".script.sql"
     sent_file_path        = GLOSSTAG_NTUMC_OUTPUT + '_sent.csv'
     word_file_path        = GLOSSTAG_NTUMC_OUTPUT + '_word.csv'
     concept_file_path     = GLOSSTAG_NTUMC_OUTPUT + '_concept.csv'    
@@ -328,6 +329,7 @@ def export_ntumc(wng_loc, wng_db_loc):
     t.start("Generating cfrom cto ...")
     with open(glosstag_ntumc_script, 'w') as outfile, open(sent_file_path, 'w') as sent_file, open(word_file_path, 'w') as word_file, open(concept_file_path, 'w') as concept_file:
         sentid = 1000000
+        docid  = 1000
         for ss in synsets:
             sent = ss.raw_glosses[0].gloss
             sent_file.write('%s\t%s\n' % (sentid, sent,))
@@ -340,12 +342,12 @@ def export_ntumc(wng_loc, wng_db_loc):
                         item.text = "'T"
                 words += gl.items
             asent = smart_search(sent, words, lambda x: x.text)
-            outfile.write("%s\n" % asent.sent)
-            for word in asent.words:
+            outfile.write('INSERT INTO sent (sid,docID,pid,sent,comment,usrname) VALUES(%s,%s,"","%s","[WNSID=%s]","letuananh");\n' % ( sentid, docid, asent.sent.replace('"', '\\"'), ss.get_synsetid()) )
+            for (wordid, word) in enumerate(asent.words):
                 testword = sent[word.cfrom:word.cto]
                 if testword != word.data.text:
                     print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
-                outfile.write("%s [%s:%s] ==> |%s|\n" % (word.data.text, word.cfrom, word.cto, testword))
+                outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "", "", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text, word.cfrom, word.cto))
                 word_file.write('%s\t%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto, word.data.lemma))
             sentid += 1
         # end for synsets
