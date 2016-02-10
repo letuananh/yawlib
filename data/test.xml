@@ -12605,4 +12605,56 @@
   </gloss>
  </synset>
 
+<synset id="n04203889" ofs="04203889" pos="n">
+  <terms>
+   <term>shopping</term>
+  </terms>
+  <keys>
+   <sk>shopping%1:06:00::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>the commodities purchased from stores; "she loaded her shopping into the car"women carrying home shopping didn't give me a second glance"</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>the commodities purchased from stores ; â she loaded her shopping into the car â women carrying home shopping did n't[="not"] give me a second glance "</text>
+  </gloss>
+  <gloss desc="wsd">
+   <def id="n04203889_d">
+    <wf id="n04203889_wf1" lemma="the" pos="DT" tag="ignore">the</wf>
+    <wf id="n04203889_wf2" lemma="commodity%1" pos="NNS" tag="auto">
+     <id id="n04203889_id.1" lemma="commodity" sk="commodity%1:06:00::"/>commodities</wf>
+    <wf id="n04203889_wf3" lemma="purchase%2" pos="VBN" tag="un">purchased</wf>
+    <wf id="n04203889_wf4" lemma="from" pos="IN" tag="ignore">from</wf>
+    <wf id="n04203889_wf5" lemma="store%1|store%2" pos="NNS" sep="" tag="un">stores</wf>
+    <wf id="n04203889_wf6" pos=":" tag="ignore" type="punc">;</wf>
+   </def>
+   <ex id="n04203889_ex1">
+    <qf rend="dq">
+     <wf id="n04203889_wf7" lemma="she" tag="ignore">she</wf>
+     <wf id="n04203889_wf8" lemma="load%2|loaded%3" tag="un">loaded</wf>
+     <wf id="n04203889_wf9" lemma="her" tag="ignore">her</wf>
+     <wf id="n04203889_wf10" lemma="shopping%1|shop%2" tag="auto">
+      <id id="n04203889_id.2" lemma="shopping" sk="shopping%1:06:00::"/>shopping</wf>
+     <wf id="n04203889_wf11" lemma="into" tag="ignore">into</wf>
+     <wf id="n04203889_wf12" lemma="the" tag="ignore">the</wf>
+     <wf id="n04203889_wf13" lemma="car%1" sep="" tag="un">car</wf>
+    </qf>
+    <wf id="n04203889_wf14" lemma="woman%1" tag="un">women</wf>
+    <wf id="n04203889_wf15" lemma="carry%2" tag="un">carrying</wf>
+    <wf id="n04203889_wf16" lemma="home%1|home%2|home%3|home%4" tag="un">home</wf>
+    <wf id="n04203889_wf17" lemma="shopping%1|shop%2" tag="auto">
+     <id id="n04203889_id.3" lemma="shopping" sk="shopping%1:06:00::"/>shopping</wf>
+    <wf id="n04203889_wf18" lemma="do%2" sep="" tag="un">did</wf>
+    <wf id="n04203889_wf19" lemma="not%4" rdf="not" tag="un">n't</wf>
+    <wf id="n04203889_wf20" lemma="give%1|give%2" tag="un">give</wf>
+    <wf id="n04203889_wf21" lemma="me" tag="ignore">me</wf>
+    <wf id="n04203889_wf22" lemma="a" tag="ignore">a</wf>
+    <wf id="n04203889_wf23" lemma="second%1|second%2|second%3|second%4" tag="un">second</wf>
+    <wf id="n04203889_wf24" lemma="glance%1|glance%2" sep="" tag="un">glance</wf>
+    <wf id="n04203889_wf25" sep="" tag="ignore" type="punc">"</wf>
+    <wf id="n04203889_wf26" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
+ 
 </wordnet>
