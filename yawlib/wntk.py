@@ -195,33 +195,42 @@ def dev_mode(wng_db_loc):
     #test_skmap_gwn_wn30() # Comparing sensekeys between GWN and WN30SQLite
 
     db = WSQL(WORDNET_30_PATH)
-    c = db.get_tagcount('100002684')
-    print(c)
+    # print("Get freq of a synset")
+    # c = db.get_tagcount('100002684')
+    # print(c)
 
     xmlwn = XMLGWordNet()
     xmlwn.read(MOCKUP_SYNSETS_DATA)
 
-    print("First synset:")
-    ss = xmlwn.synsets[0]
-    dump_synset(ss)
+    ss = xmlwn.synsets[1]
+    # print("First synset:")
+    # dump_synset(ss)
     
+    header("Gloss info")
     print(ss.raw_glosses[0].gloss)
         
     for gl in ss.glosses:
+        print("#")
         print("    > %s" % gl.items)
         print("    > %s" % gl.tags)
+        print("    > %s" % gl.groups)
+        for item in gl.items:
+            print(item)
+        print('***')
+        for tag in gl.tags:
+            print(tag)
     raw_text = ss.raw_glosses[0].gloss
     print(ss.glosses)
-    print("--------------------")
-    smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
+    
+    # header("Test smart search")
+    # smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
 
-    print("#------------------")
-
-    for ss in xmlwn.synsets:
-        sent = ss.raw_glosses[0].gloss
-        # print(sent)
-        # smart_search(sent, [ x.text for x in ss.glosses[0].items ])
-        smart_search(sent, ss.glosses[0].items, lambda x : x.text)
+    # print("#------------------")
+    # for ss in xmlwn.synsets:
+    #     sent = ss.raw_glosses[0].gloss
+    #     # print(sent)
+    #     # smart_search(sent, [ x.text for x in ss.glosses[0].items ])
+    #     smart_search(sent, ss.glosses[0].items, lambda x : x.text)
     print("Done!")
 
 def smart_search(sentence, words, getitem=lambda x:x):
@@ -250,19 +259,31 @@ def smart_search(sentence, words, getitem=lambda x:x):
 
 #--------------------------------------------------------
 
-def xml2db(xml_files, db):
-    ''' Convert a XML file of Gloss WordNet into SQLite
-    '''
-    t = Timer()
-
+def read_xmlwn(merged_folder):
+    xml_files = [
+        os.path.join(merged_folder, 'adv.xml')
+        ,os.path.join(merged_folder, 'adj.xml')
+        ,os.path.join(merged_folder, 'verb.xml')
+        ,os.path.join(merged_folder, 'noun.xml')
+    ]
     header("Extracting Gloss WordNet (XML)")
+    t = Timer()
     xmlgwn = XMLGWordNet()
     for xml_file in xml_files:
         t.start('Reading file: %s' % xml_file)
         xmlgwn.read(xml_file)
         t.end("Extraction completed %s" % xml_file)
+    return xmlgwn
 
-    header("Inserting data into đáng SQLite database")
+def xml2db(merged_folder, db):
+    ''' Convert a XML file of Gloss WordNet into SQLite
+    '''
+    t = Timer()
+
+    header("Extracting Gloss WordNet (XML)")
+    xmlgwn = read_xmlwn(merged_folder)
+
+    header("Inserting data into SQLite database")
     t.start()
     db.insert_synsets(xmlgwn.synsets)
     t.end('Insertion completed.')
@@ -289,14 +310,8 @@ def convert(wng_loc, wng_db_loc, createdb):
         header('Preparing database file ...')
         db.setup(DB_INIT_SCRIPT)
     #--
-    xmlfiles = [
-        os.path.join(merged_folder, 'adv.xml')
-        ,os.path.join(merged_folder, 'adj.xml')
-        ,os.path.join(merged_folder, 'verb.xml')
-        ,os.path.join(merged_folder, 'noun.xml')
-    ]
     header('Importing data from XML to SQLite')
-    xml2db(xmlfiles, db)
+    xml2db(merged_folder, db)
     pass
 
 def export_ntumc(wng_loc, wng_db_loc):
@@ -317,12 +332,14 @@ def export_ntumc(wng_loc, wng_db_loc):
 
     gwn = SQLiteGWordNet(wng_db_loc)
     wn = WSQL(WORDNET_30_PATH)
+    xmlwn = read_xmlwn(merged_folder)
 
     t = Timer()
     t.start("Retrieving synsets from DB")
 
     # mockup data
-    synsets = mockup_synsets()
+    synsets = xmlwn.synsets
+    # synsets = mockup_synsets()
     # synsets = gwn.all_synsets()
     print("%s synsets found in %s" % (len(synsets), wng_db_loc))
     t.end()
@@ -342,22 +359,64 @@ def export_ntumc(wng_loc, wng_db_loc):
             # print(sent)
             words = []
             wordid = 0
+            conceptid = 0
             # [2016-02-01] There is an error in glossitem for synset 01179767-a (a01179767)
             for gl in ss.glosses:
+                wordid_map = {}
+                conceptid_map = {}
+                coll_map = dd(list)
+                cwl = []
+                CWL = namedtuple("CWL", "cid wid".split())
                 for item in gl.items:
                     if item.origid == 'a01179767_wf37':
                         item.text = "'T"
                 words += gl.items
             asent = smart_search(sent, words, lambda x: x.text)
-            outfile.write('INSERT INTO sent (sid,docID,pid,sent,comment,usrname) VALUES(%s,%s,"","%s","[WNSID=%s]","letuananh");\n' % ( sentid, docid, asent.sent.replace('"', '""'), ss.get_synsetid()) )
+            outfile.write('INSERT INTO sent (sid,docID,pid,sent,comment,usrname) VALUES(%s,%s,"","%s","[WNSID=%s]","letuananh");\n' % ( sentid, docid, asent.sent.replace('"', '""').replace("'", "''"), ss.get_synsetid()) )
+            outfile.write('-- WORDS\n')
             for word in asent.words:
                 testword = sent[word.cfrom:word.cto]
                 if testword != word.data.text:
                     print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
-                outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "", "", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text, word.cfrom, word.cto))
+                outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "", "", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text.replace('"', '""').replace("'", "''"), word.cfrom, word.cto))
+                wordid_map[wordid] = word.data.origid
+                wordid_map[word.data.origid] = wordid
+                if word.data.coll:
+                    coll_map[word.data.coll].append(word.data.origid)
                 word_file.write('%s\t%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto, word.data.lemma))
                 wordid += 1
+            outfile.write('-- CONCEPTS\n')
+            for gl in ss.glosses:
+                for tag in gl.tags:
+                    # tag = synsetid in NTU format (12345678-x)
+                    if tag.sk:
+                        tagged_ss = gwn.get_synset_by_sk(tag.sk)
+                        if not tagged_ss:
+                            print("sk[%s] could not be found" % (tag.sk))
+                        elif len(tagged_ss) > 1:
+                            print("Too many synsets found for sk[%s]" % (tag.sk))
+                        else:
+                            # outfile.write("--%s\n" % (tagged_ss[0].get_synsetid(),))
+                            outfile.write('INSERT INTO concept (sid, cid, clemma, tag, tags, comment, ntag, usrname) VALUES (%s, %s, "%s", "", "", "%s", "", "letuananh"); --sk=[%s]\n' % (sentid, conceptid, tag.lemma.replace('"', '""').replace("'", "''"), tagged_ss[0].get_synsetid(), tag.sk) );
+                    conceptid_map[tag.origid] = conceptid
+                    conceptid_map[conceptid]  = tag.origid
+                    conceptid += 1
+                    if tag.coll:
+                        # multiword expression
+                        for collword in coll_map[tag.coll]:
+                            cwl.append(CWL(conceptid, wordid_map[collword]))
+                    elif tag.item:
+                        # normal tag
+                        cwl.append(CWL(conceptid, wordid_map[tag.item.origid]))
+            # outfile.write("/*%s*/\n" % (wordid_map))
+            # outfile.write("/*%s*/\n" % (conceptid_map))
+            # outfile.write("/*%s*/\n" % coll_map)
+            # outfile.write("/*%s*/\n" % cwl)
+            outfile.write('-- Concept-Word Links\n')
+            for lnk in cwl:
+                outfile.write('INSERT INTO cwl (sid, wid, cid, usrname) VALUES (%s, %s, %s, "letuananh");\n' % (sentid, lnk.wid, lnk.cid))
             sentid += 1
+            outfile.write('\n')
         # end for synsets
         outfile.write("END TRANSACTION;\n");
     t.end()
