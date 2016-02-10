@@ -157,6 +157,7 @@ class XMLGWordNet:
         if tag_obj is None:
             tag_obj = glossitem.gloss.tag_item(glossitem, '', '', '', '', '', coll, origid, '', sk, lemma)
         else:
+            tag_obj.itemid = glossitem.origid
             tag_obj.sk     = sk
             tag_obj.origid = origid
             tag_obj.coll   = coll
@@ -178,7 +179,7 @@ class XMLGWordNet:
         origid = wf_node.get('id')
         sep = wf_node.get('sep')
         text = StringTool.strip(wf_node.xpath("string()")) # XML mixed content, don't use text attr here
-        wf_obj = gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text)
+        wf_obj = gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text, origid)
         # Then parse id tag if available
         for child in wf_node:
             if child.tag == 'id':
@@ -197,7 +198,7 @@ class XMLGWordNet:
         origid = cf_node.get('id')
         sep = cf_node.get('sep')
         text = StringTool.strip(cf_node.xpath("string()"))
-        cf_obj =  gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text)
+        cf_obj =  gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text, 'coll:' + coll)
         # Parse glob info if it's available
         for child_node in cf_node:
             if child_node.tag == 'glob':
