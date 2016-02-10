@@ -328,6 +328,12 @@ def export_ntumc(wng_loc, wng_db_loc):
     t.end()
     t.start("Generating cfrom cto ...")
     with open(glosstag_ntumc_script, 'w') as outfile, open(sent_file_path, 'w') as sent_file, open(word_file_path, 'w') as word_file, open(concept_file_path, 'w') as concept_file:
+        outfile.write("""BEGIN TRANSACTION;
+   INSERT INTO corpus (corpusID, corpus, title, language)
+      VALUES (100, 'misc', "Miscellaneous", "eng"); 
+   INSERT INTO doc (docid, doc, title, url, subtitle, corpusID) 
+      VALUES(1000, "glosstag", "WordNet with Semantically Tagged Glosses", "http://wordnet.princeton.edu/glosstag.shtml", "", 100);
+""")
         sentid = 1000000
         docid  = 1000
         for ss in synsets:
@@ -335,6 +341,7 @@ def export_ntumc(wng_loc, wng_db_loc):
             sent_file.write('%s\t%s\n' % (sentid, sent,))
             # print(sent)
             words = []
+            wordid = 0
             # [2016-02-01] There is an error in glossitem for synset 01179767-a (a01179767)
             for gl in ss.glosses:
                 for item in gl.items:
@@ -342,15 +349,17 @@ def export_ntumc(wng_loc, wng_db_loc):
                         item.text = "'T"
                 words += gl.items
             asent = smart_search(sent, words, lambda x: x.text)
-            outfile.write('INSERT INTO sent (sid,docID,pid,sent,comment,usrname) VALUES(%s,%s,"","%s","[WNSID=%s]","letuananh");\n' % ( sentid, docid, asent.sent.replace('"', '\\"'), ss.get_synsetid()) )
-            for (wordid, word) in enumerate(asent.words):
+            outfile.write('INSERT INTO sent (sid,docID,pid,sent,comment,usrname) VALUES(%s,%s,"","%s","[WNSID=%s]","letuananh");\n' % ( sentid, docid, asent.sent.replace('"', '""'), ss.get_synsetid()) )
+            for word in asent.words:
                 testword = sent[word.cfrom:word.cto]
                 if testword != word.data.text:
                     print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
                 outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "", "", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text, word.cfrom, word.cto))
                 word_file.write('%s\t%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto, word.data.lemma))
+                wordid += 1
             sentid += 1
         # end for synsets
+        outfile.write("END TRANSACTION;\n");
     t.end()
     print("Done!")
     
