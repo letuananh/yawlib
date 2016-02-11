@@ -187,6 +187,36 @@ def test_skmap_gwn_wn30():
             c.count("WN30 Found")
     c.summarise()
 
+MANUAL_SPLIT = {
+'00012779-r' : ['thoroughly or completely; fully; often used as a combining form', '"The problem is well understood"', '"she was well informed"', '"shake well before using"', '"in order to avoid food poisoning be sure the meat is well cooked"', '"well-done beef"', '"well-satisfied customers"', '"well-educated"']
+,'00021878-r' : ['on certain occasions or in certain cases but not always', '"sometimes she wished she were back in England"', '"sometimes her photography is breathtaking"', '"sometimes they come for a month; at other times for six months"']
+,'00027093-r' : ['in the actual state of affairs and often contrary to expectations', '"he might have been killed; as it is he was severely injured"']
+,'00028319-r' : ['except that', '"It was the same story; only this time she came out better"']
+,'00028797-r' : ['by contrast; on the other hand', '"the first part was easy; the second, however, took hours"']
+,'00029037-r' : ['making an additional point; anyway', '"I don\'t want to go to a restaurant; besides, we can\'t afford it"', '"she couldn\'t shelter behind him all the time and in any case he wasn\'t always with her"']
+,'00029367-r' : ['in addition', '"computer chess games are getting cheaper all the time; furthermore, their quality is improving"', '"the cellar was dark; moreover, mice nested there"', '"what is more, there\'s no sign of a change"']
+,'00030443-r' : ['in addition or furthermore', '"if we further suppose"', '"stated further that he would not cooperate with them"', '"they are definitely coming; further, they should be here already"']
+}
+
+def split_gloss(ss):
+    gl = ss.raw_glosses[0].gloss
+    sid = ss.get_synsetid()
+    if sid in MANUAL_SPLIT:
+        return MANUAL_SPLIT[sid]
+    parts = [ x.strip() for x in gl.split(';') ]
+    examples = []
+    definition = []
+    
+    for part in parts:
+        if part.startswith('"') or part.endswith('"'):
+            examples.append(part)
+        else:
+            if len(examples) > 0:
+                print("WARNING: invalid glosses: %s" % (gl,))
+            definition.append(part)
+
+    return [ '; '.join(definition) ] + examples
+
 def dev_mode(wng_db_loc):
     ''' Just a dummy method for quick calling
     '''
@@ -198,6 +228,8 @@ def dev_mode(wng_db_loc):
     # print("Get freq of a synset")
     # c = db.get_tagcount('100002684')
     # print(c)
+
+    t = Timer()
 
     xmlwn = XMLGWordNet()
     xmlwn.read(MOCKUP_SYNSETS_DATA)
@@ -221,6 +253,29 @@ def dev_mode(wng_db_loc):
             print(tag)
     raw_text = ss.raw_glosses[0].gloss
     print(ss.glosses)
+
+    gwn = SQLiteGWordNet(wng_db_loc)
+    t.start("Cache all SQLite synsets")
+    synsets = gwn.all_synsets()
+    t.end("Done caching")
+    
+    c = Counter()
+    with open("data/WRONG_SPLIT.txt", 'w') as wrong:
+        for ss in synsets:
+            parts = split_gloss(ss)
+            if len(parts) != len(ss.glosses):
+                # print("WARNING")
+                # dump_synset(ss)
+                wrong.write("[%s] -- %s\n" % (ss.get_synsetid(), ss.raw_glosses[0].gloss,))
+                for part in parts:
+                    wrong.write("    -- %s\n" % (part,))
+                for gl in ss.glosses:
+                    wrong.write('    > %s\n' % (gl.items,))
+                c.count("WRONG")
+                wrong.write("'%s' : %s\n\n" % (ss.get_synsetid(), parts,))
+            else:
+                c.count("OK")
+    c.summarise()
     
     # header("Test smart search")
     # smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
@@ -378,7 +433,7 @@ def export_ntumc(wng_loc, wng_db_loc):
                 testword = sent[word.cfrom:word.cto]
                 if testword != word.data.text:
                     print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
-                outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "", "", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text.replace('"', '""').replace("'", "''"), word.cfrom, word.cto))
+                outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "%s", "", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text.replace('"', '""').replace("'", "''"), word.data.pos, word.data.lemma, word.cfrom, word.cto))
                 wordid_map[wordid] = word.data.origid
                 wordid_map[word.data.origid] = wordid
                 if word.data.coll:
