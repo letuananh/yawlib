@@ -102,7 +102,8 @@ class XMLGWordNet:
                     synset.add_raw_gloss(GlossRaw.TEXT, StringTool.strip(child[0].text))
             elif child.tag == 'gloss' and child.get('desc') == 'wsd':
                 for grandchild in child:
-                    if grandchild.tag in ('def', 'ex'):
+                    # [2016-02-12 LTA] aux should be parsed as well 
+                    if grandchild.tag in ('def', 'ex', 'aux'):
                         gloss = synset.add_gloss(grandchild.get('id'), StringTool.strip(grandchild.tag))
                         self.parse_gloss(grandchild, gloss)
                         # rip definition
