@@ -188,14 +188,28 @@ def test_skmap_gwn_wn30():
     c.summarise()
 
 MANUAL_SPLIT = {
-'00012779-r' : ['thoroughly or completely; fully; often used as a combining form', '"The problem is well understood"', '"she was well informed"', '"shake well before using"', '"in order to avoid food poisoning be sure the meat is well cooked"', '"well-done beef"', '"well-satisfied customers"', '"well-educated"']
-,'00021878-r' : ['on certain occasions or in certain cases but not always', '"sometimes she wished she were back in England"', '"sometimes her photography is breathtaking"', '"sometimes they come for a month; at other times for six months"']
-,'00027093-r' : ['in the actual state of affairs and often contrary to expectations', '"he might have been killed; as it is he was severely injured"']
-,'00028319-r' : ['except that', '"It was the same story; only this time she came out better"']
-,'00028797-r' : ['by contrast; on the other hand', '"the first part was easy; the second, however, took hours"']
-,'00029037-r' : ['making an additional point; anyway', '"I don\'t want to go to a restaurant; besides, we can\'t afford it"', '"she couldn\'t shelter behind him all the time and in any case he wasn\'t always with her"']
-,'00029367-r' : ['in addition', '"computer chess games are getting cheaper all the time; furthermore, their quality is improving"', '"the cellar was dark; moreover, mice nested there"', '"what is more, there\'s no sign of a change"']
-,'00030443-r' : ['in addition or furthermore', '"if we further suppose"', '"stated further that he would not cooperate with them"', '"they are definitely coming; further, they should be here already"']
+
+'00022401-r' : ['of the distant or comparatively distant past', '"We met once long ago"', '"they long ago forsook their nomadic life"', '"left for work long ago"', '"he has long since given up mountain climbing"', '"This name has long since been forgotten"', '"lang syne" is Scottish']
+ 
+,'00996448-a' : ['not encouraging or approving or pleasing', '"unfavorable conditions"', '"an unfavorable comparison"', '"unfavorable comments"', '"unfavorable impression"']
+
+,'01028623-a' : ['adapted to various purposes, sizes, forms, operations', '"universal wrench"', '"universal chuck"', '"universal screwdriver"']
+
+,'01304802-a' : ['giving advice', '"an advisory memorandum"', '"his function was purely consultative"']
+
+,'01475282-a' : ['hard to control', '"a difficult child"', '"an unmanageable situation"']
+
+,'01824244-a' : ['having a strong physiological or chemical effect', '"a potent toxin"', '"potent liquor"', '"a potent cup of tea"', '"a stiff drink"']
+
+,'01909077-a' : ['(of color) discolored by impurities; not bright and clear', '"dirty" is often used in combination', '"a dirty (or dingy) white"', '"the muddied grey of the sea"', '"muddy colors"', '"dirty-green walls"', '"dirty-blonde hair"']
+
+,'01985976-a' : ['capable of mentally absorbing', '"assimilative processes"', '"assimilative capacity of the human mind"']
+
+,'02026785-a' : ['high in mineral content; having a high proportion of fuel to air', '"a rich vein of copper"', '"a rich gas mixture"']
+
+,'02056880-a' : ['not concerned with or devoted to religion', '"sacred and profane music"', '"secular drama"', '"secular architecture"', '"children being brought up in an entirely profane environment"']
+
+,
 }
 
 def split_gloss(ss):
@@ -206,10 +220,18 @@ def split_gloss(ss):
     parts = [ x.strip() for x in gl.split(';') ]
     examples = []
     definition = []
-    
-    for part in parts:
+    skip = False
+    for partid, part in enumerate(parts):
         if part.startswith('"') or part.endswith('"'):
-            examples.append(part)
+            if skip:
+                skip = False
+                continue
+            if partid < len(parts)-1 and part.startswith('"') and not part.endswith('"') and not parts[partid+1].startswith('"') and parts[partid+1].endswith('"'):
+                # merge
+                examples.append(part + '; ' + parts[partid+1])
+                skip = True
+            else:
+                examples.append(part)
         else:
             if len(examples) > 0:
                 print("WARNING: invalid glosses: %s" % (gl,))
@@ -260,12 +282,13 @@ def dev_mode(wng_db_loc):
     t.end("Done caching")
     
     c = Counter()
-    with open("data/WRONG_SPLIT.txt", 'w') as wrong:
+    with open("data/WRONG_SPLIT.txt", 'w') as wrong, open('data/SYNSET_TO_FIX.txt', 'w') as sslist:
         for ss in synsets:
             parts = split_gloss(ss)
             if len(parts) != len(ss.glosses):
                 # print("WARNING")
                 # dump_synset(ss)
+                sslist.write("%s\n" % (ss.get_synsetid()))
                 wrong.write("[%s] -- %s\n" % (ss.get_synsetid(), ss.raw_glosses[0].gloss,))
                 for part in parts:
                     wrong.write("    -- %s\n" % (part,))
