@@ -76,7 +76,21 @@ WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
 DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
 MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
 GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
+GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
 #-----------------------------------------------------------------------
+
+class GlossTagPatch:
+    def __init__(self):
+        self.patched = [ '00012779-r', '00022401-r', '00098147-a', '01032029-a', '01909077-a', '02171024-a', '02404081-a', '02773862-a', '00227165-v', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01618547-v', '01915365-v', '02162162-v', '02358327-v', '02545045-v', '02646064-v', '02655135-v', '02685390-v', '02711114-v', '03501288-n', '05845888-n', '07138504-n', '07138736-n', '08145553-n', '13855627-n', '13997529-n', '14457976-n', '15021189-n' ]
+        xmlwn = XMLGWordNet()
+        xmlwn.read(GLOSSTAG_PATCH)
+        self.synsets = xmlwn.synsets
+        self.synset_map = {}
+        for ss in self.synsets:
+            self.synset_map[ss.get_synsetid()] = ss
+        pass
+
+    
 
 def cache_all_synsets(wng_db_loc):
     ''' Cache all Gloss Synset (SQLite) to database
@@ -189,27 +203,26 @@ def test_skmap_gwn_wn30():
 
 MANUAL_SPLIT = {
 
-'00022401-r' : ['of the distant or comparatively distant past', '"We met once long ago"', '"they long ago forsook their nomadic life"', '"left for work long ago"', '"he has long since given up mountain climbing"', '"This name has long since been forgotten"', '"lang syne" is Scottish']
+# '00022401-r' : ['of the distant or comparatively distant past', '"We met once long ago"', '"they long ago forsook their nomadic life"', '"left for work long ago"', '"he has long since given up mountain climbing"', '"This name has long since been forgotten"', '"lang syne" is Scottish']
  
-,'00996448-a' : ['not encouraging or approving or pleasing', '"unfavorable conditions"', '"an unfavorable comparison"', '"unfavorable comments"', '"unfavorable impression"']
+# ,'00996448-a' : ['not encouraging or approving or pleasing', '"unfavorable conditions"', '"an unfavorable comparison"', '"unfavorable comments"', '"unfavorable impression"']
 
-,'01028623-a' : ['adapted to various purposes, sizes, forms, operations', '"universal wrench"', '"universal chuck"', '"universal screwdriver"']
+# ,'01028623-a' : ['adapted to various purposes, sizes, forms, operations', '"universal wrench"', '"universal chuck"', '"universal screwdriver"']
 
-,'01304802-a' : ['giving advice', '"an advisory memorandum"', '"his function was purely consultative"']
+# ,'01304802-a' : ['giving advice', '"an advisory memorandum"', '"his function was purely consultative"']
 
-,'01475282-a' : ['hard to control', '"a difficult child"', '"an unmanageable situation"']
+# ,'01475282-a' : ['hard to control', '"a difficult child"', '"an unmanageable situation"']
 
-,'01824244-a' : ['having a strong physiological or chemical effect', '"a potent toxin"', '"potent liquor"', '"a potent cup of tea"', '"a stiff drink"']
+# ,'01824244-a' : ['having a strong physiological or chemical effect', '"a potent toxin"', '"potent liquor"', '"a potent cup of tea"', '"a stiff drink"']
 
-,'01909077-a' : ['(of color) discolored by impurities; not bright and clear', '"dirty" is often used in combination', '"a dirty (or dingy) white"', '"the muddied grey of the sea"', '"muddy colors"', '"dirty-green walls"', '"dirty-blonde hair"']
+# ,'01909077-a' : ['(of color) discolored by impurities; not bright and clear', '"dirty" is often used in combination', '"a dirty (or dingy) white"', '"the muddied grey of the sea"', '"muddy colors"', '"dirty-green walls"', '"dirty-blonde hair"']
 
-,'01985976-a' : ['capable of mentally absorbing', '"assimilative processes"', '"assimilative capacity of the human mind"']
+# ,'01985976-a' : ['capable of mentally absorbing', '"assimilative processes"', '"assimilative capacity of the human mind"']
 
-,'02026785-a' : ['high in mineral content; having a high proportion of fuel to air', '"a rich vein of copper"', '"a rich gas mixture"']
+# ,'02026785-a' : ['high in mineral content; having a high proportion of fuel to air', '"a rich vein of copper"', '"a rich gas mixture"']
 
-,'02056880-a' : ['not concerned with or devoted to religion', '"sacred and profane music"', '"secular drama"', '"secular architecture"', '"children being brought up in an entirely profane environment"']
+# ,'02056880-a' : ['not concerned with or devoted to religion', '"sacred and profane music"', '"secular drama"', '"secular architecture"', '"children being brought up in an entirely profane environment"']
 
-,
 }
 
 def split_gloss(ss):
@@ -283,7 +296,10 @@ def dev_mode(wng_db_loc):
     
     c = Counter()
     with open("data/WRONG_SPLIT.txt", 'w') as wrong, open('data/SYNSET_TO_FIX.txt', 'w') as sslist:
+        glpatch = GlossTagPatch()
         for ss in synsets:
+            if ss.get_synsetid() in glpatch.patched:
+                ss = glpatch.synset_map[ss.get_synsetid()]
             parts = split_gloss(ss)
             if len(parts) != len(ss.glosses):
                 # print("WARNING")

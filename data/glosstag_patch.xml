@@ -4,7 +4,7 @@
 
 <!-- Synsets -->
 
- <synset id="r00012779" ofs="00012779" pos="r">
+<synset id="r00012779" ofs="00012779" pos="r">
   <terms>
    <term>well</term>
   </terms>
@@ -110,7 +110,6 @@
    </ex>
   </gloss>
  </synset>
-
 <synset id="r00022401" ofs="00022401" pos="r">
   <terms>
    <term>long ago</term>
@@ -223,8 +222,7 @@
    </ex>
   </gloss>
  </synset>
-
- <synset id="a00098147" ofs="00098147" pos="a">
+<synset id="a00098147" ofs="00098147" pos="a">
   <terms>
    <term>slain</term>
   </terms>
@@ -276,8 +274,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="a01032029" ofs="01032029" pos="a">
+<synset id="a01032029" ofs="01032029" pos="a">
   <terms>
    <term>toed</term>
   </terms>
@@ -328,8 +325,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="a01909077" ofs="01909077" pos="a">
+<synset id="a01909077" ofs="01909077" pos="a">
   <terms>
    <term>dirty</term>
    <term>dingy</term>
@@ -433,8 +429,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="a02171024" ofs="02171024" pos="a">
+<synset id="a02171024" ofs="02171024" pos="a">
   <terms>
    <term>compound</term>
   </terms>
@@ -478,8 +473,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="a02404081" ofs="02404081" pos="a">
+<synset id="a02404081" ofs="02404081" pos="a">
   <terms>
    <term>limp</term>
   </terms>
@@ -539,8 +533,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="a02773862" ofs="02773862" pos="a">
+<synset id="a02773862" ofs="02773862" pos="a">
   <terms>
    <term>paramedical</term>
   </terms>
@@ -606,8 +599,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v00227165" ofs="00227165" pos="v">
+<synset id="v00227165" ofs="00227165" pos="v">
   <terms>
    <term>intensify</term>
    <term>compound</term>
@@ -691,8 +683,7 @@
    </ex>
   </gloss>
  </synset>
-
- <synset id="v00515154" ofs="00515154" pos="v">
+<synset id="v00515154" ofs="00515154" pos="v">
   <terms>
    <term>process</term>
    <term>treat</term>
@@ -789,8 +780,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v00729109" ofs="00729109" pos="v">
+<synset id="v00729109" ofs="00729109" pos="v">
   <terms>
    <term>trace</term>
    <term>follow</term>
@@ -847,8 +837,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v00781000" ofs="00781000" pos="v">
+<synset id="v00781000" ofs="00781000" pos="v">
   <terms>
    <term>continue</term>
    <term>go on</term>
@@ -916,8 +905,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v01572728" ofs="01572728" pos="v">
+<synset id="v01572728" ofs="01572728" pos="v">
   <terms>
    <term>strain</term>
    <term>tense</term>
@@ -971,8 +959,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v01618547" ofs="01618547" pos="v">
+<synset id="v01618547" ofs="01618547" pos="v">
   <terms>
    <term>institute</term>
    <term>bring</term>
@@ -1018,8 +1005,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v01915365" ofs="01915365" pos="v">
+<synset id="v01915365" ofs="01915365" pos="v">
   <terms>
    <term>transit</term>
    <term>pass through</term>
@@ -1092,8 +1078,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v02162162" ofs="02162162" pos="v">
+<synset id="v02162162" ofs="02162162" pos="v">
   <terms>
    <term>refocus</term>
   </terms>
@@ -1130,8 +1115,7 @@
    </def>
   </gloss>
  </synset>
- 
- <synset id="v02358327" ofs="02358327" pos="v">
+<synset id="v02358327" ofs="02358327" pos="v">
   <terms>
    <term>deliver</term>
    <term>drive home</term>
@@ -1192,8 +1176,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v02545045" ofs="02545045" pos="v">
+<synset id="v02545045" ofs="02545045" pos="v">
   <terms>
    <term>dare</term>
   </terms>
@@ -1249,8 +1232,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v02646064" ofs="02646064" pos="v">
+<synset id="v02646064" ofs="02646064" pos="v">
   <terms>
    <term>weigh</term>
    <term>press</term>
@@ -1300,8 +1282,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v02655135" ofs="02655135" pos="v">
+<synset id="v02655135" ofs="02655135" pos="v">
   <terms>
    <term>be</term>
   </terms>
@@ -1360,8 +1341,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v02685390" ofs="02685390" pos="v">
+<synset id="v02685390" ofs="02685390" pos="v">
   <terms>
    <term>cross</term>
    <term>traverse</term>
@@ -1436,8 +1416,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="v02711114" ofs="02711114" pos="v">
+<synset id="v02711114" ofs="02711114" pos="v">
   <terms>
    <term>enclose</term>
    <term>hold in</term>
@@ -1468,8 +1447,7 @@
    </def>
   </gloss>
  </synset>
-
- <synset id="n03501288" ofs="03501288" pos="n">
+<synset id="n03501288" ofs="03501288" pos="n">
   <terms>
    <term>head</term>
   </terms>
@@ -1520,8 +1498,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="n05845888" ofs="05845888" pos="n">
+<synset id="n05845888" ofs="05845888" pos="n">
   <terms>
    <term>like</term>
    <term>the like</term>
@@ -1581,8 +1558,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="n07138504" ofs="07138504" pos="n">
+<synset id="n07138504" ofs="07138504" pos="n">
   <terms>
    <term>indirect discourse</term>
   </terms>
@@ -1646,8 +1622,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="n07138736" ofs="07138736" pos="n">
+<synset id="n07138736" ofs="07138736" pos="n">
   <terms>
    <term>direct discourse</term>
    <term>direct quotation</term>
@@ -1698,8 +1673,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="n08145553" ofs="08145553" pos="n">
+<synset id="n08145553" ofs="08145553" pos="n">
   <terms>
    <term>post office</term>
    <term>local post office</term>
@@ -1733,8 +1707,7 @@
    </def>
   </gloss>
  </synset>
- 
- <synset id="n13855627" ofs="13855627" pos="n">
+<synset id="n13855627" ofs="13855627" pos="n">
   <terms>
    <term>contrast</term>
    <term>direct contrast</term>
@@ -1785,8 +1758,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="n13997529" ofs="13997529" pos="n">
+<synset id="n13997529" ofs="13997529" pos="n">
   <terms>
    <term>bondage</term>
   </terms>
@@ -1856,8 +1828,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="n14457976" ofs="14457976" pos="n">
+<synset id="n14457976" ofs="14457976" pos="n">
   <terms>
    <term>shirtsleeves</term>
   </terms>
@@ -1912,8 +1883,7 @@
    </ex>
   </gloss>
  </synset>
- 
- <synset id="n15021189" ofs="15021189" pos="n">
+<synset id="n15021189" ofs="15021189" pos="n">
   <terms>
    <term>scratch pad</term>
    <term>scratch paper</term>
@@ -1964,7 +1934,7 @@
    </aux>
   </gloss>
  </synset>
- 
+
 <!-- End synsets -->
  
 </wordnet>
