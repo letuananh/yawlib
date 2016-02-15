@@ -56,6 +56,7 @@ __status__ = "Prototype"
 import os.path
 import argparse
 import itertools
+from lxml import etree
 from collections import defaultdict as dd
 from collections import namedtuple
 
@@ -63,7 +64,7 @@ from chirptext.leutile import StringTool, Counter, Timer, uniquify, header, File
 
 from .config import YLConfig
 from .helpers import dump_synsets, dump_synset, get_synset_by_id, get_synset_by_sk, get_synsets_by_term
-from .glosswordnet import XMLGWordNet, SQLiteGWordNet
+from .glosswordnet import XMLGWordNet, SQLiteGWordNet, Gloss
 from .wordnetsql import WordNetSQL as WSQL
 #-----------------------------------------------------------------------
 # CONFIGURATION
@@ -77,6 +78,13 @@ DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
 MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
 GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
 GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
+GLOSSTAG_XML_FILES = [
+    os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH , 'merged', 'adv.xml')
+    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml')
+    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml')
+    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')
+    ]
+
 #-----------------------------------------------------------------------
 
 class GlossTagPatch:
@@ -226,16 +234,20 @@ MANUAL_SPLIT = {
 }
 
 def split_gloss(ss):
-    gl = ss.raw_glosses[0].gloss
     sid = ss.get_synsetid()
     if sid in MANUAL_SPLIT:
         return MANUAL_SPLIT[sid]
+
+    gl = ss.raw_glosses[0].gloss # raw gloss
+    # [2016-02-15 LTA] Some commas are actually semicolons
+    gl = gl.replace('", "')     
     parts = [ x.strip() for x in gl.split(';') ]
+
     examples = []
     definition = []
     skip = False
     for partid, part in enumerate(parts):
-        if part.startswith('"') or part.endswith('"'):
+        if part.startswith('"') or part.endswith('"') or (part.startswith('(') and part.endswith(')')):
             if skip:
                 skip = False
                 continue
@@ -247,10 +259,40 @@ def split_gloss(ss):
                 examples.append(part)
         else:
             if len(examples) > 0:
-                print("WARNING: invalid glosses: %s" % (gl,))
+                # print("WARNING: abnormal part [%s] in gloss: %s" % (part, gl,))
+                # print("   >> %s" % (ss.glosses,))
+                pass
             definition.append(part)
 
     return [ '; '.join(definition) ] + examples
+
+def combine_glosses(orig_glosses):
+    defs    = []
+    exs     = []
+
+    for gloss in orig_glosses:
+        if gloss.origid is None or gloss.origid.endswith('d'):
+            if len(exs) > 0:
+                print("WARNING: aux or def after examples")
+            defs.append(gloss)
+        else:
+            idparts = gloss.origid.split('_')
+            if len(idparts) == 2 and idparts[1].startswith('ex'):
+                exs.append(gloss)
+            else:
+                print("WARNING: Invalid origid [%s]" % (gloss.origid,))
+
+    # Create def gloss
+    g = Gloss(defs[0].synset, defs[0].origid, defs[0].cat, defs[0].gid)
+    for other in defs[1:]:
+        # update origid, cat and gid if needed
+        if g.origid is None: g.origid = other.origid
+        if g.cat is None: g.origid = other.cat
+        if g.gid is None: g.origid = other.gid    
+        g.items += other.items
+        g.tags += other.tags
+        g.groups += other.groups
+    return [ g ] + exs
 
 def dev_mode(wng_db_loc):
     ''' Just a dummy method for quick calling
@@ -275,8 +317,8 @@ def dev_mode(wng_db_loc):
     
     header("Gloss info")
     print(ss.raw_glosses[0].gloss)
-        
-    for gl in ss.glosses:
+    glosses = combine_glosses(ss.glosses)
+    for gl in glosses:
         print("#")
         print("    > %s" % gl.items)
         print("    > %s" % gl.tags)
@@ -292,6 +334,7 @@ def dev_mode(wng_db_loc):
     gwn = SQLiteGWordNet(wng_db_loc)
     t.start("Cache all SQLite synsets")
     synsets = gwn.all_synsets()
+    # synsets = xmlwn.synsets
     t.end("Done caching")
     
     c = Counter()
@@ -301,15 +344,16 @@ def dev_mode(wng_db_loc):
             if ss.get_synsetid() in glpatch.patched:
                 ss = glpatch.synset_map[ss.get_synsetid()]
             parts = split_gloss(ss)
-            if len(parts) != len(ss.glosses):
+            glosses = combine_glosses(ss.glosses)
+            if len(parts) != len(glosses):
                 # print("WARNING")
                 # dump_synset(ss)
                 sslist.write("%s\n" % (ss.get_synsetid()))
                 wrong.write("[%s] -- %s\n" % (ss.get_synsetid(), ss.raw_glosses[0].gloss,))
-                for part in parts:
-                    wrong.write("    -- %s\n" % (part,))
-                for gl in ss.glosses:
-                    wrong.write('    > %s\n' % (gl.items,))
+                for idx, part in enumerate(parts):
+                    wrong.write("    -- %s: %s\n" % (str(idx).rjust(3), part,))
+                for idx, gl in enumerate(ss.glosses):
+                    wrong.write('    >> %s: %s\n' % (str(idx).rjust(3), gl.items,))
                 c.count("WRONG")
                 wrong.write("'%s' : %s\n\n" % (ss.get_synsetid(), parts,))
             else:
@@ -354,16 +398,10 @@ def smart_search(sentence, words, getitem=lambda x:x):
 #--------------------------------------------------------
 
 def read_xmlwn(merged_folder):
-    xml_files = [
-        os.path.join(merged_folder, 'adv.xml')
-        ,os.path.join(merged_folder, 'adj.xml')
-        ,os.path.join(merged_folder, 'verb.xml')
-        ,os.path.join(merged_folder, 'noun.xml')
-    ]
     header("Extracting Gloss WordNet (XML)")
     t = Timer()
     xmlgwn = XMLGWordNet()
-    for xml_file in xml_files:
+    for xml_file in GLOSSTAG_XML_FILES:
         t.start('Reading file: %s' % xml_file)
         xmlgwn.read(xml_file)
         t.end("Extraction completed %s" % xml_file)
@@ -518,6 +556,39 @@ def export_ntumc(wng_loc, wng_db_loc):
     
     pass
 
+def to_synsetid(synsetid):
+    return '%s-%s' % (synsetid[1:], synsetid[0])
+
+def extract_synsets_xml():
+    xfile_path = 'data/extract.xml'
+    synsets = etree.Element("synsets")
+    t = Timer()
+    c = Counter()
+    
+    # Loop through elements in glosstag xml files
+    t.start("Extracting synsets from glosstag ...")
+    for xml_file in GLOSSTAG_XML_FILES: 
+    # for xml_file in [ MOCKUP_SYNSETS_DATA ]:
+        tree = etree.iterparse(xml_file)
+        for event, element in tree:
+            if event == 'end' and element.tag == 'synset':
+                # do something to the element
+                if to_synsetid(element.get('id')) in SYNSETS_TO_EXTRACT:
+                    synsets.append(etree.fromstring(etree.tostring(element)))
+                    c.count("FOUND")
+                else:
+                    c.count("IGNORED")
+                # Clean up
+                element.clear()
+    t.end()
+    c.summarise()
+
+    # save the tree (nicely?)
+    print("Writing synsets to %s" % (xfile_path,))
+    with open(xfile_path, 'wb') as xfile:
+        xfile.write(etree.tostring(synsets, pretty_print=True))
+    print("Done!")
+
 def main():
     '''Main entry of wntk
 
@@ -541,8 +612,7 @@ def main():
     parser.add_argument('-a', '--all', help='Cache all synsets', action='store_true')
     parser.add_argument('-w', '--wnsql', help='Location to WordNet SQLite 3.0 database')
     parser.add_argument('-g', '--glosswn', help='Location to Gloss WordNet SQLite database')
-
-
+    parser.add_argument('-x', '--extract', help='Extract XML synsets from glosstag', action='store_true')
 
     # Optional argument(s)
     group = parser.add_mutually_exclusive_group()
@@ -559,6 +629,8 @@ def main():
     # Now do something ...
     if args.dev:
         dev_mode(wng_db_loc)
+    elif args.extract:
+        extract_synsets_xml()
     elif args.create:
         convert(wng_loc, wng_db_loc, True)
     elif args.ntumc:
