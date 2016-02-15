@@ -12656,5 +12656,399 @@
    </ex>
   </gloss>
  </synset>
+
+<!-- To test sentence split for glosses [2016-02-15 LTA]-->
+
+  <synset id="r00015471" ofs="00015471" pos="r">
+  <terms>
+   <term>okay</term>
+   <term>O.K.</term>
+   <term>all right</term>
+   <term>alright</term>
+  </terms>
+  <keys>
+   <sk>okay%4:02:00::</sk>
+   <sk>o.k.%4:02:00::</sk>
+   <sk>all_right%4:02:02::</sk>
+   <sk>alright%4:02:02::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>in a satisfactory or adequate manner; "she'll do okay on her own"; "held up all right under pressure"; (`alright' is a nonstandard variant of `all right')</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>in a satisfactory or adequate manner ; ( &#226;&#128;&#152; alright &#226;&#128;&#153; is a nonstandard variant of &#226;&#128;&#152; all right &#226;&#128;&#153; ) ; &#226;&#128;&#156; she 'll[="will"] do okay on her own &#226;&#128;&#157; ; &#226;&#128;&#156; held up all right under pressure &#226;&#128;&#157;</text>
+  </gloss>
+  <gloss desc="wsd">
+   <def id="r00015471_d">
+    <wf id="r00015471_wf1" lemma="in" pos="IN" tag="ignore">in</wf>
+    <wf id="r00015471_wf2" lemma="a" pos="DT" tag="ignore">a</wf>
+    <wf id="r00015471_wf3" lemma="satisfactory%3" pos="JJ" tag="man">
+     <id id="r00015471_id.4" lemma="satisfactory" sk="satisfactory%3:00:00:good:01"/>
+     <id id="r00015471_id.3" lemma="satisfactory" sk="satisfactory%3:00:00::"/>satisfactory</wf>
+    <wf id="r00015471_wf4" lemma="or" pos="CC" tag="ignore">or</wf>
+    <wf id="r00015471_wf5" lemma="adequate%3" pos="JJ" tag="un">adequate</wf>
+    <wf id="r00015471_wf6" lemma="manner%1" pos="NN" sep="" tag="man">
+     <id id="r00015471_id.5" lemma="manner" sk="manner%1:07:02::"/>manner</wf>
+    <wf id="r00015471_wf7" pos=":" tag="ignore" type="punc">;</wf>
+   </def>
+   <aux tag="ignore">
+    <wf id="r00015471_tok1" sep="" tag="ignore" type="punc">(</wf>
+    <qf rend="sq">
+     <wf id="r00015471_tok2" lemma="alright%3|alright%4" sep="" tag="un">alright</wf>
+    </qf>
+    <wf id="r00015471_tok3" lemma="i%1|be%2" tag="un">is</wf>
+    <wf id="r00015471_tok4" lemma="a" tag="ignore">a</wf>
+    <wf id="r00015471_tok5" lemma="nonstandard%3" tag="un">nonstandard</wf>
+    <wf id="r00015471_tok6" lemma="variant%1|variant%3" tag="un">variant</wf>
+    <wf id="r00015471_tok7" lemma="of" tag="ignore">of</wf>
+    <qf rend="sq">
+     <wf id="r00015471_tok8" lemma="all%3|all%4" tag="un">all</wf>
+     <wf id="r00015471_tok9" lemma="right%1|right%2|right%3|right%4" sep="" tag="un">right</wf>
+    </qf>
+    <wf id="r00015471_tok10" sep="" tag="ignore" type="punc">)</wf>
+    <wf id="r00015471_tok11" tag="ignore" type="punc">;</wf>
+   </aux>
+   <ex id="r00015471_ex1">
+    <qf rend="dq">
+     <wf id="r00015471_wf8" lemma="she" sep="" tag="ignore">she</wf>
+     <wf id="r00015471_wf9" lemma="will%1|will%2" rdf="will" tag="un">'ll</wf>
+     <wf id="r00015471_wf10" lemma="do%1|do%2" tag="un">do</wf>
+     <wf id="r00015471_wf11" lemma="okay%1|okay%2|okay%3|okay%4" tag="auto">
+      <id id="r00015471_id.1" lemma="okay" sk="okay%4:02:00::"/>okay</wf>
+     <wf id="r00015471_wf12" lemma="on" tag="ignore">on</wf>
+     <wf id="r00015471_wf13" lemma="her" tag="ignore">her</wf>
+     <wf id="r00015471_wf14" lemma="own%2|own%3" sep="" tag="un">own</wf>
+    </qf>
+    <wf id="r00015471_wf15" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00015471_ex2">
+    <qf rend="dq">
+     <wf id="r00015471_wf16" lemma="hold%2|held%3" tag="un">held</wf>
+     <wf id="r00015471_wf17" lemma="up%2|up%3|up%4" tag="un">up</wf>
+     <cf coll="a" id="r00015471_wf18" lemma="all%3|all%4" tag="un">
+      <glob coll="a" glob="auto" id="r00015471_coll.a" lemma="all_right%3|all_right%4" tag="auto">
+       <id coll="a" id="r00015471_id.2" lemma="all right" sk="all_right%4:02:02::"/>
+     </glob>all</cf>
+     <cf coll="a" id="r00015471_wf19" lemma="right%1|right%2|right%3|right%4" tag="un">right</cf>
+     <wf id="r00015471_wf20" lemma="under%3|under%4" tag="un">under</wf>
+     <wf id="r00015471_wf21" lemma="pressure%1|pressure%2" sep="" tag="un">pressure</wf>
+    </qf>
+    <wf id="r00015471_wf22" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
+  <synset id="r00016458" ofs="00016458" pos="r">
+  <terms>
+   <term>badly</term>
+   <term>bad</term>
+  </terms>
+  <keys>
+   <sk>badly%4:02:04::</sk>
+   <sk>bad%4:02:04::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>with great intensity (`bad' is a nonstandard variant for `badly'); "the injury hurt badly"; "the buildings were badly shaken"; "it hurts bad"; "we need water bad"</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>with great intensity ( &#226;&#128;&#152; bad &#226;&#128;&#153; is a nonstandard variant for &#226;&#128;&#152; badly &#226;&#128;&#153; ) ; &#226;&#128;&#156; the injury hurt badly &#226;&#128;&#157; ; &#226;&#128;&#156; the buildings were badly shaken &#226;&#128;&#157; ; &#226;&#128;&#156; it hurts bad &#226;&#128;&#157; ; &#226;&#128;&#156; we need water bad &#226;&#128;&#157;</text>
+  </gloss>
+  <gloss desc="wsd">
+   <def id="r00016458_d">
+    <wf id="r00016458_wf1" lemma="with" pos="IN" tag="ignore">with</wf>
+    <wf id="r00016458_wf2" lemma="great%1|great%3" pos="JJ" tag="un">great</wf>
+    <wf id="r00016458_wf3" lemma="intensity%1" pos="NN" tag="man">
+     <id id="r00016458_id.5" lemma="intensity" sk="intensity%1:07:03::"/>intensity</wf>
+   </def>
+   <aux tag="ignore">
+    <wf id="r00016458_tok1" sep="" tag="ignore" type="punc">(</wf>
+    <qf rend="sq">
+     <wf id="r00016458_tok2" lemma="bad%1|bad%3|bad%4" sep="" tag="un">bad</wf>
+    </qf>
+    <wf id="r00016458_tok3" lemma="i%1|be%2" tag="un">is</wf>
+    <wf id="r00016458_tok4" lemma="a" tag="ignore">a</wf>
+    <wf id="r00016458_tok5" lemma="nonstandard%3" tag="un">nonstandard</wf>
+    <wf id="r00016458_tok6" lemma="variant%1|variant%3" tag="un">variant</wf>
+    <wf id="r00016458_tok7" lemma="for" tag="ignore">for</wf>
+    <qf rend="sq">
+     <wf id="r00016458_tok8" lemma="badly%4" sep="" tag="un">badly</wf>
+    </qf>
+    <wf id="r00016458_tok9" sep="" tag="ignore" type="punc">)</wf>
+    <wf id="r00016458_tok10" tag="ignore" type="punc">;</wf>
+   </aux>
+   <ex id="r00016458_ex1">
+    <qf rend="dq">
+     <wf id="r00016458_wf4" lemma="the" tag="ignore">the</wf>
+     <wf id="r00016458_wf5" lemma="injury%1" tag="un">injury</wf>
+     <wf id="r00016458_wf6" lemma="hurt%1|hurt%2|hurt%3" tag="un">hurt</wf>
+     <wf id="r00016458_wf7" lemma="badly%4" sep="" tag="auto">
+      <id id="r00016458_id.1" lemma="badly" sk="badly%4:02:04::"/>badly</wf>
+    </qf>
+    <wf id="r00016458_wf8" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00016458_ex2">
+    <qf rend="dq">
+     <wf id="r00016458_wf9" lemma="the" tag="ignore">the</wf>
+     <wf id="r00016458_wf10" lemma="building%1" tag="un">buildings</wf>
+     <wf id="r00016458_wf11" lemma="be%2" tag="un">were</wf>
+     <wf id="r00016458_wf12" lemma="badly%4" tag="auto">
+      <id id="r00016458_id.2" lemma="badly" sk="badly%4:02:04::"/>badly</wf>
+     <wf id="r00016458_wf13" lemma="shake%2|shaken%3" sep="" tag="un">shaken</wf>
+    </qf>
+    <wf id="r00016458_wf14" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00016458_ex3">
+    <qf rend="dq">
+     <wf id="r00016458_wf15" lemma="it" tag="ignore">it</wf>
+     <wf id="r00016458_wf16" lemma="hurt%1|hurt%2" tag="un">hurts</wf>
+     <wf id="r00016458_wf17" lemma="bad%1|bad%3|bad%4" sep="" tag="auto">
+      <id id="r00016458_id.3" lemma="bad" sk="bad%4:02:04::"/>bad</wf>
+    </qf>
+    <wf id="r00016458_wf18" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00016458_ex4">
+    <qf rend="dq">
+     <wf id="r00016458_wf19" lemma="we" tag="ignore">we</wf>
+     <wf id="r00016458_wf20" lemma="need%1|need%2" tag="un">need</wf>
+     <wf id="r00016458_wf21" lemma="water%1|water%2" tag="un">water</wf>
+     <wf id="r00016458_wf22" lemma="bad%1|bad%3|bad%4" sep="" tag="auto">
+      <id id="r00016458_id.4" lemma="bad" sk="bad%4:02:04::"/>bad</wf>
+    </qf>
+    <wf id="r00016458_wf23" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
+  <synset id="r00017077" ofs="00017077" pos="r">
+  <terms>
+   <term>worse</term>
+  </terms>
+  <keys>
+   <sk>worse%4:02:00::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>(comparative of `ill') in a less effective or successful or desirable manner; "he did worse on the second exam"</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>( comparative of &#226;&#128;&#152; ill &#226;&#128;&#153; ) in a less effective or successful or desirable manner ; &#226;&#128;&#156; he did worse on the second exam &#226;&#128;&#157;</text>
+  </gloss>
+  <gloss desc="wsd">
+   <aux tag="ignore">
+    <wf id="r00017077_tok1" sep="" tag="ignore" type="punc">(</wf>
+    <wf id="r00017077_tok2" lemma="comparative%1|comparative%3" tag="un">comparative</wf>
+    <wf id="r00017077_tok3" lemma="of" tag="ignore">of</wf>
+    <qf rend="sq">
+     <wf id="r00017077_tok4" lemma="ill%1|ill%3|ill%4" sep="" tag="un">ill</wf>
+    </qf>
+    <wf id="r00017077_tok5" tag="ignore" type="punc">)</wf>
+   </aux>
+   <def id="r00017077_d">
+    <wf id="r00017077_wf1" lemma="in" pos="IN" tag="ignore">in</wf>
+    <wf id="r00017077_wf2" lemma="a" pos="DT" tag="ignore">a</wf>
+    <wf id="r00017077_wf3" lemma="less%3|little%3|less%4|little%4" pos="RBR" tag="un">less</wf>
+    <wf id="r00017077_wf4" lemma="effective%3" pos="JJ" tag="man">
+     <id id="r00017077_id.5" lemma="effective" sk="effective%3:00:00::"/>effective</wf>
+    <wf id="r00017077_wf5" lemma="or" pos="CC" tag="ignore">or</wf>
+    <wf id="r00017077_wf6" lemma="successful%3" pos="JJ" tag="auto">
+     <id id="r00017077_id.1" lemma="successful" sk="successful%3:00:00::"/>successful</wf>
+    <wf id="r00017077_wf7" lemma="or" pos="CC" tag="ignore">or</wf>
+    <wf id="r00017077_wf8" lemma="desirable%3" pos="JJ" tag="man">
+     <id id="r00017077_id.3" lemma="desirable" sk="desirable%3:00:00::"/>desirable</wf>
+    <wf id="r00017077_wf9" lemma="manner%1" pos="NN" sep="" tag="man">
+     <id id="r00017077_id.4" lemma="manner" sk="manner%1:07:02::"/>manner</wf>
+    <wf id="r00017077_wf10" pos=":" tag="ignore" type="punc">;</wf>
+   </def>
+   <ex id="r00017077_ex1">
+    <qf rend="dq">
+     <wf id="r00017077_wf11" lemma="he" tag="ignore">he</wf>
+     <wf id="r00017077_wf12" lemma="do%2" tag="un">did</wf>
+     <wf id="r00017077_wf13" lemma="worse%1|bad%3|ill%3|worse%3|badly%4|worse%4" tag="auto">
+      <id id="r00017077_id.2" lemma="worse" sk="worse%4:02:00::"/>worse</wf>
+     <wf id="r00017077_wf14" lemma="on" tag="ignore">on</wf>
+     <wf id="r00017077_wf15" lemma="the" tag="ignore">the</wf>
+     <wf id="r00017077_wf16" lemma="second%1|second%2|second%3|second%4" tag="un">second</wf>
+     <wf id="r00017077_wf17" lemma="exam%1" sep="" tag="un">exam</wf>
+    </qf>
+    <wf id="r00017077_wf18" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
+  <synset id="r00017639" ofs="00017639" pos="r">
+  <terms>
+   <term>even</term>
+   <term>yet</term>
+   <term>still</term>
+  </terms>
+  <keys>
+   <sk>even%4:02:01::</sk>
+   <sk>yet%4:02:03::</sk>
+   <sk>still%4:02:00::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>to a greater degree or extent; used with comparisons; "looked sick and felt even worse"; "an even (or still) more interesting problem"; "still another problem must be solved"; "a yet sadder tale"</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>to a greater degree or extent ; used with comparisons ; &#226;&#128;&#156; looked sick and felt even worse &#226;&#128;&#157; ; &#226;&#128;&#156; an even ( or still ) more interesting problem &#226;&#128;&#157; ; &#226;&#128;&#156; still another problem must be solved &#226;&#128;&#157; ; &#226;&#128;&#156; a yet sadder tale &#226;&#128;&#157;</text>
+  </gloss>
+  <gloss desc="wsd">
+   <def id="r00017639_d">
+    <wf id="r00017639_wf1" lemma="to" pos="TO" tag="ignore">to</wf>
+    <wf id="r00017639_wf2" lemma="a" pos="DT" tag="ignore">a</wf>
+    <wf id="r00017639_wf3" lemma="great%3|greater%3" pos="JJR" tag="man">
+     <id id="r00017639_id.8" lemma="great" sk="great%3:00:01:large:00"/>greater</wf>
+    <wf id="r00017639_wf4" lemma="degree%1" pos="NN" tag="man">
+     <id id="r00017639_id.7" lemma="degree" sk="degree%1:07:00::"/>degree</wf>
+    <wf id="r00017639_wf5" lemma="or" pos="CC" tag="ignore">or</wf>
+    <wf id="r00017639_wf6" lemma="extent%1" pos="NN" sep="" tag="man">
+     <id id="r00017639_id.6" lemma="extent" sk="extent%1:26:00::"/>extent</wf>
+    <wf id="r00017639_wf7" pos=":" tag="ignore" type="punc">;</wf>
+   </def>
+   <aux tag="ignore">
+    <wf id="r00017639_tok1" lemma="use%2|used%3" tag="un">used</wf>
+    <wf id="r00017639_tok2" lemma="with" tag="ignore">with</wf>
+    <wf id="r00017639_tok3" lemma="comparison%1" sep="" tag="un">comparisons</wf>
+    <wf id="r00017639_tok4" tag="ignore" type="punc">;</wf>
+   </aux>
+   <ex id="r00017639_ex1">
+    <qf rend="dq">
+     <wf id="r00017639_wf8" lemma="look%2" tag="un">looked</wf>
+     <wf id="r00017639_wf9" lemma="sick%1|sick%2|sick%3" tag="un">sick</wf>
+     <wf id="r00017639_wf10" lemma="and" tag="ignore">and</wf>
+     <wf id="r00017639_wf11" lemma="felt%1|feel%2|felt%2" tag="un">felt</wf>
+     <wf id="r00017639_wf12" lemma="even%1|even%2|even%3|even%4" tag="auto">
+      <id id="r00017639_id.1" lemma="even" sk="even%4:02:01::"/>even</wf>
+     <wf id="r00017639_wf13" lemma="worse%1|bad%3|ill%3|worse%3|badly%4|worse%4" sep="" tag="un">worse</wf>
+    </qf>
+    <wf id="r00017639_wf14" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00017639_ex2">
+    <qf rend="dq">
+     <wf id="r00017639_wf15" lemma="an" tag="ignore">an</wf>
+     <wf id="r00017639_wf16" lemma="even%1|even%2|even%3|even%4" tag="auto">
+      <id id="r00017639_id.2" lemma="even" sk="even%4:02:01::"/>even</wf>
+     <wf id="r00017639_wf17" sep="" tag="ignore" type="punc">(</wf>
+     <wf id="r00017639_wf18" lemma="or" tag="ignore">or</wf>
+     <wf id="r00017639_wf19" lemma="still%1|still%2|still%3|still%4" sep="" tag="auto">
+      <id id="r00017639_id.3" lemma="still" sk="still%4:02:00::"/>still</wf>
+     <wf id="r00017639_wf20" tag="ignore" type="punc">)</wf>
+     <wf id="r00017639_wf21" lemma="many%3|more%3|much%3|more%4|much%4" tag="un">more</wf>
+     <wf id="r00017639_wf22" lemma="interest%2|interesting%3" tag="un">interesting</wf>
+     <wf id="r00017639_wf23" lemma="problem%1" sep="" tag="un">problem</wf>
+    </qf>
+    <wf id="r00017639_wf24" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00017639_ex3">
+    <qf rend="dq">
+     <wf id="r00017639_wf25" lemma="still%1|still%2|still%3|still%4" tag="auto">
+      <id id="r00017639_id.4" lemma="still" sk="still%4:02:00::"/>still</wf>
+     <wf id="r00017639_wf26" lemma="another" tag="ignore">another</wf>
+     <wf id="r00017639_wf27" lemma="problem%1" tag="un">problem</wf>
+     <wf id="r00017639_wf28" lemma="must%1|must%3" tag="un">must</wf>
+     <wf id="r00017639_wf29" lemma="be%2" tag="un">be</wf>
+     <wf id="r00017639_wf30" lemma="solve%2|solved%3" sep="" tag="un">solved</wf>
+    </qf>
+    <wf id="r00017639_wf31" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00017639_ex4">
+    <qf rend="dq">
+     <wf id="r00017639_wf32" lemma="a" tag="ignore">a</wf>
+     <wf id="r00017639_wf33" lemma="yet%4" tag="auto">
+      <id id="r00017639_id.5" lemma="yet" sk="yet%4:02:03::"/>yet</wf>
+     <wf id="r00017639_wf34" lemma="sad%3" tag="un">sadder</wf>
+     <wf id="r00017639_wf35" lemma="tale%1" sep="" tag="un">tale</wf>
+    </qf>
+    <wf id="r00017639_wf36" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
+  <synset id="r00022131" ofs="00022131" pos="r">
+  <terms>
+   <term>equally</term>
+   <term>as</term>
+   <term>every bit</term>
+  </terms>
+  <keys>
+   <sk>equally%4:02:01::</sk>
+   <sk>as%4:02:00::</sk>
+   <sk>every_bit%4:02:00::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>to the same degree (often followed by `as'); "they were equally beautiful"; "birds were singing and the child sang as sweetly"; "sang as sweetly as a nightingale"; "he is every bit as mean as she is"</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>to the same degree ( often followed by &#226;&#128;&#152; as &#226;&#128;&#153; ) ; &#226;&#128;&#156; they were equally beautiful &#226;&#128;&#157; ; &#226;&#128;&#156; birds were singing and the child sang as sweetly &#226;&#128;&#157; ; &#226;&#128;&#156; sang as sweetly as a nightingale &#226;&#128;&#157; ; &#226;&#128;&#156; he is every bit as mean as she is &#226;&#128;&#157;</text>
+  </gloss>
+  <gloss desc="wsd">
+   <def id="r00022131_d">
+    <wf id="r00022131_wf1" lemma="to" pos="TO" tag="ignore">to</wf>
+    <wf id="r00022131_wf2" lemma="the" pos="DT" tag="ignore">the</wf>
+    <wf id="r00022131_wf3" lemma="same%3" pos="JJ" tag="un">same</wf>
+    <wf id="r00022131_wf4" lemma="degree%1" pos="NN" tag="man">
+     <id id="r00022131_id.3" lemma="degree" sk="degree%1:07:00::"/>degree</wf>
+   </def>
+   <aux tag="ignore">
+    <wf id="r00022131_tok1" sep="" tag="ignore" type="punc">(</wf>
+    <wf id="r00022131_tok2" lemma="often%4" tag="un">often</wf>
+    <wf id="r00022131_tok3" lemma="follow%2" tag="un">followed</wf>
+    <wf id="r00022131_tok4" lemma="by" tag="ignore">by</wf>
+    <qf rend="sq">
+     <wf id="r00022131_tok5" lemma="as" sep="" tag="ignore">as</wf>
+    </qf>
+    <wf id="r00022131_tok6" sep="" tag="ignore" type="punc">)</wf>
+    <wf id="r00022131_tok7" tag="ignore" type="punc">;</wf>
+   </aux>
+   <ex id="r00022131_ex1">
+    <qf rend="dq">
+     <wf id="r00022131_wf5" lemma="they" tag="ignore">they</wf>
+     <wf id="r00022131_wf6" lemma="be%2" tag="un">were</wf>
+     <wf id="r00022131_wf7" lemma="equally%4" tag="auto">
+      <id id="r00022131_id.1" lemma="equally" sk="equally%4:02:01::"/>equally</wf>
+     <wf id="r00022131_wf8" lemma="beautiful%3" sep="" tag="un">beautiful</wf>
+    </qf>
+    <wf id="r00022131_wf9" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00022131_ex2">
+    <qf rend="dq">
+     <wf id="r00022131_wf10" lemma="bird%1|bird%2" tag="un">birds</wf>
+     <wf id="r00022131_wf11" lemma="be%2" tag="un">were</wf>
+     <wf id="r00022131_wf12" lemma="singing%1|sing%2|singe%2|singing%3" tag="un">singing</wf>
+     <wf id="r00022131_wf13" lemma="and" tag="ignore">and</wf>
+     <wf id="r00022131_wf14" lemma="the" tag="ignore">the</wf>
+     <wf id="r00022131_wf15" lemma="child%1" tag="un">child</wf>
+     <wf id="r00022131_wf16" lemma="sang%1|sing%2" tag="un">sang</wf>
+     <wf id="r00022131_wf17" lemma="as" tag="ignore">as</wf>
+     <wf id="r00022131_wf18" lemma="sweetly%4" sep="" tag="un">sweetly</wf>
+    </qf>
+    <wf id="r00022131_wf19" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00022131_ex3">
+    <qf rend="dq">
+     <wf id="r00022131_wf20" lemma="sang%1|sing%2" tag="un">sang</wf>
+     <wf id="r00022131_wf21" lemma="as" tag="ignore">as</wf>
+     <wf id="r00022131_wf22" lemma="sweetly%4" tag="un">sweetly</wf>
+     <wf id="r00022131_wf23" lemma="as" tag="ignore">as</wf>
+     <wf id="r00022131_wf24" lemma="a" tag="ignore">a</wf>
+     <wf id="r00022131_wf25" lemma="nightingale%1" sep="" tag="un">nightingale</wf>
+    </qf>
+    <wf id="r00022131_wf26" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00022131_ex4">
+    <qf rend="dq">
+     <wf id="r00022131_wf27" lemma="he" tag="ignore">he</wf>
+     <wf id="r00022131_wf28" lemma="i%1|be%2" tag="un">is</wf>
+     <cf coll="a" id="r00022131_wf29" lemma="every" tag="ignore">
+      <glob coll="a" glob="auto" id="r00022131_coll.a" lemma="every_bit%4" tag="auto">
+       <id coll="a" id="r00022131_id.2" lemma="every bit" sk="every_bit%4:02:00::"/>
+     </glob>every</cf>
+     <cf coll="a" id="r00022131_wf30" lemma="bit%1|bite%2" tag="un">bit</cf>
+     <wf id="r00022131_wf31" lemma="as" tag="ignore">as</wf>
+     <wf id="r00022131_wf32" lemma="mean%1|mean%2|mean%3" tag="un">mean</wf>
+     <wf id="r00022131_wf33" lemma="as" tag="ignore">as</wf>
+     <wf id="r00022131_wf34" lemma="she" tag="ignore">she</wf>
+     <wf id="r00022131_wf35" lemma="i%1|be%2" sep="" tag="un">is</wf>
+    </qf>
+    <wf id="r00022131_wf36" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
  
+
 </wordnet>
