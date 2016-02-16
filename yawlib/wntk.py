@@ -240,14 +240,14 @@ def split_gloss(ss):
 
     gl = ss.raw_glosses[0].gloss # raw gloss
     # [2016-02-15 LTA] Some commas are actually semicolons
-    gl = gl.replace('", "')     
-    parts = [ x.strip() for x in gl.split(';') ]
+    gl = gl.replace('", "', '"; "')     
+    parts = [ x.strip() for x in gl.split(';') if len(x.strip()) > 0 ]
 
     examples = []
     definition = []
     skip = False
     for partid, part in enumerate(parts):
-        if part.startswith('"') or part.endswith('"') or (part.startswith('(') and part.endswith(')')):
+        if part.startswith('"') or part.endswith('"') or (len(examples) > 0  and part.startswith('(') and part.endswith(')')):
             if skip:
                 skip = False
                 continue
@@ -255,6 +255,9 @@ def split_gloss(ss):
                 # merge
                 examples.append(part + '; ' + parts[partid+1])
                 skip = True
+            elif part.startswith('(') and part.endswith(')'):
+                # merge to the last example
+                examples[len(examples)-1] += '; ' + part
             else:
                 examples.append(part)
         else:
@@ -350,15 +353,18 @@ def dev_mode(wng_db_loc):
                 # dump_synset(ss)
                 sslist.write("%s\n" % (ss.get_synsetid()))
                 wrong.write("[%s] -- %s\n" % (ss.get_synsetid(), ss.raw_glosses[0].gloss,))
+                wrong.write("len(parts) = %s\n" % (len(parts)))
                 for idx, part in enumerate(parts):
                     wrong.write("    -- %s: %s\n" % (str(idx).rjust(3), part,))
-                for idx, gl in enumerate(ss.glosses):
+                wrong.write("len(glosses) = %s\n" % (len(glosses)))
+                for idx, gl in enumerate(glosses):
                     wrong.write('    >> %s: %s\n' % (str(idx).rjust(3), gl.items,))
                 c.count("WRONG")
                 wrong.write("'%s' : %s\n\n" % (ss.get_synsetid(), parts,))
             else:
                 c.count("OK")
     c.summarise()
+    print("See data/SYNSET_TO_FIX.txt for more information")
     
     # header("Test smart search")
     # smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
@@ -558,6 +564,10 @@ def export_ntumc(wng_loc, wng_db_loc):
 
 def to_synsetid(synsetid):
     return '%s-%s' % (synsetid[1:], synsetid[0])
+
+SYNSETS_TO_EXTRACT = [
+'00010466-r', '00015471-r', '00022401-r', '00025290-r', '00025559-r', '00025728-r', '00074641-r', '00121135-r', '00027074-a', '00098147-a', '00204249-a', '00326608-a', '00532560-a', '00767626-a', '01032029-a', '01493423-a', '01540871-a', '01623360-a', '01644225-a', '01644541-a', '01909077-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01915365-v', '02162162-v', '02604760-v', '02655135-v', '02711114-v', '02674482-n', '05495172-n', '07138504-n', '07138736-n', '07139316-n', '07569644-n', '08145553-n', '09405169-n', '13780719-n', '13997529-n', '14457976-n', '15021189-n'
+]
 
 def extract_synsets_xml():
     xfile_path = 'data/extract.xml'
