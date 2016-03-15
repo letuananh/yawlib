@@ -89,7 +89,7 @@ GLOSSTAG_XML_FILES = [
 
 class GlossTagPatch:
     def __init__(self):
-        self.patched = [ '00012779-r', '00022401-r', '00098147-a', '01032029-a', '01909077-a', '02171024-a', '02404081-a', '02773862-a', '00227165-v', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01618547-v', '01915365-v', '02162162-v', '02358327-v', '02545045-v', '02646064-v', '02655135-v', '02685390-v', '02711114-v', '03501288-n', '05845888-n', '07138504-n', '07138736-n', '08145553-n', '13855627-n', '13997529-n', '14457976-n', '15021189-n' ]
+        self.patched = [ '00022401-r' ]
         xmlwn = XMLGWordNet()
         xmlwn.read(GLOSSTAG_PATCH)
         self.synsets = xmlwn.synsets
@@ -233,7 +233,7 @@ MANUAL_SPLIT = {
 
 }
 
-def split_gloss(ss):
+def split_gloss(ss, expected_length):
     sid = ss.get_synsetid()
     if sid in MANUAL_SPLIT:
         return MANUAL_SPLIT[sid]
@@ -242,7 +242,8 @@ def split_gloss(ss):
     # [2016-02-15 LTA] Some commas are actually semicolons
     gl = gl.replace('", "', '"; "')     
     parts = [ x.strip() for x in gl.split(';') if len(x.strip()) > 0 ]
-
+    if expected_length >= len(parts):
+        return parts
     examples = []
     definition = []
     skip = False
@@ -269,15 +270,19 @@ def split_gloss(ss):
 
     return [ '; '.join(definition) ] + examples
 
-def combine_glosses(orig_glosses):
+def combine_glosses(orig_glosses, ssid = None):
+    if ssid in [ '00022401-r', '00098147-a' ]:
+        # ignore these synsets
+        return orig_glosses
     defs    = []
     exs     = []
 
     for gloss in orig_glosses:
         if gloss.origid is None or gloss.origid.endswith('d'):
-            if len(exs) > 0:
-                print("WARNING: aux or def after examples")
-            defs.append(gloss)
+            if gloss.origid is None and len(exs) > 0:
+                exs.append(gloss)
+            else:
+                defs.append(gloss)
         else:
             idparts = gloss.origid.split('_')
             if len(idparts) == 2 and idparts[1].startswith('ex'):
@@ -287,6 +292,9 @@ def combine_glosses(orig_glosses):
 
     # Create def gloss
     g = Gloss(defs[0].synset, defs[0].origid, defs[0].cat, defs[0].gid)
+    g.items = [ x for x in defs[0].items ]
+    g.tags = [ x for x in defs[0].tags ]
+    g.groups = [ x for x in defs[0].groups ]
     for other in defs[1:]:
         # update origid, cat and gid if needed
         if g.origid is None: g.origid = other.origid
@@ -295,6 +303,10 @@ def combine_glosses(orig_glosses):
         g.items += other.items
         g.tags += other.tags
         g.groups += other.groups
+
+    if 'killed' in orig_glosses[0].items[0].text:
+        print ([ x.items for x in ([g] + exs)])
+
     return [ g ] + exs
 
 def dev_mode(wng_db_loc):
@@ -302,42 +314,18 @@ def dev_mode(wng_db_loc):
     '''
     # test_extract_xml()   # Demo extracting Gloss WordNet XML file 
     # test_gwn_access()    # Demo accessing WN30 SQLite
-    #test_skmap_gwn_wn30() # Comparing sensekeys between GWN and WN30SQLite
+    # test_skmap_gwn_wn30() # Comparing sensekeys between GWN and WN30SQLite
 
     db = WSQL(WORDNET_30_PATH)
-    # print("Get freq of a synset")
-    # c = db.get_tagcount('100002684')
-    # print(c)
-
     t = Timer()
 
     xmlwn = XMLGWordNet()
     xmlwn.read(MOCKUP_SYNSETS_DATA)
 
-    ss = xmlwn.synsets[1]
-    # print("First synset:")
-    # dump_synset(ss)
-    
-    header("Gloss info")
-    print(ss.raw_glosses[0].gloss)
-    glosses = combine_glosses(ss.glosses)
-    for gl in glosses:
-        print("#")
-        print("    > %s" % gl.items)
-        print("    > %s" % gl.tags)
-        print("    > %s" % gl.groups)
-        for item in gl.items:
-            print(item)
-        print('***')
-        for tag in gl.tags:
-            print(tag)
-    raw_text = ss.raw_glosses[0].gloss
-    print(ss.glosses)
-
     gwn = SQLiteGWordNet(wng_db_loc)
     t.start("Cache all SQLite synsets")
-    synsets = gwn.all_synsets()
-    # synsets = xmlwn.synsets
+    # synsets = gwn.all_synsets()
+    synsets = xmlwn.synsets
     t.end("Done caching")
     
     c = Counter()
@@ -346,8 +334,9 @@ def dev_mode(wng_db_loc):
         for ss in synsets:
             if ss.get_synsetid() in glpatch.patched:
                 ss = glpatch.synset_map[ss.get_synsetid()]
-            parts = split_gloss(ss)
-            glosses = combine_glosses(ss.glosses)
+            parts = split_gloss(ss, len(ss.glosses))
+            # glosses = combine_glosses(ss.glosses, ss.get_synsetid())
+            glosses = ss.glosses
             if len(parts) != len(glosses):
                 # print("WARNING")
                 # dump_synset(ss)
@@ -359,6 +348,10 @@ def dev_mode(wng_db_loc):
                 wrong.write("len(glosses) = %s\n" % (len(glosses)))
                 for idx, gl in enumerate(glosses):
                     wrong.write('    >> %s: %s\n' % (str(idx).rjust(3), gl.items,))
+                wrong.write("len(glosses_orig) = %s\n" % (len(ss.glosses)))
+                for idx, gl in enumerate(ss.glosses):
+                    wrong.write('    |  %s: %s\n' % (str(idx).rjust(3), gl.items,))
+
                 c.count("WRONG")
                 wrong.write("'%s' : %s\n\n" % (ss.get_synsetid(), parts,))
             else:
@@ -566,7 +559,7 @@ def to_synsetid(synsetid):
     return '%s-%s' % (synsetid[1:], synsetid[0])
 
 SYNSETS_TO_EXTRACT = [
-'00010466-r', '00015471-r', '00022401-r', '00025290-r', '00025559-r', '00025728-r', '00074641-r', '00121135-r', '00027074-a', '00098147-a', '00204249-a', '00326608-a', '00532560-a', '00767626-a', '01032029-a', '01493423-a', '01540871-a', '01623360-a', '01644225-a', '01644541-a', '01909077-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01915365-v', '02162162-v', '02604760-v', '02655135-v', '02711114-v', '02674482-n', '05495172-n', '07138504-n', '07138736-n', '07139316-n', '07569644-n', '08145553-n', '09405169-n', '13780719-n', '13997529-n', '14457976-n', '15021189-n'
+'00022401-r', '00098147-a', '01032029-a', '01909077-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '07138504-n', '07138736-n', '08145553-n', '13997529-n', '14457976-n', '15021189-n'
 ]
 
 def extract_synsets_xml():
