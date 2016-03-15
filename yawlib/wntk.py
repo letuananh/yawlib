@@ -56,6 +56,7 @@ __status__ = "Prototype"
 import os.path
 import argparse
 import itertools
+import logging
 from lxml import etree
 from collections import defaultdict as dd
 from collections import namedtuple
@@ -89,7 +90,7 @@ GLOSSTAG_XML_FILES = [
 
 class GlossTagPatch:
     def __init__(self):
-        self.patched = [ '00022401-r' ]
+        self.patched = [ '00022401-r', '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n',  '00781000-v', '02655135-v' ]
         xmlwn = XMLGWordNet()
         xmlwn.read(GLOSSTAG_PATCH)
         self.synsets = xmlwn.synsets
@@ -211,6 +212,8 @@ def test_skmap_gwn_wn30():
 
 MANUAL_SPLIT = {
 
+'00781000-v' : ['continue talking', '"I know it\'s hard," he continued, "but there is no choice"', '"carry on--pretend we are not in the room"']
+
 # '00022401-r' : ['of the distant or comparatively distant past', '"We met once long ago"', '"they long ago forsook their nomadic life"', '"left for work long ago"', '"he has long since given up mountain climbing"', '"This name has long since been forgotten"', '"lang syne" is Scottish']
  
 # ,'00996448-a' : ['not encouraging or approving or pleasing', '"unfavorable conditions"', '"an unfavorable comparison"', '"unfavorable comments"', '"unfavorable impression"']
@@ -240,7 +243,7 @@ def split_gloss(ss, expected_length):
 
     gl = ss.raw_glosses[0].gloss # raw gloss
     # [2016-02-15 LTA] Some commas are actually semicolons
-    gl = gl.replace('", "', '"; "')     
+    gl = gl.replace(', "', '; "').replace(': "', '; "').replace(':"', '; "')
     parts = [ x.strip() for x in gl.split(';') if len(x.strip()) > 0 ]
     if expected_length >= len(parts):
         return parts
@@ -309,23 +312,24 @@ def combine_glosses(orig_glosses, ssid = None):
 
     return [ g ] + exs
 
-def dev_mode(wng_db_loc):
+def dev_mode(wng_db_loc, mockup=True):
     ''' Just a dummy method for quick calling
     '''
     # test_extract_xml()   # Demo extracting Gloss WordNet XML file 
     # test_gwn_access()    # Demo accessing WN30 SQLite
     # test_skmap_gwn_wn30() # Comparing sensekeys between GWN and WN30SQLite
 
-    db = WSQL(WORDNET_30_PATH)
     t = Timer()
-
-    xmlwn = XMLGWordNet()
-    xmlwn.read(MOCKUP_SYNSETS_DATA)
-
-    gwn = SQLiteGWordNet(wng_db_loc)
     t.start("Cache all SQLite synsets")
-    # synsets = gwn.all_synsets()
-    synsets = xmlwn.synsets
+    if mockup:
+        xmlwn = XMLGWordNet()
+        xmlwn.read(MOCKUP_SYNSETS_DATA)
+        synsets = xmlwn.synsets
+    else:
+        logging.info("Using SQLiteGWordNet (%s)" % (WORDNET_30_PATH))
+        db = WSQL(WORDNET_30_PATH)
+        gwn = SQLiteGWordNet(wng_db_loc)
+        synsets = gwn.all_synsets()
     t.end("Done caching")
     
     c = Counter()
@@ -335,8 +339,14 @@ def dev_mode(wng_db_loc):
             if ss.get_synsetid() in glpatch.patched:
                 ss = glpatch.synset_map[ss.get_synsetid()]
             parts = split_gloss(ss, len(ss.glosses))
-            # glosses = combine_glosses(ss.glosses, ss.get_synsetid())
-            glosses = ss.glosses
+            if len(ss.glosses) != len(parts):
+                # try to combine glosses smartly
+                glosses = combine_glosses(ss.glosses, ss.get_synsetid())
+                if len(glosses) == len(ss.glosses):
+                    # need to relax split_gloss method a bit
+                    parts = split_gloss(ss, len(ss.glosses))
+            else:
+                glosses = ss.glosses
             if len(parts) != len(glosses):
                 # print("WARNING")
                 # dump_synset(ss)
@@ -357,7 +367,7 @@ def dev_mode(wng_db_loc):
             else:
                 c.count("OK")
     c.summarise()
-    print("See data/SYNSET_TO_FIX.txt for more information")
+    print("See data/SYNSET_TO_FIX.txt and data/WRONG_SPLIT.txt for more information")
     
     # header("Test smart search")
     # smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
@@ -558,9 +568,8 @@ def export_ntumc(wng_loc, wng_db_loc):
 def to_synsetid(synsetid):
     return '%s-%s' % (synsetid[1:], synsetid[0])
 
-SYNSETS_TO_EXTRACT = [
-'00022401-r', '00098147-a', '01032029-a', '01909077-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '07138504-n', '07138736-n', '08145553-n', '13997529-n', '14457976-n', '15021189-n'
-]
+SYNSETS_TO_EXTRACT = [ '00781000-v', '02655135-v' ]
+# '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n'
 
 def extract_synsets_xml():
     xfile_path = 'data/extract.xml'
@@ -606,6 +615,7 @@ def main():
     parser.add_argument('-i', '--wng_location', help='Path to Gloss WordNet folder (default = ~/wordnet/glosstag')
     parser.add_argument('-o', '--wng_db', help='Path to database file (default = ~/wordnet/glosstag.db')
     parser.add_argument('-c', '--create', help='Create DB and then import data', action='store_true')
+    parser.add_argument('-m', '--mockup', help='Use mockup data in dev_mode', action='store_true')
     parser.add_argument('-n', '--ntumc', help='Extract GlossWordNet to NTU-MC', action='store_true')
     parser.add_argument('-d', '--dev', help='Dev mode (do not use)', action='store_true')
     parser.add_argument('-s', '--synset', help='Retrieve synset information by synsetid')
@@ -624,6 +634,12 @@ def main():
     
     # Parse input arguments
     args = parser.parse_args()
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    elif args.quiet:
+        logging.basicConfig(level=logging.ERROR)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     wng_loc = args.wng_location if args.wng_location else WORDNET_30_GLOSSTAG_PATH
     wng_db_loc = args.wng_db if args.wng_db else (args.glosswn if args.glosswn else WORDNET_30_GLOSS_DB_PATH)
@@ -631,7 +647,7 @@ def main():
 
     # Now do something ...
     if args.dev:
-        dev_mode(wng_db_loc)
+        dev_mode(wng_db_loc, args.mockup)
     elif args.extract:
         extract_synsets_xml()
     elif args.create:
