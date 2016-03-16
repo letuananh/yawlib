@@ -257,6 +257,9 @@ class Gloss:
         self.tags.append(tag)
         return tag
 
+    def text(self):
+        return ' '.join([ x.text for x in self.items ])
+
     def __repr__(self):
         return "gloss-%s" % (self.cat)
 
