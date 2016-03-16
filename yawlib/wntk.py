@@ -67,6 +67,12 @@ from .config import YLConfig
 from .helpers import dump_synsets, dump_synset, get_synset_by_id, get_synset_by_sk, get_synsets_by_term
 from .glosswordnet import XMLGWordNet, SQLiteGWordNet, Gloss
 from .wordnetsql import WordNetSQL as WSQL
+
+try:
+    from fuzzywuzzy import fuzz
+except Exception as e:
+    logging.warning("fuzzywuzzy is not installed")
+    pass
 #-----------------------------------------------------------------------
 # CONFIGURATION
 #-----------------------------------------------------------------------
@@ -90,7 +96,7 @@ GLOSSTAG_XML_FILES = [
 
 class GlossTagPatch:
     def __init__(self):
-        self.patched = [ '00022401-r', '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n',  '00781000-v', '02655135-v' ]
+        self.patched = [ '01179767-a', '00022401-r', '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n',  '00781000-v', '02655135-v' ]
         xmlwn = XMLGWordNet()
         xmlwn.read(GLOSSTAG_PATCH)
         self.synsets = xmlwn.synsets
@@ -98,8 +104,6 @@ class GlossTagPatch:
         for ss in self.synsets:
             self.synset_map[ss.get_synsetid()] = ss
         pass
-
-    
 
 def cache_all_synsets(wng_db_loc):
     ''' Cache all Gloss Synset (SQLite) to database
@@ -212,31 +216,18 @@ def test_skmap_gwn_wn30():
 
 MANUAL_SPLIT = {
 
-'00781000-v' : ['continue talking', '"I know it\'s hard," he continued, "but there is no choice"', '"carry on--pretend we are not in the room"']
+    '00781000-v' : ['continue talking', '"I know it\'s hard," he continued, "but there is no choice"', '"carry on--pretend we are not in the room"']
 
-# '00022401-r' : ['of the distant or comparatively distant past', '"We met once long ago"', '"they long ago forsook their nomadic life"', '"left for work long ago"', '"he has long since given up mountain climbing"', '"This name has long since been forgotten"', '"lang syne" is Scottish']
- 
-# ,'00996448-a' : ['not encouraging or approving or pleasing', '"unfavorable conditions"', '"an unfavorable comparison"', '"unfavorable comments"', '"unfavorable impression"']
-
-# ,'01028623-a' : ['adapted to various purposes, sizes, forms, operations', '"universal wrench"', '"universal chuck"', '"universal screwdriver"']
-
-# ,'01304802-a' : ['giving advice', '"an advisory memorandum"', '"his function was purely consultative"']
-
-# ,'01475282-a' : ['hard to control', '"a difficult child"', '"an unmanageable situation"']
-
-# ,'01824244-a' : ['having a strong physiological or chemical effect', '"a potent toxin"', '"potent liquor"', '"a potent cup of tea"', '"a stiff drink"']
-
-# ,'01909077-a' : ['(of color) discolored by impurities; not bright and clear', '"dirty" is often used in combination', '"a dirty (or dingy) white"', '"the muddied grey of the sea"', '"muddy colors"', '"dirty-green walls"', '"dirty-blonde hair"']
-
-# ,'01985976-a' : ['capable of mentally absorbing', '"assimilative processes"', '"assimilative capacity of the human mind"']
-
-# ,'02026785-a' : ['high in mineral content; having a high proportion of fuel to air', '"a rich vein of copper"', '"a rich gas mixture"']
-
-# ,'02056880-a' : ['not concerned with or devoted to religion', '"sacred and profane music"', '"secular drama"', '"secular architecture"', '"children being brought up in an entirely profane environment"']
+    ,'00011516-r' : ["(`ill' is often used as a combining form)", "in a poor or improper or unsatisfactory manner; not well", '"he was ill prepared"', '"it ill befits a man to betray old friends"', '"the car runs badly"', '"he performed badly on the exam"', '"the team played poorly"', '"ill-fitting clothes"', '"an ill-conceived plan"' ]
+    ,'01179767-a' : ['being or having the nature of a god;', '"the custom of killing the divine king upon any serious failure of his...powers"-J.G.Frazier', '"the divine will"', '"the divine capacity for love"', '"\'tis wise to learn; \'tis God-like to create"-J.G.Saxe']
 
 }
 
+#being or having the nature of a god; "the custom of killing the divine king upon any serious failure of his...powers"-J.G.Frazier; "the divine will"; "the divine capacity for love"; "'tis wise to learn; 'tis God-like to create"-J.G.Saxe
+
 def split_gloss(ss, expected_length):
+    """ Split gloss (raw text) into many sentences
+    """
     sid = ss.get_synsetid()
     if sid in MANUAL_SPLIT:
         return MANUAL_SPLIT[sid]
@@ -274,6 +265,8 @@ def split_gloss(ss, expected_length):
     return [ '; '.join(definition) ] + examples
 
 def combine_glosses(orig_glosses, ssid = None):
+    ''' Combine wrongly split glosses 
+    '''
     if ssid in [ '00022401-r', '00098147-a' ]:
         # ignore these synsets
         return orig_glosses
@@ -312,6 +305,43 @@ def combine_glosses(orig_glosses, ssid = None):
 
     return [ g ] + exs
 
+SplitData = namedtuple('SplitData', ['ss', 'sents', 'glosses', 'aligned'])
+
+def prepare_for_ntumc(ss, glpatch=None):
+    """ Split glosses into sentences (for importing into NTU-MC)
+    """
+    if glpatch and ss.get_synsetid() in glpatch.patched:
+        ss = glpatch.synset_map[ss.get_synsetid()]
+
+    sents = split_gloss(ss, len(ss.glosses))
+    glosses = ss.glosses
+    if len(glosses) != len(sents):
+        # try to combine glosses smartly
+        glosses = combine_glosses(ss.glosses, ss.get_synsetid())
+        if len(glosses) != len(sents) and len(glosses) == len(ss.glosses):
+            # need to relax split_gloss method a bit
+            sents = split_gloss(ss, len(ss.glosses))
+
+    try:
+        aligned = []
+        for (sent, gl) in zip(sents, glosses):
+            gltext = ' '.join([ x.text for x in gl.items ]).replace(';', '')
+            if fuzz.ratio(sent, gltext) > 80:
+                aligned.append((sent, gl))
+            else:
+                for gl in glosses:
+                    gltext = ' '.join([ x.text for x in gl.items ]).replace(';', '')
+                    if fuzz.ratio(sent, gltext) > 80:
+                        aligned.append((sent, gl))
+                        break
+        if len(aligned) < len(sents):
+            logging.error("Invalid alignment in synset %s" % (ss.get_synset_by_id(),))
+    except Exception as e:
+        aligned = list(zip(sents, glosses))
+        pass
+            
+    return SplitData(ss, sents, glosses, aligned)
+
 def dev_mode(wng_db_loc, mockup=True):
     ''' Just a dummy method for quick calling
     '''
@@ -333,27 +363,16 @@ def dev_mode(wng_db_loc, mockup=True):
     t.end("Done caching")
     
     c = Counter()
-    with open("data/WRONG_SPLIT.txt", 'w') as wrong, open('data/SYNSET_TO_FIX.txt', 'w') as sslist:
+    with open("data/WRONG_SPLIT.txt", 'w') as wrong, open('data/SYNSET_TO_FIX.txt', 'w') as sslist, open('data/INVALID_ALIGNMENT.txt', 'w') as invalidfile:
         glpatch = GlossTagPatch()
         for ss in synsets:
-            if ss.get_synsetid() in glpatch.patched:
-                ss = glpatch.synset_map[ss.get_synsetid()]
-            parts = split_gloss(ss, len(ss.glosses))
-            if len(ss.glosses) != len(parts):
-                # try to combine glosses smartly
-                glosses = combine_glosses(ss.glosses, ss.get_synsetid())
-                if len(glosses) == len(ss.glosses):
-                    # need to relax split_gloss method a bit
-                    parts = split_gloss(ss, len(ss.glosses))
-            else:
-                glosses = ss.glosses
-            if len(parts) != len(glosses):
-                # print("WARNING")
-                # dump_synset(ss)
+            orig_glosses = [ x.text() for x in ss.glosses ]
+            (ss,sents,glosses, aligned) = prepare_for_ntumc(ss, glpatch)
+            if len(sents) != len(glosses):
                 sslist.write("%s\n" % (ss.get_synsetid()))
                 wrong.write("[%s] -- %s\n" % (ss.get_synsetid(), ss.raw_glosses[0].gloss,))
-                wrong.write("len(parts) = %s\n" % (len(parts)))
-                for idx, part in enumerate(parts):
+                wrong.write("len(sents) = %s\n" % (len(sents)))
+                for idx, part in enumerate(sents):
                     wrong.write("    -- %s: %s\n" % (str(idx).rjust(3), part,))
                 wrong.write("len(glosses) = %s\n" % (len(glosses)))
                 for idx, gl in enumerate(glosses):
@@ -363,11 +382,27 @@ def dev_mode(wng_db_loc, mockup=True):
                     wrong.write('    |  %s: %s\n' % (str(idx).rjust(3), gl.items,))
 
                 c.count("WRONG")
-                wrong.write("'%s' : %s\n\n" % (ss.get_synsetid(), parts,))
+                wrong.write("'%s' : %s\n\n" % (ss.get_synsetid(), sents,))
             else:
                 c.count("OK")
+            # check word alignment
+            invalid = False
+            for sent, gl in aligned:
+                gltext = ' '.join([ x.text for x in gl.items ]).replace(';', '')
+                if fuzz.ratio(sent, gltext) < 80:
+                    print("WARNING [%s]: %s >><< %s" % (ss.get_synsetid(), sent, gltext))
+                    invalid = True
+            if invalid:
+                invalidfile.write('%s\n' % (ss.get_synsetid(), ))
+                invalidfile.write('Split raw gloss : \t%s\n' % (sents,))
+                invalidfile.write('Orig glosses    : \t%s\n' % (orig_glosses,))
+                invalidfile.write('Combined glosses: \t%s\n--\n\n' % ([ x.text() for x in glosses ],))
+
     c.summarise()
-    print("See data/SYNSET_TO_FIX.txt and data/WRONG_SPLIT.txt for more information")
+    if c['WRONG'] > 0:
+        print("See data/SYNSET_TO_FIX.txt and data/WRONG_SPLIT.txt for more information")
+    else:
+        print("Done!")
     
     # header("Test smart search")
     # smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
@@ -381,6 +416,8 @@ def dev_mode(wng_db_loc, mockup=True):
     print("Done!")
 
 def smart_search(sentence, words, getitem=lambda x:x):
+    ''' Link tokenized words back to original sentence
+    '''
     pos = 0
     prob = False
     Word              = namedtuple("Word", "data cfrom cto")
@@ -392,16 +429,17 @@ def smart_search(sentence, words, getitem=lambda x:x):
             continue
         idx = sentence.find(word_text, pos)
         if idx == -1:
-            hint = sentence[pos:pos+10] + '...' if pos+10 < len(sentence) else sentence[pos:pos+10]
-            print('\t[%s] word=[%s] pos=Not found (starting at [%s] => [%s])' % (wid,word,pos,hint))
+            hint = sentence[pos:pos+20] + '...' if pos+20 < len(sentence) else sentence[pos:pos+10]
+            logging.error('\t[%s] word=[%s] pos=Not found (starting at [%s] => [%s])' % (wid,word,pos,hint))
             prob = True
         else:
             # print("\tword=%s pos=%s" % (word, idx))
             asent.words.append(Word(word, idx, idx + len(word_text)))
             pos = idx + len(word_text)
     if prob:
-        print(sentence)
-        print([ (idx,w) for idx,w in enumerate(asent.words) ])
+        logging.error("context: %s" % (sentence,))
+        logging.error("required: %s" % (words,))
+        logging.error("words: %s\n" % ([ (idx,w) for idx,w in enumerate(asent.words) ],))
     return asent
 
 #--------------------------------------------------------
@@ -455,7 +493,7 @@ def convert(wng_loc, wng_db_loc, createdb):
     xml2db(merged_folder, db)
     pass
 
-def export_ntumc(wng_loc, wng_db_loc):
+def export_ntumc(wng_loc, wng_db_loc, mockup=False):
     '''
     Export GlossTag to NTU-MC format
     '''
@@ -471,17 +509,19 @@ def export_ntumc(wng_loc, wng_db_loc):
     print("Path to glosstag DB    : %s" % (wng_db_loc))
     print("Output file            : %s" % (glosstag_ntumc_script))
 
-    gwn = SQLiteGWordNet(wng_db_loc)
-    wn = WSQL(WORDNET_30_PATH)
-    xmlwn = read_xmlwn(merged_folder)
-
     t = Timer()
     t.start("Retrieving synsets from DB")
 
-    # mockup data
-    synsets = xmlwn.synsets
-    # synsets = mockup_synsets()
-    # synsets = gwn.all_synsets()
+    gwn = SQLiteGWordNet(wng_db_loc)
+    if mockup:
+        synsets = mockup_synsets()
+        pass
+    else:
+        # synsets = gwn.all_synsets()
+        wn = WSQL(WORDNET_30_PATH)
+        xmlwn = read_xmlwn(merged_folder)
+        synsets = xmlwn.synsets
+
     print("%s synsets found in %s" % (len(synsets), wng_db_loc))
     t.end()
     t.start("Generating cfrom cto ...")
@@ -494,70 +534,71 @@ def export_ntumc(wng_loc, wng_db_loc):
 """)
         sentid = 1000000
         docid  = 1000
+        glpatch = GlossTagPatch()
         for ss in synsets:
-            sent = ss.raw_glosses[0].gloss
-            sent_file.write('%s\t%s\n' % (sentid, sent,))
+            (ss, sents, glosses, aligned) = prepare_for_ntumc(ss, glpatch)
+            # sent = ss.raw_glosses[0].gloss
+            
             # print(sent)
-            words = []
-            wordid = 0
-            conceptid = 0
             # [2016-02-01] There is an error in glossitem for synset 01179767-a (a01179767)
-            for gl in ss.glosses:
+            for sent, gl in aligned:
+                wordid = 0
+                conceptid = 0
+
                 wordid_map = {}
                 conceptid_map = {}
+
+                sent_file.write('%s\t%s\n' % (sentid, sent,))
                 coll_map = dd(list)
                 cwl = []
                 CWL = namedtuple("CWL", "cid wid".split())
-                for item in gl.items:
-                    if item.origid == 'a01179767_wf37':
-                        item.text = "'T"
-                words += gl.items
-            asent = smart_search(sent, words, lambda x: x.text)
-            outfile.write('INSERT INTO sent (sid,docID,pid,sent,comment,usrname) VALUES(%s,%s,"","%s","[WNSID=%s]","letuananh");\n' % ( sentid, docid, asent.sent.replace('"', '""').replace("'", "''"), ss.get_synsetid()) )
-            outfile.write('-- WORDS\n')
-            for word in asent.words:
-                testword = sent[word.cfrom:word.cto]
-                if testword != word.data.text:
-                    print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
-                outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "%s", "", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text.replace('"', '""').replace("'", "''"), word.data.pos, word.data.lemma, word.cfrom, word.cto))
-                wordid_map[wordid] = word.data.origid
-                wordid_map[word.data.origid] = wordid
-                if word.data.coll:
-                    coll_map[word.data.coll].append(word.data.origid)
-                word_file.write('%s\t%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto, word.data.lemma))
-                wordid += 1
-            outfile.write('-- CONCEPTS\n')
-            for gl in ss.glosses:
+                words = gl.items
+                asent = smart_search(sent, words, lambda x: x.text)
+                outfile.write('INSERT INTO sent (sid,docID,pid,sent,comment,usrname) VALUES(%s,%s,"","%s","[WNSID=%s]","letuananh");\n' % ( sentid, docid, asent.sent.replace('"', '""').replace("'", "''"), ss.get_synsetid()) )
+                outfile.write('-- WORDS\n')
+                for word in asent.words:
+                    testword = sent[word.cfrom:word.cto]
+                    if testword != word.data.text:
+                        print("WARNING: Expected [%s] but found [%s]" % (word.text, testword))
+                    outfile.write('INSERT INTO word (sid, wid, word, pos, lemma, cfrom, cto, comment, usrname) VALUES (%s, %s, "%s", "%s", "%s", %s, %s, "", "letuananh");\n' % (sentid, wordid, word.data.text.replace('"', '""').replace("'", "''"), word.data.pos, word.data.lemma, word.cfrom, word.cto))
+                    wordid_map[wordid] = word.data.origid
+                    wordid_map[word.data.origid] = wordid
+                    if word.data.coll:
+                        coll_map[word.data.coll].append(word.data.origid)
+                    word_file.write('%s\t%s\t%s\t%s\t%s\n' % (sentid, word.data.text, word.cfrom, word.cto, word.data.lemma))
+                    wordid += 1
+                outfile.write('-- CONCEPTS\n')
+                #for gl in ss.glosses:
                 for tag in gl.tags:
                     # tag = synsetid in NTU format (12345678-x)
-                    if tag.sk:
+                    if tag.sk and tag.sk != 'purposefully_ignored%0:00:00::':
                         tagged_ss = gwn.get_synset_by_sk(tag.sk)
                         if not tagged_ss:
-                            print("sk[%s] could not be found" % (tag.sk))
+                            logging.info("sk[%s] could not be found" % (tag.sk))
                         elif len(tagged_ss) > 1:
-                            print("Too many synsets found for sk[%s]" % (tag.sk))
+                            logging.info("Too many synsets found for sk[%s]" % (tag.sk))
                         else:
                             # outfile.write("--%s\n" % (tagged_ss[0].get_synsetid(),))
                             outfile.write('INSERT INTO concept (sid, cid, clemma, tag, tags, comment, ntag, usrname) VALUES (%s, %s, "%s", "", "", "%s", "", "letuananh"); --sk=[%s]\n' % (sentid, conceptid, tag.lemma.replace('"', '""').replace("'", "''"), tagged_ss[0].get_synsetid(), tag.sk) );
-                    conceptid_map[tag.origid] = conceptid
-                    conceptid_map[conceptid]  = tag.origid
-                    conceptid += 1
-                    if tag.coll:
-                        # multiword expression
-                        for collword in coll_map[tag.coll]:
-                            cwl.append(CWL(conceptid, wordid_map[collword]))
-                    elif tag.item:
-                        # normal tag
-                        cwl.append(CWL(conceptid, wordid_map[tag.item.origid]))
-            # outfile.write("/*%s*/\n" % (wordid_map))
-            # outfile.write("/*%s*/\n" % (conceptid_map))
-            # outfile.write("/*%s*/\n" % coll_map)
-            # outfile.write("/*%s*/\n" % cwl)
-            outfile.write('-- Concept-Word Links\n')
-            for lnk in cwl:
-                outfile.write('INSERT INTO cwl (sid, wid, cid, usrname) VALUES (%s, %s, %s, "letuananh");\n' % (sentid, lnk.wid, lnk.cid))
-            sentid += 1
-            outfile.write('\n')
+                        conceptid_map[tag.origid] = conceptid
+                        conceptid_map[conceptid]  = tag.origid
+                        conceptid += 1
+                        if tag.coll:
+                            # multiword expression
+                            for collword in coll_map[tag.coll]:
+                                cwl.append(CWL(conceptid, wordid_map[collword]))
+                        elif tag.item:
+                            # normal tag
+                            cwl.append(CWL(conceptid, wordid_map[tag.item.origid]))
+                # outfile.write("/*%s*/\n" % (wordid_map))
+                # outfile.write("/*%s*/\n" % (conceptid_map))
+                # outfile.write("/*%s*/\n" % coll_map)
+                # outfile.write("/*%s*/\n" % cwl)
+                outfile.write('-- Concept-Word Links\n')
+                for lnk in cwl:
+                    outfile.write('INSERT INTO cwl (sid, wid, cid, usrname) VALUES (%s, %s, %s, "letuananh");\n' % (sentid, lnk.wid, lnk.cid))
+                sentid += 1
+                outfile.write('\n')
         # end for synsets
         outfile.write("END TRANSACTION;\n");
     t.end()
@@ -568,7 +609,7 @@ def export_ntumc(wng_loc, wng_db_loc):
 def to_synsetid(synsetid):
     return '%s-%s' % (synsetid[1:], synsetid[0])
 
-SYNSETS_TO_EXTRACT = [ '00781000-v', '02655135-v' ]
+SYNSETS_TO_EXTRACT = [ '00100883-r' ]
 # '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n'
 
 def extract_synsets_xml():
@@ -653,7 +694,7 @@ def main():
     elif args.create:
         convert(wng_loc, wng_db_loc, True)
     elif args.ntumc:
-        export_ntumc(wng_loc, wng_db_loc)
+        export_ntumc(wng_loc, wng_db_loc, args.mockup)
     elif args.synset:
         get_synset_by_id(wng_db_loc, args.synset)
     elif args.sensekey:

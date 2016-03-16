@@ -1467,6 +1467,223 @@
  </synset>
  
  
+  <synset id="r00011516" ofs="00011516" pos="r">
+  <terms>
+   <term>ill</term>
+   <term>badly</term>
+   <term>poorly</term>
+  </terms>
+  <keys>
+   <sk>ill%4:02:00::</sk>
+   <sk>badly%4:02:00::</sk>
+   <sk>poorly%4:02:00::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>(`ill' is often used as a combining form) in a poor or improper or unsatisfactory manner; not well; "he was ill prepared"; "it ill befits a man to betray old friends"; "the car runs badly"; "he performed badly on the exam"; "the team played poorly"; "ill-fitting clothes"; "an ill-conceived plan"</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>( &#226;&#128;&#152; ill &#226;&#128;&#153; is often used as a combining form ) in a poor or improper or unsatisfactory manner ; not well ; &#226;&#128;&#156; he was ill prepared &#226;&#128;&#157; ; &#226;&#128;&#156; it ill befits a man to betray old friends &#226;&#128;&#157; ; &#226;&#128;&#156; the car runs badly &#226;&#128;&#157; ; &#226;&#128;&#156; he performed badly on the exam &#226;&#128;&#157; ; &#226;&#128;&#156; the team played poorly &#226;&#128;&#157; ; &#226;&#128;&#156; ill-fitting clothes &#226;&#128;&#157; ; &#226;&#128;&#156; an ill-conceived plan &#226;&#128;&#157;</text>
+  </gloss>
+  <gloss desc="wsd">
+   <aux tag="ignore">
+    <wf id="r00011516_tok1" sep="" tag="ignore" type="punc">(</wf>
+    <qf rend="sq">
+     <wf id="r00011516_tok2" lemma="ill%1|ill%3|ill%4" sep="" tag="un">ill</wf>
+    </qf>
+    <wf id="r00011516_tok3" lemma="i%1|be%2" tag="un">is</wf>
+    <wf id="r00011516_tok4" lemma="often%4" tag="un">often</wf>
+    <wf id="r00011516_tok5" lemma="use%2|used%3" tag="un">used</wf>
+    <wf id="r00011516_tok6" lemma="as" tag="ignore">as</wf>
+    <wf id="r00011516_tok7" lemma="a" tag="ignore">a</wf>
+    <wf id="r00011516_tok8" lemma="combining%1|combine%2" tag="un">combining</wf>
+    <wf id="r00011516_tok9" lemma="form%1|form%2" sep="" tag="un">form</wf>
+    <wf id="r00011516_tok10" tag="ignore" type="punc">)</wf>
+   </aux>
+   <def id="r00011516_d">
+    <wf id="r00011516_wf1" lemma="in" pos="IN" tag="ignore">in</wf>
+    <wf id="r00011516_wf2" lemma="a" pos="DT" tag="ignore">a</wf>
+    <wf id="r00011516_wf3" lemma="poor%1|poor%3" pos="JJ" tag="un">poor</wf>
+    <wf id="r00011516_wf4" lemma="or" pos="CC" tag="ignore">or</wf>
+    <wf id="r00011516_wf5" lemma="improper%3" pos="JJ" tag="un">improper</wf>
+    <wf id="r00011516_wf6" lemma="or" pos="CC" tag="ignore">or</wf>
+    <wf id="r00011516_wf7" lemma="unsatisfactory%3" pos="JJ" tag="auto">
+     <id id="r00011516_id.1" lemma="unsatisfactory" sk="unsatisfactory%3:00:00::"/>unsatisfactory</wf>
+    <wf id="r00011516_wf8" lemma="manner%1" pos="NN" sep="" tag="man">
+     <id id="r00011516_id.8" lemma="manner" sk="manner%1:07:02::"/>manner</wf>
+    <wf id="r00011516_wf9" pos=":" tag="ignore" type="punc">;</wf>
+    <wf id="r00011516_wf10" lemma="not%4" pos="RB" tag="auto">
+     <id id="r00011516_id.2" lemma="not" sk="not%4:02:00::"/>not</wf>
+    <wf id="r00011516_wf11" lemma="well%1|well%2|well%3|well%4" pos="RB" sep="" tag="un">well</wf>
+    <wf id="r00011516_wf12" pos=":" tag="ignore" type="punc">;</wf>
+   </def>
+   <ex id="r00011516_ex1">
+    <qf rend="dq">
+     <wf id="r00011516_wf13" lemma="he" tag="ignore">he</wf>
+     <wf id="r00011516_wf14" lemma="be%2" tag="un">was</wf>
+     <wf id="r00011516_wf15" lemma="ill%1|ill%3|ill%4" tag="auto">
+      <id id="r00011516_id.3" lemma="ill" sk="ill%4:02:00::"/>ill</wf>
+     <wf id="r00011516_wf16" lemma="prepare%2|prepared%3" sep="" tag="un">prepared</wf>
+    </qf>
+    <wf id="r00011516_wf17" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00011516_ex2">
+    <qf rend="dq">
+     <wf id="r00011516_wf18" lemma="it" tag="ignore">it</wf>
+     <wf id="r00011516_wf19" lemma="ill%1|ill%3|ill%4" tag="auto">
+      <id id="r00011516_id.4" lemma="ill" sk="ill%4:02:00::"/>ill</wf>
+     <wf id="r00011516_wf20" lemma="befit%2" tag="un">befits</wf>
+     <wf id="r00011516_wf21" lemma="a" tag="ignore">a</wf>
+     <wf id="r00011516_wf22" lemma="man%1|man%2" tag="un">man</wf>
+     <wf id="r00011516_wf23" lemma="to" tag="ignore">to</wf>
+     <wf id="r00011516_wf24" lemma="betray%2" tag="un">betray</wf>
+     <wf id="r00011516_wf25" lemma="old%1|old%3" tag="un">old</wf>
+     <wf id="r00011516_wf26" lemma="friend%1" sep="" tag="un">friends</wf>
+    </qf>
+    <wf id="r00011516_wf27" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00011516_ex3">
+    <qf rend="dq">
+     <wf id="r00011516_wf28" lemma="the" tag="ignore">the</wf>
+     <wf id="r00011516_wf29" lemma="car%1" tag="un">car</wf>
+     <wf id="r00011516_wf30" lemma="run%1|run%2" tag="un">runs</wf>
+     <wf id="r00011516_wf31" lemma="badly%4" sep="" tag="auto">
+      <id id="r00011516_id.5" lemma="badly" sk="badly%4:02:00::"/>badly</wf>
+    </qf>
+    <wf id="r00011516_wf32" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00011516_ex4">
+    <qf rend="dq">
+     <wf id="r00011516_wf33" lemma="he" tag="ignore">he</wf>
+     <wf id="r00011516_wf34" lemma="perform%2" tag="un">performed</wf>
+     <wf id="r00011516_wf35" lemma="badly%4" tag="auto">
+      <id id="r00011516_id.6" lemma="badly" sk="badly%4:02:00::"/>badly</wf>
+     <wf id="r00011516_wf36" lemma="on" tag="ignore">on</wf>
+     <wf id="r00011516_wf37" lemma="the" tag="ignore">the</wf>
+     <wf id="r00011516_wf38" lemma="exam%1" sep="" tag="un">exam</wf>
+    </qf>
+    <wf id="r00011516_wf39" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00011516_ex5">
+    <qf rend="dq">
+     <wf id="r00011516_wf40" lemma="the" tag="ignore">the</wf>
+     <wf id="r00011516_wf41" lemma="team%1|team%2" tag="un">team</wf>
+     <wf id="r00011516_wf42" lemma="play%2|played%3" tag="un">played</wf>
+     <wf id="r00011516_wf43" lemma="poorly%3|poorly%4" sep="" tag="auto">
+      <id id="r00011516_id.7" lemma="poorly" sk="poorly%4:02:00::"/>poorly</wf>
+    </qf>
+    <wf id="r00011516_wf44" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00011516_ex6">
+    <qf rend="dq">
+     <wf id="r00011516_wf45" lemma="ill-fitting%3" tag="un">ill-fitting</wf>
+     <wf id="r00011516_wf46" lemma="clothes%1|clothe%2" sep="" tag="un">clothes</wf>
+    </qf>
+    <wf id="r00011516_wf47" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="r00011516_ex7">
+    <qf rend="dq">
+     <wf id="r00011516_wf48" lemma="an" tag="ignore">an</wf>
+     <wf id="r00011516_wf49" lemma="ill-conceived%3" tag="un">ill-conceived</wf>
+     <wf id="r00011516_wf50" lemma="plan%1|plan%2" sep="" tag="un">plan</wf>
+    </qf>
+    <wf id="r00011516_wf51" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
+
+ <!-- 2016-03-16 patch -->
+  <synset id="a01179767" ofs="01179767" pos="a">
+  <terms>
+   <term>divine</term>
+   <term>godlike</term>
+  </terms>
+  <keys>
+   <sk>divine%3:00:02:heavenly:00</sk>
+   <sk>godlike%3:00:00:heavenly:00</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>being or having the nature of a god; "the custom of killing the divine king upon any serious failure of his...powers"-J.G.Frazier; "the divine will"; "the divine capacity for love"; "'tis wise to learn; 'tis God-like to create"-J.G.Saxe</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>being or having the nature of a god ; &#226;&#128;&#156; the custom of killing the divine king upon any serious failure of his ... powers &#226;&#128;&#157; -J.G.Frazier ; &#226;&#128;&#156; the divine will &#226;&#128;&#157; ; &#226;&#128;&#156; the divine capacity for love &#226;&#128;&#157; ; &#226;&#128;&#156; 't[="it"] is wise to learn ; 't[="it"] is God- like to create &#226;&#128;&#157; -J.G.Saxe</text>
+  </gloss>
+  <gloss desc="wsd">
+   <def id="a01179767_d">
+    <wf id="a01179767_wf1" lemma="being%1|be%2" pos="VBG" tag="un">being</wf>
+    <wf id="a01179767_wf2" lemma="or" pos="CC" tag="ignore">or</wf>
+    <wf id="a01179767_wf3" lemma="have%2" pos="VBG" tag="un">having</wf>
+    <wf id="a01179767_wf4" lemma="the" pos="DT" tag="ignore">the</wf>
+    <wf id="a01179767_wf5" lemma="nature%1" pos="NN" tag="un">nature</wf>
+    <wf id="a01179767_wf6" lemma="of" pos="IN" tag="ignore">of</wf>
+    <wf id="a01179767_wf7" lemma="a" pos="DT" tag="ignore">a</wf>
+    <wf id="a01179767_wf8" lemma="god%1" pos="NN" sep="" tag="man">
+     <id id="a01179767_id.4" lemma="god" sk="god%1:18:01::"/>god</wf>
+    <wf id="a01179767_wf9" pos=":" tag="ignore" type="punc">;</wf>
+   </def>
+   <ex id="a01179767_ex1">
+    <qf rend="dq">
+     <wf id="a01179767_wf10" lemma="the" tag="ignore">the</wf>
+     <wf id="a01179767_wf11" lemma="custom%1|custom%3" tag="un">custom</wf>
+     <wf id="a01179767_wf12" lemma="of" tag="ignore">of</wf>
+     <wf id="a01179767_wf13" lemma="killing%1|kill%2|killing%3" tag="un">killing</wf>
+     <wf id="a01179767_wf14" lemma="the" tag="ignore">the</wf>
+     <wf id="a01179767_wf15" lemma="divine%1|divine%2|divine%3" tag="auto">
+      <id id="a01179767_id.1" lemma="divine" sk="divine%3:00:02:heavenly:00"/>divine</wf>
+     <wf id="a01179767_wf16" lemma="king%1" tag="un">king</wf>
+     <wf id="a01179767_wf17" lemma="upon" tag="ignore">upon</wf>
+     <wf id="a01179767_wf18" lemma="any" tag="ignore">any</wf>
+     <wf id="a01179767_wf19" lemma="serious%3" tag="un">serious</wf>
+     <wf id="a01179767_wf20" lemma="failure%1" tag="un">failure</wf>
+     <wf id="a01179767_wf21" lemma="of" tag="ignore">of</wf>
+     <wf id="a01179767_wf22" lemma="his" sep="" tag="ignore">his</wf>
+     <wf id="a01179767_wf23" sep="" tag="ignore" type="punc">...</wf>
+     <wf id="a01179767_wf24" lemma="power%1|power%2" sep="" tag="un">powers</wf>
+    </qf>
+    <wf id="a01179767_wf25" lemma="-J.G.Frazier" sep="" tag="un">-J.G.Frazier</wf>
+    <wf id="a01179767_wf26" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="a01179767_ex2">
+    <qf rend="dq">
+     <wf id="a01179767_wf27" lemma="the" tag="ignore">the</wf>
+     <wf id="a01179767_wf28" lemma="divine%1|divine%2|divine%3" tag="auto">
+      <id id="a01179767_id.2" lemma="divine" sk="divine%3:00:02:heavenly:00"/>divine</wf>
+     <wf id="a01179767_wf29" lemma="will%1|will%2" sep="" tag="un">will</wf>
+    </qf>
+    <wf id="a01179767_wf30" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="a01179767_ex3">
+    <qf rend="dq">
+     <wf id="a01179767_wf31" lemma="the" tag="ignore">the</wf>
+     <wf id="a01179767_wf32" lemma="divine%1|divine%2|divine%3" tag="auto">
+      <id id="a01179767_id.3" lemma="divine" sk="divine%3:00:02:heavenly:00"/>divine</wf>
+     <wf id="a01179767_wf33" lemma="capacity%1" tag="un">capacity</wf>
+     <wf id="a01179767_wf34" lemma="for" tag="ignore">for</wf>
+     <wf id="a01179767_wf35" lemma="love%1|love%2" sep="" tag="un">love</wf>
+    </qf>
+    <wf id="a01179767_wf36" tag="ignore" type="punc">;</wf>
+   </ex>
+   <ex id="a01179767_ex4">
+    <qf rend="dq">
+     <wf id="a01179767_wf37" lemma="it" rdf="it" sep="" tag="ignore">'t</wf>
+     <wf id="a01179767_wf38" lemma="i%1|be%2" tag="un">is</wf>
+     <wf id="a01179767_wf39" lemma="wise%2|wise%1|wise%3" tag="un">wise</wf>
+     <wf id="a01179767_wf40" lemma="to" tag="ignore">to</wf>
+     <wf id="a01179767_wf41" lemma="learn%2" sep="" tag="un">learn</wf>
+     <wf id="a01179767_wf42" tag="ignore" type="punc">;</wf>
+     <wf id="a01179767_wf43" lemma="it" rdf="it" sep="" tag="ignore">'t</wf>
+     <wf id="a01179767_wf44" lemma="i%1|be%2" tag="un">is</wf>
+     <wf id="a01179767_wf45" lemma="God%1" sep="-" tag="un">God</wf>
+     <wf id="a01179767_wf46" lemma="like%1|like%2|like%3" tag="un">like</wf>
+     <wf id="a01179767_wf47" lemma="to" tag="ignore">to</wf>
+     <wf id="a01179767_wf48" lemma="create%2" sep="" tag="un">create</wf>
+    </qf>
+    <wf id="a01179767_wf49" lemma="-J.G.Saxe" sep="" tag="un">-J.G.Saxe</wf>
+    <wf id="a01179767_wf50" tag="ignore" type="punc">;</wf>
+   </ex>
+  </gloss>
+ </synset>
+
+
 <!-- End synsets -->
  
 </wordnet>
