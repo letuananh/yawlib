@@ -70,6 +70,25 @@ GLOSSTAG_XML_FILES = [
 
 class TestWordNetSQL(unittest.TestCase):
 
+    def test_extract_xml(self):
+        ''' Test data extraction from XML file
+        ''' 
+        xmlwn = XMLGWordNet()
+        xmlwn.read(MOCKUP_SYNSETS_DATA)
+        synsets = xmlwn.synsets
+        self.assertIsNotNone(synsets)
+
+    def test_gwn_access(self):
+        ''' Testing wordnetsql module
+        '''
+        db = WSQL(WORDNET_30_PATH)
+
+        sinfo = db.get_senseinfo_by_sk('pleasure%1:09:00::')
+        self.assertIsNotNone(sinfo)
+        
+        hypehypos = db.get_hypehypo(sinfo.synsetid)
+        self.assertEqual(1, len(hypehypos))
+    
     def test_get_freq(self):
         # WSQL should support get_tagcount
         db = WSQL(WORDNET_30_PATH)

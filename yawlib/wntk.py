@@ -85,12 +85,15 @@ DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
 MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
 GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
 GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
-GLOSSTAG_XML_FILES = [
-    os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH , 'merged', 'adv.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')
+glosstag_files = lambda x : [
+    os.path.join(x, 'adv.xml')
+    ,os.path.join(x, 'adj.xml')
+    ,os.path.join(x, 'verb.xml')
+    ,os.path.join(x, 'noun.xml')
     ]
+MERGED_FOLDER            = os.path.join(WORDNET_30_GLOSSTAG_PATH , 'merged')
+GLOSSTAG_XML_FILES       = glosstag_files(MERGED_FOLDER)
+MISALIGNED               = FileTool.abspath('data/misaligned.xml')
 
 #-----------------------------------------------------------------------
 
@@ -132,26 +135,6 @@ def mockup_synsets():
     xmlwn.read(MOCKUP_SYNSETS_DATA)
     synsets = xmlwn.synsets
     return synsets
-
-def test_extract_xml():
-    ''' Test data extraction from XML file
-    ''' 
-    xmlwn = XMLGWordNet()
-    xmlwn.read(MOCKUP_SYNSETS_DATA)
-    
-    for ss in xmlwn.synsets[:5]:
-        dump_synset(ss)
-
-def test_gwn_access():
-    ''' Testing wordnetsql module
-    '''
-    db = WSQL(WORDNET_30_PATH)
-
-    sinfo = db.get_senseinfo_by_sk('pleasure%1:09:00::')
-    print(sinfo)
-    hypehypos = db.get_hypehypo(sinfo.synsetid)
-    for hh in hypehypos:
-        print(hh)
 
 def test_skmap_gwn_wn30():
     ''' Comparing sensekeys between GWN and WN30SQLite
@@ -349,6 +332,32 @@ def dev_mode(wng_db_loc, mockup=True):
     # test_gwn_access()    # Demo accessing WN30 SQLite
     # test_skmap_gwn_wn30() # Comparing sensekeys between GWN and WN30SQLite
 
+    # test_alignment(wng_db_loc, mockup)
+    fix_misalignment()
+
+def fix_misalignment():
+    xmlwn = XMLGWordNet()
+    xmlwn.read(MISALIGNED)
+    synsets = xmlwn.synsets
+    glpatch = GlossTagPatch()
+    with open('data/temp.txt', 'w') as outfile:
+        for ss in synsets:
+            outfile.write("Synset ID: %s\n" % (ss.get_synsetid(),))
+            (ss,sents,glosses, aligned) = prepare_for_ntumc(ss, glpatch)
+            outfile.write('RAW: %s' % (ss.raw_glosses[0].gloss))
+            invalid = False
+            for sent, gl in aligned:
+                gltext = ' '.join([ x.text for x in gl.items ]).replace(';', '')
+                match_score = fuzz.ratio(sent, gltext)
+                outfile.write('    [%s] %s -- %s\n' % (match_score, sent, gl.items))
+                if match_score < 80:
+                    outfile.write("WARNING [%s]: %s >><< %s\n" % (ss.get_synsetid(), sent, gltext))
+            outfile.write('\n--\n')
+        
+    print("%s synsets to be fixed" % (len(synsets)))
+    print("See data/temp.txt for more information")
+
+def test_alignment(wng_db_loc, mockup=True):
     t = Timer()
     t.start("Cache all SQLite synsets")
     if mockup:
@@ -365,6 +374,7 @@ def dev_mode(wng_db_loc, mockup=True):
     c = Counter()
     with open("data/WRONG_SPLIT.txt", 'w') as wrong, open('data/SYNSET_TO_FIX.txt', 'w') as sslist, open('data/INVALID_ALIGNMENT.txt', 'w') as invalidfile:
         glpatch = GlossTagPatch()
+        invalid_synsets = set()
         for ss in synsets:
             orig_glosses = [ x.text() for x in ss.glosses ]
             (ss,sents,glosses, aligned) = prepare_for_ntumc(ss, glpatch)
@@ -393,26 +403,18 @@ def dev_mode(wng_db_loc, mockup=True):
                     print("WARNING [%s]: %s >><< %s" % (ss.get_synsetid(), sent, gltext))
                     invalid = True
             if invalid:
+                invalid_synsets.add(ss.get_synsetid())
                 invalidfile.write('%s\n' % (ss.get_synsetid(), ))
                 invalidfile.write('Split raw gloss : \t%s\n' % (sents,))
                 invalidfile.write('Orig glosses    : \t%s\n' % (orig_glosses,))
                 invalidfile.write('Combined glosses: \t%s\n--\n\n' % ([ x.text() for x in glosses ],))
-
+        invalidfile.write("\n\ninvalid_synsets=%s" % (invalid_synsets,))
     c.summarise()
     if c['WRONG'] > 0:
         print("See data/SYNSET_TO_FIX.txt and data/WRONG_SPLIT.txt for more information")
     else:
-        print("Done!")
+        print("Everything is OK!")
     
-    # header("Test smart search")
-    # smart_search(ss.raw_glosses[0].gloss, [ x.text for x in ss.glosses[0].items ])
-
-    # print("#------------------")
-    # for ss in xmlwn.synsets:
-    #     sent = ss.raw_glosses[0].gloss
-    #     # print(sent)
-    #     # smart_search(sent, [ x.text for x in ss.glosses[0].items ])
-    #     smart_search(sent, ss.glosses[0].items, lambda x : x.text)
     print("Done!")
 
 def smart_search(sentence, words, getitem=lambda x:x):
@@ -444,23 +446,26 @@ def smart_search(sentence, words, getitem=lambda x:x):
 
 #--------------------------------------------------------
 
-def read_xmlwn(merged_folder):
+def read_xmlwn(xml_filenames=GLOSSTAG_XML_FILES):
+    ''' Read all synsets in XML format
+    '''
     header("Extracting Gloss WordNet (XML)")
+    print("XML files: %s" % (xml_filenames))
     t = Timer()
     xmlgwn = XMLGWordNet()
-    for xml_file in GLOSSTAG_XML_FILES:
+    for xml_file in xml_filenames:
         t.start('Reading file: %s' % xml_file)
         xmlgwn.read(xml_file)
         t.end("Extraction completed %s" % xml_file)
     return xmlgwn
 
-def xml2db(merged_folder, db):
-    ''' Convert a XML file of Gloss WordNet into SQLite
+def xml2db(xml_filenames, db):
+    ''' Convert Gloss WordNet synsets in XML file(s) into SQLite
     '''
     t = Timer()
 
     header("Extracting Gloss WordNet (XML)")
-    xmlgwn = read_xmlwn(merged_folder)
+    xmlgwn = read_xmlwn(xml_filenames)
 
     header("Inserting data into SQLite database")
     t.start()
@@ -490,7 +495,7 @@ def convert(wng_loc, wng_db_loc, createdb):
         db.setup(DB_INIT_SCRIPT)
     #--
     header('Importing data from XML to SQLite')
-    xml2db(merged_folder, db)
+    xml2db(glosstag_files(merged_folder), db)
     pass
 
 def export_ntumc(wng_loc, wng_db_loc, mockup=False):
@@ -519,7 +524,7 @@ def export_ntumc(wng_loc, wng_db_loc, mockup=False):
     else:
         # synsets = gwn.all_synsets()
         wn = WSQL(WORDNET_30_PATH)
-        xmlwn = read_xmlwn(merged_folder)
+        xmlwn = read_xmlwn(GLOSSTAG_XML_FILES)
         synsets = xmlwn.synsets
 
     print("%s synsets found in %s" % (len(synsets), wng_db_loc))
@@ -609,7 +614,7 @@ def export_ntumc(wng_loc, wng_db_loc, mockup=False):
 def to_synsetid(synsetid):
     return '%s-%s' % (synsetid[1:], synsetid[0])
 
-SYNSETS_TO_EXTRACT = [ '00100883-r' ]
+SYNSETS_TO_EXTRACT = [ '09524555-n', '02426634-n', '10310516-n', '01804340-n', '09520498-n', '09585218-n', '10484526-n', '09571581-n', '08311933-n', '02423787-n', '04523993-n', '09582019-n', '01259594-n', '10528493-n', '01700075-a', '01929600-a', '01496592-a', '02291632-a', '07688757-n', '01992555-a', '00627849-a', '02259817-a', '02427337-n', '02067063-a', '01279183-a', '00974697-a', '04805304-n', '11889847-n', '10237935-n', '12222334-n', '05629381-n', '07689313-n', '01024812-a', '02430756-a', '02022162-v', '08641944-n', '07497019-n', '01502262-n', '15193271-n', '09490961-n', '00624285-n', '04455835-n', '01032029-a', '08225334-n', '02516148-a', '06006609-n', '09496673-n', '09517342-n', '09573561-n', '11889473-n', '01280576-a', '10750640-n', '09564371-n', '02822601-a', '07138736-n', '02422249-n', '04066023-n', '03550420-n', '02426054-n', '09555391-n', '15282032-n', '02155233-a', '09498186-n', '04323819-n', '00038623-a', '06609785-n', '07577538-n', '00253395-n', '01385255-a', '01040390-n', '00221553-a', '01824751-a', '12322359-n', '05626618-n', '09501737-n', '03976268-n', '01034685-n', '00660313-a', '00145713-r', '09560061-n', '05278922-n', '01859970-a', '03382708-n', '02421962-n', '10689306-n', '09498072-n', '01129920-n', '15258450-n', '10545682-n', '00814611-a', '09776522-n', '00071242-a', '07330560-n', '00100883-r', '00140542-a', '02217799-a', '09495732-n', '00605893-a', '09592734-n', '09180967-n', '12216028-n', '06032752-n', '02422561-n', '02430096-a', '09495619-n', '12223405-n', '09574926-n', '12385219-n', '10119953-n', '15229408-n', '00038462-a', '09579714-n', '06457796-n', '05613170-n', '09573145-n', '09920106-n', '08180484-n', '11202477-n', '01554510-a', '05065717-n', '03884778-n', '10840769-n', '15234587-n', '09549643-n', '01268426-a', '02532200-a', '00562823-n', '09566667-n', '02425393-n', '05824985-n', '09996920-n', '02649125-a', '03348454-n', '01612053-a', '12672497-n', '00558630-n', '09495849-n', '06509210-n', '09559404-n', '10750365-n', '09550125-n', '00728065-n', '09567309-n', '03120029-n', '04102162-n', '01302811-a', '00003316-v', '02038617-n', '02427958-n', '04460634-n', '10758713-n', '00252130-a', '09579994-n', '10219778-n', '08555883-n', '09829650-n', '09521994-n', '10240921-n', '00385946-r', '01630939-a', '01559294-n', '05144663-n', '09580673-n', '09566791-n', '00557419-n', '01929062-a', '00562643-n', '12853901-n', '13996211-n', '02428229-n', '05039106-n', '04605163-n', '11750855-n', '09549983-n', '00509377-a', '00458286-n', '10588860-n', '09593044-n', '04990781-n', '00727901-n', '00727743-n', '04055861-n', '09501198-n', '09498697-n', '02437853-a', '12486732-n', '09566436-n', '10158222-n', '00139919-n', '05082116-n', '02933954-a', '11455386-n', '01222100-a', '09829506-n', '03090598-n', '10557404-n', '00818678-n', '14342132-n', '02463990-v', '01971519-a', '06385434-n', '09682122-n', '10496393-n', '01929312-a', '01753721-n', '15204201-n', '03877472-n', '13813591-n', '15192890-n', '07281099-n', '14413831-n', '15231634-n', '07211503-n', '00230335-a', '02380819-a', '07543910-n', '14359459-n', '01142636-v', '13762836-n', '02107386-a', '00563360-v', '09494280-n', '02421308-n', '10375690-n', '14453290-n', '02010864-v', '00507913-v', '02531919-a', '09556580-n', '09566544-n', '00970081-a', '00509735-a', '04991389-n', '15227593-n', '07689003-n', '07851054-n', '07535532-n', '02818507-n', '00468587-r', '06804728-n', '02268133-a', '00456610-r', '00192523-a', '09520617-n', '09684352-n', '05628403-n', '09566320-n', '01193714-a', '02264752-v', '01235463-n', '02426339-n', '03085333-n', '12353604-n', '06464419-n', '10996533-n', '09575033-n' ]
 # '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n'
 
 def extract_synsets_xml():
