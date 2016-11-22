@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -53,6 +52,7 @@ from collections import namedtuple
 from puchikarui import Schema, Execution#, DataSource, Table
 from chirptext.leutile import StringTool, Counter, Timer, uniquify, header, jilog, TextReport
 
+from .models import SynsetID
 from .config import YLConfig
 from .glosswordnet import XMLGWordNet, SQLiteGWordNet
 from .wordnetsql import WordNetSQL as WSQL
@@ -70,35 +70,34 @@ DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
 
 ########################################################################
 
-def get_synset_by_id(wng_db_loc, synsetid, report_file=None):
-    ''' Search synset in WordNet Gloss Corpus by synset ID 
-    '''
-    if report_file == None:
-        report_file = TextReport() # Default to stdout
-    report_file.print("Looking for synsets by synsetid (Provided: %s)\n" % synsetid)
- 
+
+def get_synset_by_id(wng_db_loc, synsetid_str, report_file=None):
+    ''' Search synset in WordNet Gloss Corpus by synset ID'''
+    if report_file is None:
+        report_file = TextReport()  # Default to stdout
+    report_file.print("Looking for synsets by synsetid (Provided: %s)\n" % synsetid_str)
+
     db = SQLiteGWordNet(wng_db_loc)
-    if len(synsetid) == 10 and synsetid[8] == '-':
-        synsetid = synsetid[9] + synsetid[:8]
-    synsets = db.get_synset_by_id(synsetid)
+    synsetid = SynsetID.from_string(synsetid_str)
+    synsets = db.get_synset_by_id(synsetid.to_gwnsql())
     dump_synsets(synsets, report_file)
 
+
 def get_synset_by_sk(wng_db_loc, sk, report_file=None):
-    ''' Search synset in WordNet Gloss Corpus by sensekey 
-    '''
-    if report_file == None:
-        report_file = TextReport() # Default to stdout
+    ''' Search synset in WordNet Gloss Corpus by sensekey'''
+    if report_file is None:
+        report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by sensekey (Provided: %s)\n" % sk)
-    
+
     db = SQLiteGWordNet(wng_db_loc)
     synsets = db.get_synset_by_sk(sk)
     dump_synsets(synsets, report_file)
-    
+
+
 def get_synsets_by_term(wng_db_loc, t, pos, report_file=None):
-    ''' Search synset in WordNet Gloss Corpus by term 
-    '''
-    if report_file == None:
-        report_file = TextReport() # Default to stdout
+    ''' Search synset in WordNet Gloss Corpus by term'''
+    if report_file is None:
+        report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by term (Provided: %s | pos = %s)\n" % (t, pos))
 
     db = SQLiteGWordNet(wng_db_loc)
@@ -114,8 +113,8 @@ def dump_synsets(synsets, report_file=None):
         synsets     -- List of synsets to dump
         report_file -- An instance of TextReport
     '''
-    if report_file == None:
-        report_file = TextReport() # Default to stdout
+    if report_file is None:
+        report_file = TextReport()  # Default to stdout
 
     if synsets:
         for synset in synsets:
@@ -123,6 +122,7 @@ def dump_synsets(synsets, report_file=None):
         report_file.print("Found %s synset(s)" % synsets.count())
     else:
         report_file.print("None was found!")
+
 
 def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, report_file=None):
     ''' Print synset details for debugging purpose
@@ -135,9 +135,9 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
         report_file   -- Report file to write to
 
     '''
-    if report_file == None:
-        report_file = TextReport() # Default to stdout
-    
+    if report_file is None:
+        report_file = TextReport()  # Default to stdout
+
     if more_compact:
         report_file.header("Synset: %s (terms=%s | keys=%s)" % (ss.get_synsetid(), ss.terms, ss.keys), 'h0')
     else:

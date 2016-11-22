@@ -85,9 +85,11 @@ class TestModels(unittest.TestCase):
         sid2 = SynsetID.from_string('112345678')
         sid3 = SynsetID.from_string('12345678-n')
         sid4 = SynsetID.from_string('12345678n')
+        sid5 = SynsetID.from_string('n12345678')
         self.assertEqual(sid, sid2)
-        self.assertEqual(sid2, sid3)
-        self.assertEqual(sid2, sid4)
+        self.assertEqual(sid, sid3)
+        self.assertEqual(sid, sid4)
+        self.assertEqual(sid, sid5)
 
     def test_synset_wrong_format(self):
         print("Test invalid synset formats")
@@ -96,9 +98,10 @@ class TestModels(unittest.TestCase):
         self.assertRaises(Exception, lambda: SynsetID.from_string('12345678x'))
         # wrong POS (WNSQL)
         self.assertRaises(Exception, lambda: SynsetID.from_string('612345678'))
+        # wrong POS (WNSQL) #2
+        self.assertRaises(Exception, lambda: SynsetID.from_string('g12345678'))
         # no POS
         self.assertRaises(Exception, lambda: SynsetID.from_string('12345678'))
-
 
 
 ########################################################################

@@ -71,7 +71,7 @@ class POS:
 
 class SynsetID:
 
-    WNSQL_FORMAT = re.compile(r'(?P<pos>[12345])(?P<offset>\d{8})')
+    WNSQL_FORMAT = re.compile(r'(?P<pos>[12345nvasr])(?P<offset>\d{8})')
     CANONICAL_FORMAT = re.compile(r'(?P<offset>\d{8})-?(?P<pos>[nvasr])')
 
     def __init__(self, offset, pos):
@@ -86,8 +86,10 @@ class SynsetID:
         if m:
             # WNSQL_FORMAT
             offset = m.group('offset')
-            posnum = m.group('pos')
-            return SynsetID(offset, POS.num2pos(posnum))
+            pos = m.group('pos')
+            if pos in POS.NUMS:
+                pos = POS.num2pos(pos)
+            return SynsetID(offset, pos)
         else:
             # try canonical format
             m = SynsetID.CANONICAL_FORMAT.match(synsetid)
@@ -105,6 +107,10 @@ class SynsetID:
         '''WordNet SQLite synsetID format
            Reference: https://sourceforge.net/projects/wnsql/'''
         return "{posnum}{offset}".format(offset=self.offset, posnum=POS.pos2num(self.pos))
+
+    def to_gwnsql(self):
+        '''Gloss WordNet SQLite synsetID format'''
+        return "{pos}{offset}".format(offset=self.offset, pos=self.pos)
 
     def __eq__(self, other):
         return other is not None and self.offset == other.offset and self.pos == other.pos
@@ -137,10 +143,10 @@ class SenseInfo:
             return sid[-10:]
         else:
             return sid
-    
+
     def get_full_sid(self):
         return self.pos + str(self.sid)[1:]
-        
+
     def __repr__(self):
         return str(self)
 
@@ -154,10 +160,11 @@ class SenseInfo:
     def __str__(self):
         return "SenseInfo: pos:%s | synsetid:%s | sensekey:%s | freq: %s" % (self.pos, self.get_canonical_synsetid(), self.sk, self.tagcount)
 
+
 ########################################################################
 
 def main():
-    jilog("This is a library, not a tool")
+    print("This is a library, not a tool")
 
 if __name__ == "__main__":
     main()
