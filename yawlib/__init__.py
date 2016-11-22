@@ -40,11 +40,12 @@ __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
 from .config import YLConfig
-
+from .models import SynsetID
+from .models import POS
 from .glosswordnet import XMLGWordNet, SQLiteGWordNet
 from .wordnetsql import WordNetSQL
 from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term, dump_synsets, dump_synset
 
-__all__ = ['YLConfig', 'XMLGWordNet', 'SQLiteGWordNet', 'WOrdNetSQL', 'get_synset_by_id', 'get_synset_by_sk', 
+__all__ = ['YLConfig', 'XMLGWordNet', 'SQLiteGWordNet', 'WordNetSQL', 'POS', 'SynsetID', 'get_synset_by_id', 'get_synset_by_sk', 
            'get_synsets_by_term', 'dump_synsets', 'dump_synset']
 

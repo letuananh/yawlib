@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-A tool for converting Gloss WordNet into SQLite
+YAWLib console application
 Latest version can be found at https://github.com/letuananh/yawlib
 
 Usage:
@@ -333,7 +333,15 @@ def dev_mode(wng_db_loc, mockup=True):
     # test_skmap_gwn_wn30() # Comparing sensekeys between GWN and WN30SQLite
 
     # test_alignment(wng_db_loc, mockup)
-    fix_misalignment()
+    # fix_misalignment()
+    glosstag2txt(wng_db_loc)
+
+
+def glosstag2txt(wng_db_loc):
+    print("glosstag")
+    gwn = SQLiteGWordNet(wng_db_loc)
+    synsets = gwn.all_synsets()
+    print("Synset count: %s" % (len(synsets),))
 
 def fix_misalignment():
     xmlwn = XMLGWordNet()

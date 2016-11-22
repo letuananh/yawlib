@@ -72,27 +72,31 @@ class WordNetNTUMC:
         self.db_path = db_path
         self.schema = WordNetNTUMCSchema(self.db_path)
         # some cache here?
-        
+
     def get_all_synsets(self):
         with Execution(self.schema) as exe:
             return exe.schema.ss.select()
-            
+
     def get_synset_def(self, sid):
         with Execution(self.schema) as exe:
             return exe.schema.synset_def.select(where='synset=?', values=[sid])
-    
+
 
 class WordNetSQL:
+
     def __init__(self, db_path):
         self.db_path = db_path
         self.schema = WordNet3Schema(self.db_path)
-        
         # Caches
         self.sk_cache = dd(set)
         self.sid_cache = dd(set)
         self.hypehypo_cache = dd(set)
         self.tagcount_cache = dd(lambda: 0)
-    
+
+    def get_conn(self):
+        conn = sqlite3.connect(self.db_path)
+        return conn
+
     def get_all_synsets(self):
         with Execution(self.schema) as exe:
             return exe.schema.wss.select(columns=['synsetid', 'lemma', 'sensekey', 'tagcount'])
@@ -183,7 +187,7 @@ class WordNetSQL:
                 # search in database
                 query = '''SELECT wordid, lemma FROM words
                             WHERE wordid in (%s);''' % ','.join(need_to_find)
-                conn = sqlite3.connect(WORDNET_30_PATH)
+                conn = self.get_conn()
                 c = conn.cursor()
                 result = c.execute(query).fetchall()
                 for (wordid, lemma) in result:
@@ -194,7 +198,7 @@ class WordNetSQL:
 
     def cache_all_words(self):
         query = '''SELECT wordid, lemma FROM words'''
-        conn = sqlite3.connect(WORDNET_30_PATH)
+        conn = self.get_conn()
         c = conn.cursor()
         result = c.execute(query).fetchall()
         for (wordid, lemma) in result:
@@ -232,9 +236,6 @@ class WordNetSQL:
         WordNetSQL.sense_map_cache=lemma_map
         return lemma_map
 
-    def get_conn(self):
-        conn = sqlite3.connect(YLConfig.WORDNET_30_PATH)
-        return conn
 
     lemma_list_cache = dict()
     def search_senses(self, lemma_list, pos=None, a_conn=None):
@@ -260,7 +261,7 @@ class WordNetSQL:
         if a_conn:
             conn = a_conn
         else:
-            conn = sqlite3.connect(WORDNET_30_PATH)
+            conn = self.get_conn()
         c = conn.cursor()
         result = c.execute(_query, _args).fetchall()
 
@@ -283,7 +284,7 @@ class WordNetSQL:
         '''
         if (lemma, pos) in WordNetSQL.sense_cache:
             return WordNetSQL.sense_cache[(lemma, pos)]
-        conn = sqlite3.connect(WORDNET_30_PATH)
+        conn = self.get_conn()
         c = conn.cursor()
         if pos:
             if pos == 'a':
@@ -309,15 +310,14 @@ class WordNetSQL:
         return senses
         
     def cache_all_sense_by_lemma(self):
-        conn = sqlite3.connect(WORDNET_30_PATH)
-        c = conn.cursor()
-        result = c.execute("""SELECT lemma, pos, synsetid, sensekey, definition FROM wordsXsensesXsynsets;""").fetchall()
+        with self.get_conn() as conn:
+            c = conn.cursor()
+            result = c.execute("""SELECT lemma, pos, synsetid, sensekey, definition FROM wordsXsensesXsynsets;""").fetchall()
 
-        for (lemma, pos, synsetid, sensekey, definition) in result:
-            if lemma not in WordNetSQL.sense_cache:
-                WordNetSQL.sense_cache[lemma] = []
-            WordNetSQL.sense_cache[lemma].append(SenseInfo(pos, synsetid, sensekey, '', definition))
-        conn.close()
+            for (lemma, pos, synsetid, sensekey, definition) in result:
+                if lemma not in WordNetSQL.sense_cache:
+                    WordNetSQL.sense_cache[lemma] = []
+                WordNetSQL.sense_cache[lemma].append(SenseInfo(pos, synsetid, sensekey, '', definition))
 
     def get_gloss_by_sk(self, sk):
         sid = self.get_senseinfo_by_sk(sk).get_full_sid()
