@@ -10,23 +10,23 @@ Latest version can be found at https://github.com/letuananh/lelesk
 
 # Copyright (c) 2014, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, lelesk"
@@ -42,20 +42,25 @@ __status__ = "Prototype"
 import itertools
 import sqlite3
 from collections import defaultdict as dd
-
 from puchikarui import Schema, Execution#, DataSource, Table
-
 from ..config import YLConfig 
 from ..models import SenseInfo
+from ..models import SynsetID
 from ..glosswordnet.models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
 
 #-----------------------------------------------------------------------
 
+
 class WordNet3Schema(Schema):
+    
+    '''SQLite schema for WordNetSQL (Princeton WordNet version 3.0)'''
     def __init__(self, data_source=None):
         Schema.__init__(self, data_source)
         self.add_table('wordsXsensesXsynsets', 'wordid lemma casedwordid synsetid senseid sensenum lexid tagcount sensekey pos lexdomainid definition'.split(), alias='wss')
         self.add_table('sensesXsemlinksXsenses', 'linkid ssynsetid swordid ssenseid scasedwordid ssensenum slexid stagcount ssensekey spos slexdomainid sdefinition dsynsetid dwordid dsenseid dcasedwordid dsensenum dlexid dtagcount dsensekey dpos dlexdomainid ddefinition'.split(), alias='sss')
+        self.add_table('synsets', 'synsetid pos definition'.split(), alias='ss')
+        self.add_table('samples', 'synsetid sampleid sample'.split(), alias='ex')
+
 
 class WordNetNTUMCSchema(Schema):
     def __init__(self, data_source=None):
@@ -129,6 +134,12 @@ class WordNetSQL:
         return result
 
     def get_senseinfo_by_sid(self, sid):
+        # make sure that sid is in the correct format
+        if isinstance(sid, SynsetID):
+            sid = sid.to_wnsql()
+        else:
+            sid = SynsetID.from_string(str(sid)).to_wnsql()
+        # 
         if sid in self.sid_cache:
             return self.sid_cache[sid]
         result = None
@@ -369,10 +380,10 @@ class WordNetSQL:
             WordNetSQL.gloss_cache[sid] = None
             return None
         pass
-            
+
     # Search a synset by ID
     def search_by_id(self, synset_id):
-        #print 'searching %s' % synset_id
+        # print 'searching %s' % synset_id
         if synset_id in self.sid_index:
             return self.sid_index[synset_id]
         else:
@@ -387,7 +398,7 @@ class WordNetSQL:
     
     @staticmethod
     def get_default(auto_cache=True):
-        wnsql = WordNetSQL(WORDNET_30_PATH, WORDNET_30_GLOSSTAG_PATH)
+        wnsql = WordNetSQL(YLConfig.WORDNET_30_PATH, YLConfig.WORDNET_30_GLOSSTAG_PATH)
         # Cache everything into memory if needed
         if auto_cache:
             wnsql.cache_all_words()

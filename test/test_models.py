@@ -70,7 +70,7 @@ GLOSSTAG_XML_FILES = [
 
 ########################################################################
 
-class TestModels(unittest.TestCase):
+class TestSynsetIDWrapper(unittest.TestCase):
 
     def test_synset_id(self):
         print("Test synset ID")
@@ -86,10 +86,12 @@ class TestModels(unittest.TestCase):
         sid3 = SynsetID.from_string('12345678-n')
         sid4 = SynsetID.from_string('12345678n')
         sid5 = SynsetID.from_string('n12345678')
+        sid6 = SynsetID.from_string(112345678)
         self.assertEqual(sid, sid2)
         self.assertEqual(sid, sid3)
         self.assertEqual(sid, sid4)
         self.assertEqual(sid, sid5)
+        self.assertEqual(sid, sid6)
 
     def test_synset_wrong_format(self):
         print("Test invalid synset formats")

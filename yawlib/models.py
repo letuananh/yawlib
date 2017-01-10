@@ -82,7 +82,7 @@ class SynsetID:
     def from_string(synsetid):
         if synsetid is None:
             raise Exception("synsetid cannot be None")
-        m = SynsetID.WNSQL_FORMAT.match(synsetid)
+        m = SynsetID.WNSQL_FORMAT.match(str(synsetid))
         if m:
             # WNSQL_FORMAT
             offset = m.group('offset')

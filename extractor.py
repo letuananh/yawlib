@@ -37,7 +37,7 @@ __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
-# import sys
+import sys
 import os.path
 import argparse
 import itertools
@@ -54,6 +54,7 @@ from chirptext.leutile import header
 from chirptext.leutile import FileTool
 
 from yawlib import YLConfig
+from yawlib import SynsetID
 from yawlib.helpers import dump_synset
 from yawlib.helpers import dump_synsets
 from yawlib import XMLGWordNet
@@ -89,22 +90,74 @@ MISALIGNED               = FileTool.abspath('data/misaligned.xml')
 
 #-----------------------------------------------------------------------
 
-def get_gwn(gwn_db_loc=WORDNET_30_GLOSS_DB_PATH):
-    gwn = SQLiteGWordNet(gwn_db_loc)
+
+def get_gwn(args):
+    gwn = SQLiteGWordNet(args.glossdb)
     return gwn
 
-def get_wn(wn_db_loc=WORDNET_30_PATH):
-    wn = WSQL(wn_db_loc)
+
+def get_wn(args):
+    wn = WSQL(args.wnsql)
     return wn
 
-def dev_mode(gwn_db_loc, wn_db_loc, mockup):
-    print("GlossWordNet location: %s" % gwn_db_loc)
-    print("WordNet location     : %s" % wn_db_loc)
-    print("Use mockup data      : %s" % mockup)
-    gwn = get_gwn(gwn_db_loc)
-    wn = get_wn(wn_db_loc)
 
-#-----------------------------------------------------------------------
+def glosstag2ntumc(args):
+    print("Extracting Glosstag to NTU-MC")
+    show_info(args)
+    print("To be developed")
+    pass
+
+
+def export_wn_synsets(args):
+    print("Exporting synsets' info (lemmas/defs/examples) from WordNetSQL to text file")
+    show_info(args)
+    output_with_sid_file = os.path.abspath('./data/wn30_lemmas.txt')
+    output_without_sid_file = os.path.abspath('./data/wn30_lemmas_noss.txt')
+    output_defs = os.path.abspath('./data/wn30_defs.txt')
+    output_exes = os.path.abspath('./data/wn30_exes.txt')
+    wn = get_wn(args)
+    # Extract lemmas
+    wn_ss = wn.get_all_synsets()
+    with open(output_with_sid_file, 'w') as with_sid, open(output_without_sid_file, 'w') as without_sid:
+        for s in wn_ss:
+            with_sid.write('%s\t%s\n' % (SynsetID.from_string(str(s.synsetid)), s.lemma))
+            without_sid.write('%s\n' % (s.lemma,))
+    # Extract synset definitions
+    defs = wn.schema.ss.select(orderby='synsetid')
+    with open(output_defs, 'w') as def_file:
+        for d in defs:
+            def_file.write('{sid}\t{d}\n'.format(sid=SynsetID.from_string(d.synsetid), d=d.definition))
+    # Extract examples
+    exes = wn.schema.ex.select(orderby='synsetid')
+    with open(output_exes, 'w') as ex_file:
+        for ex in exes:
+            ex_file.write('{sid}\t{ex}\n'.format(sid=SynsetID.from_string(ex.synsetid), ex=ex.sample))
+    # summary
+    print("Data has been extracted to:")
+    print("  + {}".format(output_with_sid_file))
+    print("  + {}".format(output_without_sid_file))
+    print("  + {}".format(output_defs))
+    print("  + {}".format(output_exes))
+    print("Done!")
+
+
+def show_info(args):
+    print("GlossWordNet XML folder: %s" % args.gloss_xml)
+    print("GlossWordNet SQlite DB : %s" % args.glossdb)
+    print("Princeton WordNetSQL DB: %s" % args.wnsql)
+    print("Use mockup data      : %s" % args.mockup)
+
+
+def config_logging(args):
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    elif args.quiet:
+        logging.basicConfig(level=logging.ERROR)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+#----------------------------------------------------------------------
+
 
 def main():
     '''Main entry
@@ -113,48 +166,35 @@ def main():
     # It's easier to create a user-friendly console application by using argparse
     # See reference at the top of this script
     parser = argparse.ArgumentParser(description="WordNet Toolkit - For accessing and manipulating WordNet")
-    
-    # Positional argument(s)
-    # parser.add_argument('task', help='Task to perform (create/import/synset)')
 
-    parser.add_argument('-i', '--gwn_location', help='Path to Gloss WordNet folder (default = ~/wordnet/glosstag')
-    parser.add_argument('-o', '--gwn_db', help='Path to database file (default = ~/wordnet/glosstag.db')
-    parser.add_argument('-w', '--wnsql', help='Location to WordNet SQLite 3.0 database')
-    parser.add_argument('-g', '--glosswn', help='Location to Gloss WordNet SQLite database')
-
+    parser.add_argument('-i', '--gloss_xml', help='Path to Gloss WordNet folder (default = )', default=YLConfig.WORDNET_30_GLOSSTAG_PATH)
+    parser.add_argument('-w', '--wnsql', help='Path to WordNet SQLite 3.0 database', default=YLConfig.WORDNET_30_PATH)
+    parser.add_argument('-g', '--glossdb', help='Path to Gloss WordNet SQLite database', default=YLConfig.WORDNET_30_GLOSS_DB_PATH)
     parser.add_argument('-m', '--mockup', help='Use mockup data in dev_mode', action='store_true')
-    parser.add_argument('-n', '--ntumc', help='Extract GlossWordNet to NTU-MC', action='store_true')
-    parser.add_argument('-d', '--dev', help='Dev mode (do not use)', action='store_true')
-    parser.add_argument('-x', '--extract', help='Extract XML synsets from glosstag', action='store_true')
+
+    tasks = parser.add_subparsers(title='task', help='Task to be performed')
+
+    cmd_glosstag2ntumc = tasks.add_parser('g2n', help='Export Glosstag data to NTU-MC')
+    cmd_glosstag2ntumc.set_defaults(func=glosstag2ntumc)
+
+    cmd_extract = tasks.add_parser('xgloss', help='Extract XML synsets from glosstag')
+    cmd_extract.set_defaults(func=export_wn_synsets)
+
+    cmd_extract = tasks.add_parser('info', help='Show configuration information')
+    cmd_extract.set_defaults(func=show_info)
 
     # Optional argument(s)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-v", "--verbose", action="store_true")
     group.add_argument("-q", "--quiet", action="store_true")
-    
+
     # Parse input arguments
-    args = parser.parse_args()
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    elif args.quiet:
-        logging.basicConfig(level=logging.ERROR)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
-    wng_loc = args.gwn_location if args.gwn_location else WORDNET_30_GLOSSTAG_PATH
-    gwn_db_loc = args.gwn_db if args.gwn_db else (args.glosswn if args.glosswn else WORDNET_30_GLOSS_DB_PATH)
-    wn_db_loc = args.wnsql if args.wnsql else WORDNET_30_PATH
-
-    # Now do something ...
-    if args.dev:
-        dev_mode(gwn_db_loc, wn_db_loc, args.mockup)
-    elif args.extract:
-        extract_synsets_xml()
-    elif args.ntumc:
-        export_ntumc(wng_loc, gwn_db_loc, args.mockup)
+    if len(sys.argv) > 1:
+        args = parser.parse_args()
+        config_logging(args)
+        args.func(args)
     else:
         parser.print_help()
-    pass # end main()
 
 if __name__ == "__main__":
     main()
