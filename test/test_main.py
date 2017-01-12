@@ -47,7 +47,9 @@ import argparse
 import unittest
 from chirptext.leutile import FileTool
 from yawlib.wordnetsql import WordNetSQL as WSQL
-from yawlib.glosswordnet import XMLGWordNet, SQLiteGWordNet, Gloss
+from yawlib.glosswordnet import XMLGWordNet
+from yawlib.glosswordnet import SQLiteGWordNet as GWNSQL
+from yawlib.glosswordnet import Gloss
 from yawlib.wntk import combine_glosses
 
 from yawlib.config import YLConfig
@@ -111,6 +113,18 @@ class TestGlossWordNetSQL(unittest.TestCase):
         self.assertEqual(len(glosses), 2)
         # for gl in glosses:
         #     print("#\n\t>%s\n\t>%s\n\t>%s\n" % (gl.items, gl.tags, gl.groups))
+
+    def test_get_gloss_synsets(self):
+        print("Test get glossed synset(s)")
+        db = GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
+        glosses = db.schema.gloss.select()
+        gitems = db.schema.glossitem.select(columns='id ord gid lemma'.split())
+        print("Gloss count: {}".format(len(glosses)))
+        print(glosses[:5])
+        print("Glossitem count: {}".format(len(gitems)))
+        print(gitems[:5])
+        
+        pass
 
 ########################################################################
 

@@ -1,3 +1,2 @@
-Required libraries:
-	+ puchikarui (For accessing SQLite database)
-	+ chirptext  (Common text features)
+fuzzywuzzy
+python-levenshtein

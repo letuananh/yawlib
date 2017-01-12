@@ -109,6 +109,50 @@ def glosstag2ntumc(args):
 
 
 def export_wn_synsets(args):
+    if args.source == 'gloss':
+        export_gloss_synsets(args)
+    else:
+        export_wnsql_synsets(args)
+
+
+def export_gloss_synsets(args):
+    print("Exporting synsets' info (lemmas/defs/examples) from GlossWordNet to text file")
+    show_info(args)
+    output_with_sid_file = os.path.abspath('./data/glosstag_lemmas.txt')
+    output_without_sid_file = os.path.abspath('./data/glosstag_lemmas_noss.txt')
+    output_defs = os.path.abspath('./data/glosstag_defs.txt')
+    output_exes = os.path.abspath('./data/glosstag_exes.txt')
+    gwn = get_gwn(args)
+    # Extract lemmas
+    wn_ss = gwn.schema.term.select()
+    with open(output_with_sid_file, 'w') as with_sid, open(output_without_sid_file, 'w') as without_sid:
+        for s in wn_ss:
+            with_sid.write('%s\t%s\n' % (SynsetID.from_string(str(s.sid)), s.term))
+            without_sid.write('%s\n' % (s.term,))
+    # This table is not very helpful, definitions and examples are combined into a single string
+    glosses = gwn.schema.gloss_raw.select(where='cat=?', values=('orig',))
+    print(glosses[:5])
+    return
+    # Extract synset definitions
+    defs = wn.schema.ss.select(orderby='synsetid')
+    with open(output_defs, 'w') as def_file:
+        for d in defs:
+            def_file.write('{sid}\t{d}\n'.format(sid=SynsetID.from_string(d.synsetid), d=d.definition))
+    # Extract examples
+    exes = wn.schema.ex.select(orderby='synsetid')
+    with open(output_exes, 'w') as ex_file:
+        for ex in exes:
+            ex_file.write('{sid}\t{ex}\n'.format(sid=SynsetID.from_string(ex.synsetid), ex=ex.sample))
+    # summary
+    print("Data has been extracted to:")
+    print("  + {}".format(output_with_sid_file))
+    print("  + {}".format(output_without_sid_file))
+    print("  + {}".format(output_defs))
+    print("  + {}".format(output_exes))
+    print("Done!")
+    
+
+def export_wnsql_synsets(args):
     print("Exporting synsets' info (lemmas/defs/examples) from WordNetSQL to text file")
     show_info(args)
     output_with_sid_file = os.path.abspath('./data/wn30_lemmas.txt')
@@ -177,7 +221,8 @@ def main():
     cmd_glosstag2ntumc = tasks.add_parser('g2n', help='Export Glosstag data to NTU-MC')
     cmd_glosstag2ntumc.set_defaults(func=glosstag2ntumc)
 
-    cmd_extract = tasks.add_parser('xgloss', help='Extract XML synsets from glosstag')
+    cmd_extract = tasks.add_parser('extract', help='Extract XML synsets from glosstag')
+    cmd_extract.add_argument('-s', '--source', required=False, help='Which Wordnet to be used (wnsql, gloss, etc.)')
     cmd_extract.set_defaults(func=export_wn_synsets)
 
     cmd_extract = tasks.add_parser('info', help='Show configuration information')
