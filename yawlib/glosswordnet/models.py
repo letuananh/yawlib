@@ -32,13 +32,14 @@ Adapted from: https://github.com/letuananh/lelesk
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = ["Le Tuan Anh"]
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
+from ..models import SynsetID
 from chirptext.leutile import StringTool, Counter, uniquify
 
 #-----------------------------------------------------------------------
@@ -48,6 +49,7 @@ from chirptext.leutile import StringTool, Counter, uniquify
 # How to use this library?
 # from glosswordnet.models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
 
+
 class SynsetCollection:
     ''' Synset collection which provides basic synset search function (by_sid, by_sk, etc.)
     '''
@@ -55,23 +57,24 @@ class SynsetCollection:
         self.synsets = []
         self.sid_map = {}
         self.sk_map = {}
-        
+
     def add(self, synset):
+        ssid = str(synset.sid)
         self.synsets.append(synset)
-        self.sid_map[synset.sid] = synset
+        self.sid_map[ssid] = synset
         if synset.keys:
             for key in synset.keys:
                 self.sk_map[key] = synset
-    
+
     def __getitem__(self, name):
         return self.synsets[name]
 
     def by_sid(self, sid):
-        if sid in self.sid_map:
-            return self.sid_map[sid]
+        if sid and sid in self.sid_map:
+            return self.sid_map[str(sid)]
         else:
             return None
-    
+
     def by_sk(self, sk):
         if sk in self.sk_map:
             return self.sk_map[sk]
@@ -97,6 +100,9 @@ class SynsetCollection:
         self.add(ss)
         return ss
 
+    def __str__(self):
+        return str(self.synsets)
+
 class GlossRaw:
     ''' Raw glosses extracted from WordNet Gloss Corpus.
         Each synset has a orig_gloss, a text_gloss and a wsd_gloss
@@ -114,6 +120,7 @@ class GlossRaw:
     def __str__(self):
         return "[gloss-%s] %s" % (self.cat, self.gloss)
 
+
 class SenseKey:
     ''' Sensekey of a synset. Another way to identify a synset is to use the combination synsetid-pos.
     '''
@@ -127,6 +134,7 @@ class SenseKey:
     def __str__(self):
         return "sensekey: `%s'" % self.sensekey
 
+
 class Term:
     ''' Text form a synset
     '''
@@ -139,16 +147,17 @@ class Term:
 
     def __str__(self):
         return "term: `%s'" % self.term
-        
+
+
 class Synset:
     ''' Each synset object comes with sensekeys (ref: SenseKey), terms (ref: Term), and 3 glosses (ref: GlossRaw).
     '''
 
-    def __init__(self, sid, ofs=None, pos=None):
-        self.sid   = sid
-        self.ofs   = ofs if ofs else sid[1:]
-        self.pos   = pos if pos else sid[0]
-        self.keys  = []       # list of SenseKey
+    def __init__(self, sid):
+        self.sid = SynsetID.from_string(sid)
+        # self.ofs   = ofs if ofs else sid[1:]
+        # self.pos   = pos if pos else sid[0]
+        self.keys = []       # list of SenseKey
         self.terms = []       # list of Term
         self.raw_glosses = [] # list of GlossRaw
         self.glosses = []     # list of Gloss
@@ -170,36 +179,11 @@ class Synset:
         self.glosses.append(g)
         return g
 
-    def get_synsetid(self):
-        ''' Get canonical synset ID (E.g. 12345678-n)
-        '''
-        return "%s-%s" % (self.ofs, self.pos)
-
     def get_orig_gloss(self):
         for gr in self.raw_glosses:
             if gr.cat == 'orig':
                 return gr.gloss
         return ''
-
-    def to_wn30_synsetid(self):
-        if len(self.keys) > 0:
-            parts = self.keys[0].sensekey.split("%") # E.g. cause_to_be_perceived%2:39:00::
-            if len(parts) == 2:
-                nums = parts[1].split(":")
-                if len(nums) >= 3:
-                    return nums[0] + self.ofs
-        print("Invalid sensekey")
-        return ''
-
-    def to_wnsqlite_sid(self):
-        posnum = '4'
-        if self.pos == 'n':
-            posnum = '1'
-        elif self.pos == 'v':
-            posnum = '2'
-        elif self.pos == 'a':
-            posnum = '3'
-        return posnum + str(self.ofs)
 
     def get_gramwords(self, nopunc=True):
         words = []
@@ -221,33 +205,40 @@ class Synset:
                 terms.extend(term.term.split())
         return uniquify(terms)
 
+    def __repr__(self):
+        if self.terms:
+            return "{sid} ({term})".format(sid=self.sid.to_canonical(), term=self.terms[0].term)
+        else:
+            return self.sid.to_canonical()
+    
     def __str__(self):
-        return "sid: %s | terms: %s | keys: %s | glosses: %s | ofs-pos: %s-%s" % (
-            self.sid, self.terms, self.keys, self.glosses, self.ofs, self.pos)
-   
+        return "sid: %s | terms: %s | keys: %s | glosses: %s" % (
+            self.sid, self.terms, self.keys, self.glosses)
+
+
 class Gloss:
     def __init__(self, synset, origid, cat, gid):
         self.synset = synset
         self.gid = gid
-        self.origid = origid # Original ID from Gloss WordNet
+        self.origid = origid  # Original ID from Gloss WordNet
         self.cat = cat
-        self.items = []      # list of GlossItem objects
-        self.tags = []       # Sense tags
-        self.groups = []     # Other group labels
+        self.items = []       # list of GlossItem objects
+        self.tags = []        # Sense tags
+        self.groups = []      # Other group labels
         pass
 
     def get_tagged_sensekey(self):
-        return [ x.sk for x in self.tags if x ]
+        return [x.sk for x in self.tags if x]
 
-    def get_gramwords(self,nopunc=True):
+    def get_gramwords(self, nopunc=True):
         tokens = []
         for item in self.items:
-            words = [ x for x in item.get_gramwords(nopunc)  if x ]
+            words = [x for x in item.get_gramwords(nopunc) if x]
             tokens.extend(words)
         return tokens
 
     def add_gloss_item(self, tag, lemma, pos, cat, coll, rdf, origid, sep=None, text=None, itemid=-1):
-        gt = GlossItem(self, tag, lemma, pos, cat, coll, rdf, origid, sep, text,itemid)
+        gt = GlossItem(self, tag, lemma, pos, cat, coll, rdf, origid, sep, text, itemid)
         gt.order = len(self.items)
         self.items.append(gt)
         return gt
@@ -257,14 +248,21 @@ class Gloss:
         self.tags.append(tag)
         return tag
 
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, idx):
+        return self.items[idx]
+
     def text(self):
-        return ' '.join([ x.text for x in self.items ])
+        return ' '.join([x.text for x in self.items]).replace(' ;', ';')
 
     def __repr__(self):
         return "gloss-%s" % (self.cat)
 
     def __str__(self):
-        return "{Gloss oid='%s' type='%s' items: %s}" % (self.origid, self.cat, self.items)   
+        return "{Gloss oid='%s' type='%s' items: %s}" % (self.origid, self.cat, self.items)
+
 
 class GlossItem:
     ''' A word token (belong to a gloss)

@@ -45,6 +45,8 @@ import itertools
 
 from puchikarui import Schema, Execution#, DataSource, Table
 
+from ..models import SynsetID
+
 from .models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
 
 #-----------------------------------------------------------------------
@@ -69,7 +71,7 @@ class SQLiteGWordNet:
         self.db_path = db_path
         self.schema = GWordNetSchema(self.db_path)
         self.verbose = verbose
-        
+
     def setup(self, script_file):
         with Execution(self.schema) as exe:
             if self.verbose:
@@ -80,13 +82,13 @@ class SQLiteGWordNet:
                     print(meta)
             except Exception as e:
                 print("Error while setting up database ... e = %s" % e)
-        pass # end setup()
-    
+        pass  # end setup()
+
     def insert_synset(self, synset):
         ''' Helper method for storing a single synset
         '''
         self.insert_synsets([synset])
-    
+
     def insert_synsets(self, synsets):
         ''' Store synsets with related information (sensekeys, terms, gloss, etc.)
         '''
@@ -96,20 +98,21 @@ class SQLiteGWordNet:
             glossitemid_seed = itertools.count()
             sensetagid_seed = itertools.count()
             for synset in synsets:
-                exe.schema.synset.insert([synset.sid, synset.ofs, synset.pos])
+                sid = synset.sid.to_gwnsql()
+                exe.schema.synset.insert([sid, synset.sid.offset, synset.sid.pos])
                 # term;
                 for term in synset.terms:
-                    exe.schema.term.insert([synset.sid, term.term])
+                    exe.schema.term.insert([sid, term.term])
                 # sensekey;
                 for sk in synset.keys:
-                    exe.schema.sensekey.insert([synset.sid, sk.sensekey])
+                    exe.schema.sensekey.insert([sid, sk.sensekey])
                 # gloss_raw;
                 for gloss_raw in synset.raw_glosses:
-                    exe.schema.gloss_raw.insert([synset.sid, gloss_raw.cat, gloss_raw.gloss])
+                    exe.schema.gloss_raw.insert([sid, gloss_raw.cat, gloss_raw.gloss])
                 # gloss; DB: id origid sid cat | OBJ: gid origid cat
                 for gloss in synset.glosses:
                     gloss.gid = next(glossid_seed)
-                    exe.schema.gloss.insert([gloss.gid, gloss.origid, synset.sid, gloss.cat])
+                    exe.schema.gloss.insert([gloss.gid, gloss.origid, sid, gloss.cat])
                     # glossitem;
                     # OBJ | gloss, order, tag, lemma, pos, cat, coll, rdf, origid, sep, text
                     # DB  | id ord gid tag lemma pos cat coll rdf sep text origid
@@ -133,23 +136,24 @@ class SQLiteGWordNet:
         if not synsets:
             synsets = SynsetCollection()
         for result in results:
-            ss = Synset(result.id, result.offset, result.pos)
+            ss = Synset(result.id)
+            sid = ss.sid.to_gwnsql()
             # term;
-            terms = exe.schema.term.select(where='sid=?', values=[ss.sid])
+            terms = exe.schema.term.select(where='sid=?', values=[sid])
             for term in terms:
                 ss.add_term(term.term)
             # sensekey;
-            sks = exe.schema.sensekey.select(where='sid=?', values=[ss.sid])
+            sks = exe.schema.sensekey.select(where='sid=?', values=[sid])
             for sk in sks:
                 ss.add_sensekey(sk.sensekey)
             # gloss_raw | sid cat gloss
-            rgs = exe.schema.gloss_raw.select(where='sid=?', values=[ss.sid])
+            rgs = exe.schema.gloss_raw.select(where='sid=?', values=[sid])
             for rg in rgs:
                 ss.add_raw_gloss(rg.cat, rg.gloss)
             # gloss; DB: id origid sid cat | OBJ: gid origid cat
-            glosses = exe.schema.gloss.select(where='sid=?', values=[ss.sid])
+            glosses = exe.schema.gloss.select(where='sid=?', values=[sid])
             for gl in glosses:
-                gloss = ss.add_gloss(gl.origid, gl.cat, gl.id)  
+                gloss = ss.add_gloss(gl.origid, gl.cat, gl.id)
                 # glossitem;
                 # OBJ | gloss, order, tag, lemma, pos, cat, coll, rdf, origid, sep, text
                 # DB  | id ord gid tag lemma pos cat coll rdf sep text origid
@@ -169,20 +173,30 @@ class SQLiteGWordNet:
         return synsets
 
     def get_synset_by_id(self, synsetid):
-        synsets = SynsetCollection()
-        with Execution(self.schema) as exe:
-            # synset;
-            results = exe.schema.synset.select(where='id = ?', values=[synsetid])
-            if results:
-                return self.results_to_synsets(results, exe, synsets)
-        return synsets
+        # ensure that synsetid is an instance of SynsetID
+        if synsetid is None:
+            raise Exception("Synset ID cannot be None")
+        elif not isinstance(synsetid, SynsetID):
+            sid = SynsetID.from_string(synsetid)
+        else:
+            sid = synsetid
 
-    def get_synset_by_ids(self, synsetids):
+        with Execution(self.schema) as exe:
+            # synset;
+            results = exe.schema.synset.select(where='id=?', values=[sid.to_gwnsql()])
+            if results:
+                synsets = self.results_to_synsets(results, exe)
+                if len(synsets) != 1:
+                    raise Exception("Cannot find synset with provided ID: {})".format(synsetid))
+        return synsets[0] if len(synsets) == 1 else None
+
+    def get_synsets_by_ids(self, synsetids):
+        sids = [str(SynsetID.from_string(x).to_gwnsql()) for x in synsetids]
         synsets = SynsetCollection()
         with Execution(self.schema) as exe:
             # synset;
-            results = exe.schema.synset.select(where='id IN (%s)' % (','.join(['?'] * len(synsetids)))
-                , values=synsetids)
+            wherecon = 'id IN (%s)' % (','.join(['?'] * len(sids)))
+            results = exe.schema.synset.select(where=wherecon, values=sids)
             if results:
                 return self.results_to_synsets(results, exe, synsets)
         return synsets
@@ -198,15 +212,16 @@ class SQLiteGWordNet:
                 else:
                     return results
         return synsets
-        
+
     def get_synset_by_sk(self, sensekey):
-        synsets = SynsetCollection()
         with Execution(self.schema) as exe:
             # synset;
             results = exe.schema.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=[sensekey])
             if results:
-                return self.results_to_synsets(results, exe, synsets)
-        return synsets
+                synsets = self.results_to_synsets(results, exe)
+                if synsets and len(synsets) == 1:
+                    return synsets[0]
+        raise Exception("Could not find any synset with provided key {}".format(sensekey))
 
     def get_synset_by_sks(self, sensekeys):
         synsets = SynsetCollection()

@@ -53,7 +53,7 @@ class POS:
     ADJECTIVE_SATELLITE = 5
 
     NUMS  = '12345'
-    POSES = 'nvasr'
+    POSES = 'nvars'
     num2pos_map = dict(zip(NUMS, POSES))
     pos2num_map = dict(zip(POSES, NUMS))
 
@@ -69,7 +69,7 @@ class POS:
             return POS.pos2num_map[pos]
 
 
-class SynsetID:
+class SynsetID(object):
 
     WNSQL_FORMAT = re.compile(r'(?P<pos>[12345nvasr])(?P<offset>\d{8})')
     CANONICAL_FORMAT = re.compile(r'(?P<offset>\d{8})-?(?P<pos>[nvasr])')
@@ -98,21 +98,26 @@ class SynsetID:
                 pos = m.group('pos')
                 return SynsetID(offset, pos)
             else:
-                raise Exception("Invalid synsetid format")
+                raise Exception("Invalid synsetid format (provided: {})".format(synsetid))
 
     def to_canonical(self):
+        ''' Wordnet synset ID (canonical format: 12345678-x)
+        '''
         return "{offset}-{pos}".format(offset=self.offset, pos=self.pos)
 
     def to_wnsql(self):
-        '''WordNet SQLite synsetID format
+        '''WordNet SQLite synsetID format (112345678)
            Reference: https://sourceforge.net/projects/wnsql/'''
         return "{posnum}{offset}".format(offset=self.offset, posnum=POS.pos2num(self.pos))
 
     def to_gwnsql(self):
-        '''Gloss WordNet SQLite synsetID format'''
+        '''Gloss WordNet SQLite synsetID format (x12345678)'''
         return "{pos}{offset}".format(offset=self.offset, pos=self.pos)
 
     def __eq__(self, other):
+        # make sure that the other instance is a SynsetID object
+        if other and not isinstance(other, SynsetID):
+            other = SynsetID.from_string(str(other))
         return other is not None and self.offset == other.offset and self.pos == other.pos
 
     def __repr__(self):

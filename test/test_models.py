@@ -93,6 +93,18 @@ class TestSynsetIDWrapper(unittest.TestCase):
         self.assertEqual(sid, sid5)
         self.assertEqual(sid, sid6)
 
+    def test_pos(self):
+        self.assertEqual(SynsetID.from_string('112345678').pos, 'n')
+        self.assertEqual(SynsetID.from_string('212345678').pos, 'v')
+        self.assertEqual(SynsetID.from_string('312345678').pos, 'a')
+        self.assertEqual(SynsetID.from_string('412345678').pos, 'r')
+        self.assertEqual(SynsetID.from_string('512345678').pos, 's')
+        self.assertEqual(SynsetID.from_string('n12345678').pos, 'n')
+        self.assertEqual(SynsetID.from_string('v12345678').pos, 'v')
+        self.assertEqual(SynsetID.from_string('a12345678').pos, 'a')
+        self.assertEqual(SynsetID.from_string('r12345678').pos, 'r')
+        self.assertEqual(SynsetID.from_string('s12345678').pos, 's')
+
     def test_synset_wrong_format(self):
         print("Test invalid synset formats")
         self.assertRaises(Exception, lambda: SynsetID.from_string(None))

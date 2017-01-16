@@ -133,13 +133,16 @@ class WordNetSQL:
         self.sk_cache[sk] = result
         return result
 
-    def get_senseinfo_by_sid(self, sid):
-        # make sure that sid is in the correct format
+    def ensure_sid(self, sid):
+        '''Ensure that a given synset ID is an instance of SynsetID'''
         if isinstance(sid, SynsetID):
             sid = sid.to_wnsql()
         else:
             sid = SynsetID.from_string(str(sid)).to_wnsql()
-        # 
+        return sid
+
+    def get_senseinfo_by_sid(self, synsetid):
+        sid = self.ensure_sid(synsetid)
         if sid in self.sid_cache:
             return self.sid_cache[sid]
         result = None
@@ -148,7 +151,13 @@ class WordNetSQL:
                 , columns=['pos', 'synsetid', 'sensekey', 'definition', 'tagcount'])
         self.sid_cache[sid] = result
         return result
- 
+
+    def get_examples_by_sid(self, synsetid):
+        sid = self.ensure_sid(synsetid)
+        with Execution(self.schema) as exe:
+            result = exe.schema.ex.select(where='synsetid=?', values=[sid], orderby='sampleid')
+        return result
+
     def get_all_sensekeys(self):
         results = None
         with Execution(self.schema) as exe:
@@ -388,14 +397,14 @@ class WordNetSQL:
             return self.sid_index[synset_id]
         else:
             return None
-    
+
     # Search a synset by sensekey
     def search_by_sk(self, wnsk):
         if wnsk in self.sk_index:
             return self.sk_index[wnsk]
         else:
             return 'N/A'
-    
+
     @staticmethod
     def get_default(auto_cache=True):
         wnsql = WordNetSQL(YLConfig.WORDNET_30_PATH, YLConfig.WORDNET_30_GLOSSTAG_PATH)

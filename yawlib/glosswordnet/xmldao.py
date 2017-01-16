@@ -32,7 +32,7 @@ Adapted from: https://github.com/letuananh/lelesk
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = ["Le Tuan Anh"]
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -41,21 +41,34 @@ __status__ = "Prototype"
 
 #-----------------------------------------------------------------------
 
+import logging
 from lxml import etree
 
 from chirptext.leutile import StringTool, Counter
 
-from .models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
+from .models import SynsetCollection
+from .models import Synset
+from .models import GlossRaw
+from .models import SenseKey
+from .models import Term
+from .models import Gloss
+from .models import GlossGroup
+from .models import SenseTag
+from .models import GlossItem
 
 #-----------------------------------------------------------------------
 
+
 class XMLGWordNet:
     ''' GWordNet XML Data Access Object
-    '''    
-    def __init__(self, memory_save=False, verbose=False):
+    '''
+    def __init__(self, filenames, memory_save=False, verbose=False):
         self.synsets = SynsetCollection()
         self.memory_save = memory_save
         self.verbose = verbose
+        if filenames:
+            self.filenames = filenames
+            self.readfiles(filenames)
 
     def readfiles(self, files):
         ''' Read from multiple XML files
@@ -63,28 +76,27 @@ class XMLGWordNet:
         for filename in files:
             self.read(filename)
 
-    def read(self, file_name):
+    def read(self, filename):
         ''' Read all synsets from an XML file
         '''
-        if self.verbose:
-            print('Loading %s' %file_name)
-        tree = etree.iterparse(file_name)
-        c = Counter()
+        logging.info('Loading %s' % filename)
+        with open(filename, 'rb') as infile:
+            tree = etree.iterparse(infile)
+            c = Counter()
+            for event, element in tree:
+                if event == 'end' and element.tag == 'synset':
+                    synset = self.parse_synset(element)
+                    element.clear()
+                    self.synsets.add(synset)
+                # end if end-synset
+                c.count(element.tag)
 
-        for event, element in tree:
-            if event == 'end' and element.tag == 'synset':
-                synset = self.parse_synset(element)
-                element.clear()
-                self.synsets.add(synset)
-            # end if end-synset
-            c.count(element.tag)
-
-        if self.verbose:
-            c.summarise()
-        return self.synsets
+            if self.verbose:
+                c.summarise()
+            return self.synsets
 
     def parse_synset(self, element):
-        synset = Synset(element.get('id'),element.get('ofs'),element.get('pos')) if not self.memory_save else Synset(element.get('id'), '', '')
+        synset = Synset(element.get('id'))
         for child in element:
             if child.tag == 'terms':
                 for grandchild in child:

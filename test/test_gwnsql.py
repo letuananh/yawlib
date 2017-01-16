@@ -74,50 +74,34 @@ GLOSSTAG_XML_FILES = [
 
 ########################################################################
 
-def get_wn():
-    return WSQL(YLConfig.WORDNET_30_PATH)
-
 
 def get_gwn():
     return GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
 
 
-class TestHelperMethods(unittest.TestCase):
-
-    def test_dump_synset(self):
-        ss = get_synset_by_id(YLConfig.WORDNET_30_GLOSS_DB_PATH, '01775535-v')
-        self.assertIsNotNone(ss)
-        self.assertGreater(len(ss.terms), 0)
-        self.assertGreater(len(ss.keys), 0)
-        self.assertGreater(len(ss.glosses), 0)
-        pass
-
-
 class TestGlossWordNetSQL(unittest.TestCase):
 
-    def test_get_freq(self):
-        # WSQL should support get_tagcount
-        db = WSQL(WORDNET_30_PATH)
-        c = db.get_tagcount('100002684')
-        self.assertEqual(c, 51)
-
-    def test_synset_info(self):
-        xmlwn = XMLGWordNet()
-        xmlwn.read(MOCKUP_SYNSETS_DATA)
-
-        ss = xmlwn.synsets[1]
+    def test_get_synset_by_id(self):
+        gwn = get_gwn()
+        ss = gwn.get_synset_by_id('00001740-r')
         self.assertIsNotNone(ss)
-        self.assertEqual(len(ss.raw_glosses), 2)
-        self.assertTrue(ss.raw_glosses[0].gloss)
+        self.assertEqual('00001740-r', ss.sid)
+        self.assertEqual('a cappella', ss.terms[0].term)
+        self.assertEqual('a_cappella%4:02:00::', ss.keys[0].sensekey)
+        self.assertEqual(2, len(ss.glosses))
+        self.assertEqual('without musical accompaniment;', ss.glosses[0].text())
+        self.assertEqual('they performed a cappella;', ss.glosses[1].text())
+        pass
 
-        glosses = combine_glosses(ss.glosses)
-        self.assertEqual(len(glosses), 2)
-        # for gl in glosses:
-        #     print("#\n\t>%s\n\t>%s\n\t>%s\n" % (gl.items, gl.tags, gl.groups))
+    def test_get_synsets_by_ids(self):
+        gwn = get_gwn()
+        synsets = gwn.get_synsets_by_ids(['01828736-v', '00001740-r'])
+        self.assertEqual(len(synsets), 2)
+        print(synsets)
 
     def test_get_gloss_synsets(self):
         print("Test get glossed synset(s)")
-        db = GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
+        db = get_gwn()
         glosses = db.schema.gloss.select()
         # select glosses
         print("Gloss count: {}".format(len(glosses)))

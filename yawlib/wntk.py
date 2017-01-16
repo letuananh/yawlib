@@ -52,7 +52,7 @@ __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
-# import sys
+import sys
 import os.path
 import argparse
 import itertools
@@ -64,6 +64,10 @@ from collections import namedtuple
 from chirptext.leutile import StringTool, Counter, Timer, uniquify, header, FileTool
 
 from .config import YLConfig
+from .helpers import config_logging, add_logging_config
+from .helpers import add_wordnet_config
+from .helpers import show_info
+from .helpers import get_wn, get_gwn, get_gwnxml
 from .helpers import dump_synsets, dump_synset, get_synset_by_id, get_synset_by_sk, get_synsets_by_term
 from .glosswordnet import XMLGWordNet, SQLiteGWordNet, Gloss
 from .wordnetsql import WordNetSQL as WSQL
@@ -78,21 +82,10 @@ except Exception as e:
 #-----------------------------------------------------------------------
 # >>> WARNING: Do NOT change these values here. Change config.py instead!
 #
-WORDNET_30_PATH          = YLConfig.WORDNET_30_PATH
-WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
-WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
+
 DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
 GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
 GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
-glosstag_files = lambda x : [
-    os.path.join(x, 'adv.xml')
-    ,os.path.join(x, 'adj.xml')
-    ,os.path.join(x, 'verb.xml')
-    ,os.path.join(x, 'noun.xml')
-    ]
-MERGED_FOLDER            = os.path.join(WORDNET_30_GLOSSTAG_PATH , 'merged')
-GLOSSTAG_XML_FILES       = glosstag_files(MERGED_FOLDER)
 MISALIGNED               = FileTool.abspath('data/misaligned.xml')
 
 #-----------------------------------------------------------------------
@@ -454,57 +447,37 @@ def smart_search(sentence, words, getitem=lambda x:x):
 
 #--------------------------------------------------------
 
-def read_xmlwn(xml_filenames=GLOSSTAG_XML_FILES):
-    ''' Read all synsets in XML format
+
+def convert(args):
+    ''' Convert Gloss WordNet XML into SQLite format
     '''
-    header("Extracting Gloss WordNet (XML)")
-    print("XML files: %s" % (xml_filenames))
+    createdb = True
+    merged_folder = os.path.join(args.gloss_xml, 'merged')
+    print("Path to glosstag folder: %s" % (merged_folder))
+    print("Path to output database: %s" % (args.glossdb))
+    print("Script to execute: %s" % (DB_INIT_SCRIPT))
+
+    if os.path.isfile(args.glossdb):
+        print("DB file exists (%s | size: %s)" % (args.glossdb, os.path.getsize(args.glossdb)))
+        answer = input("If you want to overwrite this file, please type CONFIRM: ")
+        if answer != "CONFIRM":
+            print("Script aborted!")
+            exit()
+
+    db = get_gwn(args)
+    if createdb:
+        header('Preparing database file ...')
+        db.setup(DB_INIT_SCRIPT)
+    header('Importing data from XML to SQLite')
     t = Timer()
-    xmlgwn = XMLGWordNet()
-    for xml_file in xml_filenames:
-        t.start('Reading file: %s' % xml_file)
-        xmlgwn.read(xml_file)
-        t.end("Extraction completed %s" % xml_file)
-    return xmlgwn
-
-def xml2db(xml_filenames, db):
-    ''' Convert Gloss WordNet synsets in XML file(s) into SQLite
-    '''
-    t = Timer()
-
     header("Extracting Gloss WordNet (XML)")
-    xmlgwn = read_xmlwn(xml_filenames)
-
+    xmlgwn = get_gwnxml(args)
     header("Inserting data into SQLite database")
     t.start()
     db.insert_synsets(xmlgwn.synsets)
     t.end('Insertion completed.')
     pass
 
-def convert(wng_loc, wng_db_loc, createdb):
-    ''' Convert Gloss WordNet into SQLite
-    '''
-    merged_folder = os.path.join(wng_loc, 'merged')
-    
-    print("Path to glosstag folder: %s" % (merged_folder))
-    print("Path to output database: %s" % (wng_db_loc))
-    print("Script to execute: %s" % (DB_INIT_SCRIPT))
-
-    if os.path.isfile(wng_db_loc):
-        print("DB file exists (%s | size: %s)" % (wng_db_loc,os.path.getsize(wng_db_loc)))
-        answer = input("If you want to overwrite this file, please type CONFIRM: ")
-        if answer != "CONFIRM":
-            print("Script aborted!")
-            exit()
-
-    db = SQLiteGWordNet(wng_db_loc)
-    if createdb:
-        header('Preparing database file ...')
-        db.setup(DB_INIT_SCRIPT)
-    #--
-    header('Importing data from XML to SQLite')
-    xml2db(glosstag_files(merged_folder), db)
-    pass
 
 def export_ntumc(wng_loc, wng_db_loc, mockup=False):
     '''
@@ -655,6 +628,29 @@ def extract_synsets_xml():
         xfile.write(etree.tostring(synsets, pretty_print=True))
     print("Done!")
 
+
+##############################################################
+# MAIN
+##############################################################
+
+
+def search_by_id(args):
+    gwn = get_gwn(args)
+    get_synset_by_id(gwn, args.synsetid, compact=not args.detail)
+
+
+def search_by_key(args):
+    gwn = get_gwn(args)
+    get_synset_by_sk(gwn, args.sensekey, compact=not args.detail)
+    pass
+
+
+def search_by_lemma(args):
+    gwn = get_gwn(args)
+    get_synsets_by_term(gwn, args.lemma, args.pos, compact=not args.detail)
+    pass
+
+
 def main():
     '''Main entry of wntk
 
@@ -662,52 +658,51 @@ def main():
     # It's easier to create a user-friendly console application by using argparse
     # See reference at the top of this script
     parser = argparse.ArgumentParser(description="WordNet Toolkit - For accessing and manipulating WordNet")
-    
-    # Positional argument(s)
-    # parser.add_argument('task', help='Task to perform (create/import/synset)')
+    add_logging_config(parser)
+    add_wordnet_config(parser)
+    parser.add_argument('-p', '--pos', help='Specify part-of-speech')
 
-    parser.add_argument('-i', '--wng_location', help='Path to Gloss WordNet folder (default = ~/wordnet/glosstag')
-    parser.add_argument('-o', '--wng_db', help='Path to database file (default = ~/wordnet/glosstag.db')
     parser.add_argument('-c', '--create', help='Create DB and then import data', action='store_true')
-    parser.add_argument('-m', '--mockup', help='Use mockup data in dev_mode', action='store_true')
-    parser.add_argument('-n', '--ntumc', help='Extract GlossWordNet to NTU-MC', action='store_true')
-    parser.add_argument('-d', '--dev', help='Dev mode (do not use)', action='store_true')
     parser.add_argument('-s', '--synset', help='Retrieve synset information by synsetid')
     parser.add_argument('-k', '--sensekey', help='Retrieve synset information by sensekey')
     parser.add_argument('-t', '--term', help='Retrieve synset information by term (word form)')
-    parser.add_argument('-p', '--pos', help='Specify part-of-speech')
-    parser.add_argument('-a', '--all', help='Cache all synsets', action='store_true')
-    parser.add_argument('-w', '--wnsql', help='Location to WordNet SQLite 3.0 database')
-    parser.add_argument('-g', '--glosswn', help='Location to Gloss WordNet SQLite database')
-    parser.add_argument('-x', '--extract', help='Extract XML synsets from glosstag', action='store_true')
 
-    # Optional argument(s)
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("-v", "--verbose", action="store_true")
-    group.add_argument("-q", "--quiet", action="store_true")
-    
+    tasks = parser.add_subparsers(title='task', help='Task to be performed')
+
+    # Convert GWordnetXML into GWordnetSQL
+    cmd_convert = tasks.add_parser('create', help='Create DB and then import data')
+    cmd_convert.set_defaults(func=convert)
+    # Search synsets by synsetID
+    cmd_getbyid = tasks.add_parser('synset', help='Retrieve synset information by synsetid')
+    cmd_getbyid.add_argument('synsetid', help='Synset ID (e.g. 12345678-n)')
+    cmd_getbyid.set_defaults(func=search_by_id)
+    cmd_getbyid.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
+    # by sensekey
+    cmd_getbykey = tasks.add_parser('key', help='Retrieve synset information by sensekey')
+    cmd_getbykey.set_defaults(func=search_by_key)
+    cmd_getbykey.add_argument('sensekey', help='sensekey (e.g. )')
+    cmd_getbykey.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
+    # by lemma (term)
+    cmd_getbylemma = tasks.add_parser('lemma', help='Retrieve synset information by lemma (term)')
+    cmd_getbylemma.add_argument('lemma', help='lemma (term, word form, etc.)')
+    cmd_getbylemma.add_argument('pos', nargs='?', help='Part-of-speech (a, n, r, x)')
+    cmd_getbylemma.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
+    cmd_getbylemma.set_defaults(func=search_by_lemma)
+    # show info
+    cmd_info = tasks.add_parser('info', help='Show configuration information')
+    cmd_info.set_defaults(func=show_info)
+
     # Parse input arguments
-    args = parser.parse_args()
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    elif args.quiet:
-        logging.basicConfig(level=logging.ERROR)
+    if len(sys.argv) > 1:
+        args = parser.parse_args()
+        config_logging(args)
+        args.func(args)
     else:
-        logging.basicConfig(level=logging.INFO)
-
-    wng_loc = args.wng_location if args.wng_location else WORDNET_30_GLOSSTAG_PATH
-    wng_db_loc = args.wng_db if args.wng_db else (args.glosswn if args.glosswn else WORDNET_30_GLOSS_DB_PATH)
-    wn30_loc = args.wnsql if args.wnsql else WORDNET_30_PATH
-
+        parser.print_help()
+    return
     # Now do something ...
-    if args.dev:
-        dev_mode(wng_db_loc, args.mockup)
-    elif args.extract:
-        extract_synsets_xml()
-    elif args.create:
+    if args.create:
         convert(wng_loc, wng_db_loc, True)
-    elif args.ntumc:
-        export_ntumc(wng_loc, wng_db_loc, args.mockup)
     elif args.synset:
         get_synset_by_id(wng_db_loc, args.synset)
     elif args.sensekey:
@@ -716,9 +711,7 @@ def main():
         cache_all_synsets(wng_db_loc)
     elif args.term:
         get_synsets_by_term(wng_db_loc, args.term, args.pos)
-    else:
-        parser.print_help()
-    pass # end main()
+
 
 if __name__ == "__main__":
     main()
