@@ -85,7 +85,9 @@ def get_gwn():
 class TestHelperMethods(unittest.TestCase):
 
     def test_dump_synset(self):
-        ss = get_synset_by_id(YLConfig.WORDNET_30_GLOSS_DB_PATH, '01775535-v')
+        print("Test get synset by ID")
+        gwn = get_gwn()
+        ss = get_synset_by_id(gwn, '01775535-v')
         self.assertIsNotNone(ss)
         self.assertGreater(len(ss.terms), 0)
         self.assertGreater(len(ss.keys), 0)
