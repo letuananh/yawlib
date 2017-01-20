@@ -62,7 +62,7 @@ from .models import GlossItem
 class XMLGWordNet:
     ''' GWordNet XML Data Access Object
     '''
-    def __init__(self, filenames, memory_save=False, verbose=False):
+    def __init__(self, filenames=None, memory_save=False, verbose=False):
         self.synsets = SynsetCollection()
         self.memory_save = memory_save
         self.verbose = verbose

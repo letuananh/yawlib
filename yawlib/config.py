@@ -52,6 +52,7 @@ class YLConfig:
 
     WORDNET_30_GLOSSTAG_PATH = full_path('~/wordnet/glosstag')
     WORDNET_30_GLOSS_DB_PATH = full_path('~/wordnet/glosstag.db')
+    OMW_DB_PATH = full_path('~/wordnet/wn-ntumc.db')
     # Gloss WordNet can be downloaded from: 
     #       http://wordnet.princeton.edu/glosstag.shtml
 
