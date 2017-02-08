@@ -46,14 +46,9 @@ import os
 import argparse
 import unittest
 from chirptext.leutile import FileTool
-from yawlib.wordnetsql import WordNetSQL as WSQL
 from yawlib.glosswordnet import XMLGWordNet
 from yawlib.glosswordnet import SQLiteGWordNet as GWNSQL
 from yawlib.glosswordnet import Gloss
-from yawlib.helpers import get_synset_by_id
-from yawlib.helpers import get_synset_by_sk
-from yawlib.helpers import get_synsets_by_term
-from yawlib.helpers import dump_synset, dump_synsets
 from yawlib.wntk import combine_glosses
 
 from yawlib.config import YLConfig
@@ -74,65 +69,23 @@ GLOSSTAG_XML_FILES = [
 
 ########################################################################
 
-def get_wn():
-    return WSQL(YLConfig.WORDNET_30_PATH)
+class TestGlossWordNetXML(unittest.TestCase):
 
-
-def get_gwn():
-    return GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
-
-
-class TestHelperMethods(unittest.TestCase):
-
-    def test_dump_synset(self):
-        print("Test get synset by ID")
-        gwn = get_gwn()
-        ss = get_synset_by_id(gwn, '01775535-v')
-        self.assertIsNotNone(ss)
-        self.assertGreater(len(ss.terms), 0)
-        self.assertGreater(len(ss.keys), 0)
-        self.assertGreater(len(ss.glosses), 0)
-        pass
-
-
-class TestGlossWordNetSQL(unittest.TestCase):
-
-    def test_get_freq(self):
-        # WSQL should support get_tagcount
-        db = WSQL(WORDNET_30_PATH)
-        c = db.get_tagcount('100002684')
-        self.assertEqual(c, 51)
-
-    def test_synset_info(self):
+    def test_extract_xml(self):
+        ''' Test data extraction from XML file
+        '''
         xmlwn = XMLGWordNet()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
-
-        ss = xmlwn.synsets[1]
-        self.assertIsNotNone(ss)
-        self.assertEqual(len(ss.raw_glosses), 2)
-        self.assertTrue(ss.raw_glosses[0].gloss)
-
-        glosses = combine_glosses(ss.glosses)
-        self.assertEqual(len(glosses), 2)
-        # for gl in glosses:
-        #     print("#\n\t>%s\n\t>%s\n\t>%s\n" % (gl.items, gl.tags, gl.groups))
-
-    def test_get_gloss_synsets(self):
-        print("Test get glossed synset(s)")
-        db = GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
-        glosses = db.schema.gloss.select()
-        # select glosses
-        print("Gloss count: {}".format(len(glosses)))
-        print(glosses[:5])
-        # select glossitems
-        # gitems = db.schema.glossitem.select(columns='id ord gid lemma'.split())
-        # print("Glossitem count: {}".format(len(gitems)))
-        # print(gitems[:5])
-        # fetch all synsets
-        # ss = db.all_synsets()
-        # print("Synsets: {}".format(len(ss)))
-        # print(ss[:5])
-        pass
+        synsets = xmlwn.synsets
+        self.assertIsNotNone(synsets)
+        self.assertEqual(223, len(synsets))
+        # first synset should be 00001740-r
+        ss0 = synsets[0]
+        self.assertEqual('00001740-r', ss0.sid)
+        self.assertEqual('a cappella', ss0.terms[0].term)
+        self.assertEqual('a_cappella%4:02:00::', ss0.keys[0].sensekey)
+        self.assertEqual(2, len(ss0.glosses))
+        self.assertEqual(5, len(ss0.glosses[1]))
 
 ########################################################################
 

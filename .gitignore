@@ -1,3 +1,8 @@
+data/glosstag*.txt
+data/wn30*.txt
+*.py~
+*.py#
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

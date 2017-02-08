@@ -10,23 +10,23 @@ Latest version can be found at https://github.com/letuananh/lelesk
 
 # Copyright (c) 2014, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, lelesk"
@@ -42,57 +42,41 @@ __status__ = "Prototype"
 import itertools
 import sqlite3
 from collections import defaultdict as dd
-
 from puchikarui import Schema, Execution#, DataSource, Table
-
 from ..config import YLConfig 
 from ..models import SenseInfo
+from ..models import SynsetID
 from ..glosswordnet.models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
 
 #-----------------------------------------------------------------------
 
+
 class WordNet3Schema(Schema):
+    
+    '''SQLite schema for WordNetSQL (Princeton WordNet version 3.0)'''
     def __init__(self, data_source=None):
         Schema.__init__(self, data_source)
         self.add_table('wordsXsensesXsynsets', 'wordid lemma casedwordid synsetid senseid sensenum lexid tagcount sensekey pos lexdomainid definition'.split(), alias='wss')
         self.add_table('sensesXsemlinksXsenses', 'linkid ssynsetid swordid ssenseid scasedwordid ssensenum slexid stagcount ssensekey spos slexdomainid sdefinition dsynsetid dwordid dsenseid dcasedwordid dsensenum dlexid dtagcount dsensekey dpos dlexdomainid ddefinition'.split(), alias='sss')
+        self.add_table('synsets', 'synsetid pos definition'.split(), alias='ss')
+        self.add_table('samples', 'synsetid sampleid sample'.split(), alias='ex')
 
-class WordNetNTUMCSchema(Schema):
-    def __init__(self, data_source=None):
-        Schema.__init__(self, data_source)
-        self.add_table('synset', 'synset pos name src'.split(), alias='ss')
-        self.add_table('word', 'wordid lang lemma pron pos'.split(), alias='word')
-        self.add_table('synlink', 'synset1 synset2 link src'.split(), alias='synlink')
-        self.add_table('sense', 'synset wordid lang rank lexid freq src'.split(), alias='sense')
-        self.add_table('synset_def', 'synset lang def sid'.split(), alias='sdef')
-        self.add_table('synset_ex', 'synset lang def sid'.split(), alias='sex')
-
-class WordNetNTUMC:
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.schema = WordNetNTUMCSchema(self.db_path)
-        # some cache here?
-        
-    def get_all_synsets(self):
-        with Execution(self.schema) as exe:
-            return exe.schema.ss.select()
-            
-    def get_synset_def(self, sid):
-        with Execution(self.schema) as exe:
-            return exe.schema.synset_def.select(where='synset=?', values=[sid])
-    
 
 class WordNetSQL:
+
     def __init__(self, db_path):
         self.db_path = db_path
         self.schema = WordNet3Schema(self.db_path)
-        
         # Caches
         self.sk_cache = dd(set)
         self.sid_cache = dd(set)
         self.hypehypo_cache = dd(set)
         self.tagcount_cache = dd(lambda: 0)
-    
+
+    def get_conn(self):
+        conn = sqlite3.connect(self.db_path)
+        return conn
+
     def get_all_synsets(self):
         with Execution(self.schema) as exe:
             return exe.schema.wss.select(columns=['synsetid', 'lemma', 'sensekey', 'tagcount'])
@@ -124,7 +108,16 @@ class WordNetSQL:
         self.sk_cache[sk] = result
         return result
 
-    def get_senseinfo_by_sid(self, sid):
+    def ensure_sid(self, sid):
+        '''Ensure that a given synset ID is an instance of SynsetID'''
+        if isinstance(sid, SynsetID):
+            sid = sid.to_wnsql()
+        else:
+            sid = SynsetID.from_string(str(sid)).to_wnsql()
+        return sid
+
+    def get_senseinfo_by_sid(self, synsetid):
+        sid = self.ensure_sid(synsetid)
         if sid in self.sid_cache:
             return self.sid_cache[sid]
         result = None
@@ -133,7 +126,13 @@ class WordNetSQL:
                 , columns=['pos', 'synsetid', 'sensekey', 'definition', 'tagcount'])
         self.sid_cache[sid] = result
         return result
- 
+
+    def get_examples_by_sid(self, synsetid):
+        sid = self.ensure_sid(synsetid)
+        with Execution(self.schema) as exe:
+            result = exe.schema.ex.select(where='synsetid=?', values=[sid], orderby='sampleid')
+        return result
+
     def get_all_sensekeys(self):
         results = None
         with Execution(self.schema) as exe:
@@ -145,16 +144,17 @@ class WordNetSQL:
             results = exe.schema.wss.select(columns=['pos', 'synsetid', 'sensekey'])
             for result in results:
                 self.sk_cache[result.sensekey] = result
-    
+
     def get_hypehypo(self, sid):
         ''' Get all hypernyms and hyponyms of a given synset
         '''
+        sid = SynsetID.from_string(str(sid))
         if sid in self.hypehypo_cache:
             return self.hypehypo_cache[sid]
         result = None
         with Execution(self.schema) as exe:
             result = exe.schema.sss.select(where='ssynsetid = ? and linkid in (1,2,3,4, 11,12,13,14,15,16,40,50,81)'
-                , values=[sid], columns=['linkid', 'dpos', 'dsynsetid', 'dsensekey', 'dwordid'])
+                , values=[sid.to_wnsql()], columns=['linkid', 'dpos', 'dsynsetid', 'dsensekey', 'dwordid'])
         for r in result:
             self.hypehypo_cache[sid].add(r)
         return self.hypehypo_cache[sid]
@@ -183,7 +183,7 @@ class WordNetSQL:
                 # search in database
                 query = '''SELECT wordid, lemma FROM words
                             WHERE wordid in (%s);''' % ','.join(need_to_find)
-                conn = sqlite3.connect(WORDNET_30_PATH)
+                conn = self.get_conn()
                 c = conn.cursor()
                 result = c.execute(query).fetchall()
                 for (wordid, lemma) in result:
@@ -194,7 +194,7 @@ class WordNetSQL:
 
     def cache_all_words(self):
         query = '''SELECT wordid, lemma FROM words'''
-        conn = sqlite3.connect(WORDNET_30_PATH)
+        conn = self.get_conn()
         c = conn.cursor()
         result = c.execute(query).fetchall()
         for (wordid, lemma) in result:
@@ -232,9 +232,6 @@ class WordNetSQL:
         WordNetSQL.sense_map_cache=lemma_map
         return lemma_map
 
-    def get_conn(self):
-        conn = sqlite3.connect(YLConfig.WORDNET_30_PATH)
-        return conn
 
     lemma_list_cache = dict()
     def search_senses(self, lemma_list, pos=None, a_conn=None):
@@ -260,7 +257,7 @@ class WordNetSQL:
         if a_conn:
             conn = a_conn
         else:
-            conn = sqlite3.connect(WORDNET_30_PATH)
+            conn = self.get_conn()
         c = conn.cursor()
         result = c.execute(_query, _args).fetchall()
 
@@ -283,7 +280,7 @@ class WordNetSQL:
         '''
         if (lemma, pos) in WordNetSQL.sense_cache:
             return WordNetSQL.sense_cache[(lemma, pos)]
-        conn = sqlite3.connect(WORDNET_30_PATH)
+        conn = self.get_conn()
         c = conn.cursor()
         if pos:
             if pos == 'a':
@@ -309,15 +306,14 @@ class WordNetSQL:
         return senses
         
     def cache_all_sense_by_lemma(self):
-        conn = sqlite3.connect(WORDNET_30_PATH)
-        c = conn.cursor()
-        result = c.execute("""SELECT lemma, pos, synsetid, sensekey, definition FROM wordsXsensesXsynsets;""").fetchall()
+        with self.get_conn() as conn:
+            c = conn.cursor()
+            result = c.execute("""SELECT lemma, pos, synsetid, sensekey, definition FROM wordsXsensesXsynsets;""").fetchall()
 
-        for (lemma, pos, synsetid, sensekey, definition) in result:
-            if lemma not in WordNetSQL.sense_cache:
-                WordNetSQL.sense_cache[lemma] = []
-            WordNetSQL.sense_cache[lemma].append(SenseInfo(pos, synsetid, sensekey, '', definition))
-        conn.close()
+            for (lemma, pos, synsetid, sensekey, definition) in result:
+                if lemma not in WordNetSQL.sense_cache:
+                    WordNetSQL.sense_cache[lemma] = []
+                WordNetSQL.sense_cache[lemma].append(SenseInfo(pos, synsetid, sensekey, '', definition))
 
     def get_gloss_by_sk(self, sk):
         sid = self.get_senseinfo_by_sk(sk).get_full_sid()
@@ -369,25 +365,25 @@ class WordNetSQL:
             WordNetSQL.gloss_cache[sid] = None
             return None
         pass
-            
+
     # Search a synset by ID
     def search_by_id(self, synset_id):
-        #print 'searching %s' % synset_id
+        # print 'searching %s' % synset_id
         if synset_id in self.sid_index:
             return self.sid_index[synset_id]
         else:
             return None
-    
+
     # Search a synset by sensekey
     def search_by_sk(self, wnsk):
         if wnsk in self.sk_index:
             return self.sk_index[wnsk]
         else:
             return 'N/A'
-    
+
     @staticmethod
     def get_default(auto_cache=True):
-        wnsql = WordNetSQL(WORDNET_30_PATH, WORDNET_30_GLOSSTAG_PATH)
+        wnsql = WordNetSQL(YLConfig.WORDNET_30_PATH, YLConfig.WORDNET_30_GLOSSTAG_PATH)
         # Cache everything into memory if needed
         if auto_cache:
             wnsql.cache_all_words()
