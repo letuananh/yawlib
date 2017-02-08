@@ -144,16 +144,17 @@ class WordNetSQL:
             results = exe.schema.wss.select(columns=['pos', 'synsetid', 'sensekey'])
             for result in results:
                 self.sk_cache[result.sensekey] = result
-    
+
     def get_hypehypo(self, sid):
         ''' Get all hypernyms and hyponyms of a given synset
         '''
+        sid = SynsetID.from_string(str(sid))
         if sid in self.hypehypo_cache:
             return self.hypehypo_cache[sid]
         result = None
         with Execution(self.schema) as exe:
             result = exe.schema.sss.select(where='ssynsetid = ? and linkid in (1,2,3,4, 11,12,13,14,15,16,40,50,81)'
-                , values=[sid], columns=['linkid', 'dpos', 'dsynsetid', 'dsensekey', 'dwordid'])
+                , values=[sid.to_wnsql()], columns=['linkid', 'dpos', 'dsynsetid', 'dsensekey', 'dwordid'])
         for r in result:
             self.hypehypo_cache[sid].add(r)
         return self.hypehypo_cache[sid]

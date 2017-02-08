@@ -12,27 +12,27 @@ Adapted from: https://github.com/letuananh/lelesk
 
 # Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -43,7 +43,7 @@ __status__ = "Prototype"
 
 import itertools
 
-from puchikarui import Schema, Execution#, DataSource, Table
+from puchikarui import Schema, Execution  # , DataSource, Table
 
 from ..models import SynsetID
 
@@ -51,20 +51,23 @@ from .models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, G
 
 #-----------------------------------------------------------------------
 
+
 class GWordNetSchema(Schema):
     def __init__(self, data_source=None):
         Schema.__init__(self, data_source)
         self.add_table('meta', 'title license WNVer url maintainer'.split())
         self.add_table('synset', 'id offset pos'.split())
-        
+        # --
         self.add_table('term', 'sid term'.split())
         self.add_table('gloss_raw', 'sid cat gloss'.split())
         self.add_table('sensekey', 'sid sensekey'.split())
-        
+        # --
         self.add_table('gloss', 'id origid sid cat'.split())
         self.add_table('glossitem', 'id ord gid tag lemma pos cat coll rdf sep text origid'.split())
         self.add_table('sensetag', 'id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid'.split())
-#-----------------------------------------------------------------------
+
+# -----------------------------------------------------------------------
+
 
 class SQLiteGWordNet:
     def __init__(self, db_path, verbose=False):

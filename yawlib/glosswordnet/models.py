@@ -210,10 +210,9 @@ class Synset:
             return "{sid} ({term})".format(sid=self.sid.to_canonical(), term=self.terms[0].term)
         else:
             return self.sid.to_canonical()
-    
+
     def __str__(self):
-        return "sid: %s | terms: %s | keys: %s | glosses: %s" % (
-            self.sid, self.terms, self.keys, self.glosses)
+        return "(GSynset:{})".format(self.sid)
 
 
 class Gloss:

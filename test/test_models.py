@@ -50,22 +50,20 @@ from yawlib import WordNetSQL as WSQL
 from yawlib import XMLGWordNet
 from yawlib import SQLiteGWordNet
 from yawlib.wntk import combine_glosses
-from yawlib import SynsetID
+from yawlib import SynsetID, SenseInfo
 
 from yawlib.config import YLConfig
-WORDNET_30_PATH          = YLConfig.WORDNET_30_PATH
+WORDNET_30_PATH = YLConfig.WORDNET_30_PATH
 WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
 WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
-DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
-GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
-GLOSSTAG_XML_FILES = [
-    os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH , 'merged', 'adv.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')
-    ]
+DB_INIT_SCRIPT = YLConfig.DB_INIT_SCRIPT
+MOCKUP_SYNSETS_DATA = FileTool.abspath('data/test.xml')
+GLOSSTAG_NTUMC_OUTPUT = FileTool.abspath('data/glosstag_ntumc')
+GLOSSTAG_PATCH = FileTool.abspath('data/glosstag_patch.xml')
+GLOSSTAG_XML_FILES = [os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adv.xml'),
+                      os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml'),
+                      os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml'),
+                      os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')]
 
 
 ########################################################################
@@ -93,6 +91,14 @@ class TestSynsetIDWrapper(unittest.TestCase):
         self.assertEqual(sid, sid5)
         self.assertEqual(sid, sid6)
 
+    def test_as_dict_key(self):
+        s = SynsetID.from_string('12345678n')
+        s2 = SynsetID.from_string('112345678')
+        d = {}
+        d['12345678-n'] = 'abc'
+        self.assertEqual(d[s], 'abc')
+        self.assertIn(s2, d)
+
     def test_pos(self):
         self.assertEqual(SynsetID.from_string('112345678').pos, 'n')
         self.assertEqual(SynsetID.from_string('212345678').pos, 'v')
@@ -117,8 +123,14 @@ class TestSynsetIDWrapper(unittest.TestCase):
         # no POS
         self.assertRaises(Exception, lambda: SynsetID.from_string('12345678'))
 
+    def test_sense_info(self):
+        s = SenseInfo('12345678n', lemma='foo')
+        self.assertEqual(s.synsetid, '12345678-n')
+        self.assertEqual(s.lemma, 'foo')
 
-########################################################################
+
+######################################################################
+
 
 def main():
     unittest.main()

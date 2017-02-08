@@ -12,27 +12,27 @@ Adapted from: https://github.com/letuananh/lelesk
 
 # Copyright (c) 2014, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, lelesk"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = ["Le Tuan Anh"]
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -45,6 +45,7 @@ import re
 
 ########################################################################
 
+
 class POS:
     NOUN = 1
     VERB = 2
@@ -52,7 +53,7 @@ class POS:
     ADVERB = 4
     ADJECTIVE_SATELLITE = 5
 
-    NUMS  = '12345'
+    NUMS = '12345'
     POSES = 'nvars'
     num2pos_map = dict(zip(NUMS, POSES))
     pos2num_map = dict(zip(POSES, NUMS))
@@ -114,6 +115,9 @@ class SynsetID(object):
         '''Gloss WordNet SQLite synsetID format (x12345678)'''
         return "{pos}{offset}".format(offset=self.offset, pos=self.pos)
 
+    def __hash__(self):
+        return hash(self.to_canonical())
+    
     def __eq__(self, other):
         # make sure that the other instance is a SynsetID object
         if other and not isinstance(other, SynsetID):
@@ -131,45 +135,26 @@ class SenseInfo:
     '''Store WordNet Sense Information (synsetID, pos, sensekey, etc.)
     '''
 
-    def __init__(self, pos, synsetid, sensekey, wordid='', gloss='', tagcount=0, lemma=''):
-        self.pos = pos
-        self.sid = synsetid
+    def __init__(self, synsetid, sensekey='', wordid='', gloss='', tagcount=0, lemma=''):
+        self.synsetid = SynsetID.from_string(synsetid)
         self.sk = sensekey
         self.wordid = wordid
         self.gloss = gloss
         self.tagcount = tagcount
         self.lemma = lemma
 
-    @staticmethod
-    def normalise_synsetid(sid):
-        if len(sid) < 10:
-            return '0' * (10 - len(sid)) + sid
-        elif len(sid) > 10:
-            return sid[-10:]
-        else:
-            return sid
-
-    def get_full_sid(self):
-        return self.pos + str(self.sid)[1:]
-
     def __repr__(self):
         return str(self)
 
-    def get_canonical_synsetid(self):
-        return '%s-%s' % (str(self.sid)[1:], self.pos)
-
-    def get_gwn_sid(self):
-        csid = self.get_canonical_synsetid()
-        return csid[-1] + csid[:8]
-
     def __str__(self):
-        return "SenseInfo: pos:%s | synsetid:%s | sensekey:%s | freq: %s" % (self.pos, self.get_canonical_synsetid(), self.sk, self.tagcount)
+        return "(Synset:{})".format(self.sid)
 
 
 ########################################################################
 
 def main():
     print("This is a library, not a tool")
+
 
 if __name__ == "__main__":
     main()
