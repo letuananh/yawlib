@@ -99,6 +99,13 @@ class TestSynsetIDWrapper(unittest.TestCase):
         self.assertEqual(d[s], 'abc')
         self.assertIn(s2, d)
 
+    def test_unusual_sid(self):
+        s = SynsetID.from_string('80000683-x')
+        self.assertEqual(s.pos, 'x')
+        self.assertEqual(s.offset, '80000683')
+        # ?
+        s = SynsetID.from_string('02315002-a')
+
     def test_pos(self):
         self.assertEqual(SynsetID.from_string('112345678').pos, 'n')
         self.assertEqual(SynsetID.from_string('212345678').pos, 'v')
@@ -115,11 +122,11 @@ class TestSynsetIDWrapper(unittest.TestCase):
         print("Test invalid synset formats")
         self.assertRaises(Exception, lambda: SynsetID.from_string(None))
         # wrong POS (canonical)
-        self.assertRaises(Exception, lambda: SynsetID.from_string('12345678x'))
+        self.assertRaises(Exception, lambda: SynsetID.from_string('12345678g'))
         # wrong POS (WNSQL)
-        self.assertRaises(Exception, lambda: SynsetID.from_string('612345678'))
+        self.assertRaises(Exception, lambda: SynsetID.from_string('712345678'))
         # wrong POS (WNSQL) #2
-        self.assertRaises(Exception, lambda: SynsetID.from_string('g12345678'))
+        self.assertRaises(Exception, lambda: SynsetID.from_string('k12345678'))
         # no POS
         self.assertRaises(Exception, lambda: SynsetID.from_string('12345678'))
 

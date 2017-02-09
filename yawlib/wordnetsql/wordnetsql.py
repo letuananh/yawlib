@@ -222,7 +222,7 @@ class WordNetSQL:
             # r ADVERB
             if not keep_pos and pos == 's' or pos == 'r':
                 pos = 'a'
-            sinfo = SenseInfo(pos, synsetid, sensekey, '', definition, tagcount, lemma)
+            sinfo = SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition, tagcount, lemma)
             # add to map
             if lemma not in lemma_map:
                 lemma_map[lemma] = []
@@ -264,7 +264,7 @@ class WordNetSQL:
         # Build results
         senses = []
         for (lemma, pos, synsetid, sensekey, definition, tagcount) in result:
-            senses.append(SenseInfo(pos, synsetid, sensekey, '', definition, tagcount, lemma))
+            senses.append(SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition, tagcount, lemma))
         if not a_conn:
             conn.close()
         
@@ -300,7 +300,7 @@ class WordNetSQL:
         for (rpos, synsetid, sensekey, definition, tagcount) in result:
             if rpos == 's':
                 rpos = 'a'
-            senses.append(SenseInfo(rpos, synsetid, sensekey, '', definition, tagcount))
+            senses.append(SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition, tagcount))
         conn.close()
         WordNetSQL.sense_cache[(lemma, pos)] = senses
         return senses
@@ -313,7 +313,7 @@ class WordNetSQL:
             for (lemma, pos, synsetid, sensekey, definition) in result:
                 if lemma not in WordNetSQL.sense_cache:
                     WordNetSQL.sense_cache[lemma] = []
-                WordNetSQL.sense_cache[lemma].append(SenseInfo(pos, synsetid, sensekey, '', definition))
+                WordNetSQL.sense_cache[lemma].append(SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition))
 
     def get_gloss_by_sk(self, sk):
         sid = self.get_senseinfo_by_sk(sk).get_full_sid()
