@@ -52,9 +52,10 @@ class POS:
     ADJECTIVE = 3
     ADVERB = 4
     ADJECTIVE_SATELLITE = 5
+    EXTRA = 6
 
-    NUMS = '12345'
-    POSES = 'nvars'
+    NUMS = '123456'
+    POSES = 'nvarsx'
     num2pos_map = dict(zip(NUMS, POSES))
     pos2num_map = dict(zip(POSES, NUMS))
 
@@ -72,8 +73,8 @@ class POS:
 
 class SynsetID(object):
 
-    WNSQL_FORMAT = re.compile(r'(?P<pos>[12345nvasr])(?P<offset>\d{8})')
-    CANONICAL_FORMAT = re.compile(r'(?P<offset>\d{8})-?(?P<pos>[nvasr])')
+    WNSQL_FORMAT = re.compile(r'(?P<pos>[123456nvarsx])(?P<offset>\d{8})')
+    CANONICAL_FORMAT = re.compile(r'(?P<offset>\d{8})-?(?P<pos>[nvasrx])')
 
     def __init__(self, offset, pos):
         self.offset = offset
@@ -93,7 +94,7 @@ class SynsetID(object):
             return SynsetID(offset, pos)
         else:
             # try canonical format
-            m = SynsetID.CANONICAL_FORMAT.match(synsetid)
+            m = SynsetID.CANONICAL_FORMAT.match(str(synsetid))
             if m:
                 offset = m.group('offset')
                 pos = m.group('pos')
@@ -147,7 +148,7 @@ class SenseInfo:
         return str(self)
 
     def __str__(self):
-        return "(Synset:{})".format(self.sid)
+        return "(Synset:{})".format(self.synsetid)
 
 
 ########################################################################
