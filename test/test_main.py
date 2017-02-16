@@ -41,70 +41,73 @@ __status__ = "Prototype"
 
 ########################################################################
 
-import sys
 import os
-import argparse
 import unittest
-from chirptext.leutile import FileTool
-from yawlib.wordnetsql import WordNetSQL as WSQL
-from yawlib.glosswordnet import XMLGWordNet
-from yawlib.glosswordnet import SQLiteGWordNet as GWNSQL
-from yawlib.glosswordnet import Gloss
+from chirptext.leutile import TextReport
+from yawlib import GWordnetXML as GWNXML
+from yawlib import GWordnetSQLite as GWNSQL
 from yawlib.helpers import get_synset_by_id
 from yawlib.helpers import get_synset_by_sk
 from yawlib.helpers import get_synsets_by_term
+from yawlib.helpers import get_gwn, get_wn
 from yawlib.helpers import dump_synset, dump_synsets
 from yawlib.wntk import combine_glosses
 
-from yawlib.config import YLConfig
-WORDNET_30_PATH          = YLConfig.WORDNET_30_PATH
-WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
-WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
-DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
-GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
-GLOSSTAG_XML_FILES = [
-    os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH , 'merged', 'adv.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')
-    ]
-
+from yawlib import YLConfig
 
 ########################################################################
 
-def get_wn():
-    return WSQL(YLConfig.WORDNET_30_PATH)
+TEST_DIR = os.path.dirname(__file__)
+TEST_DATA = os.path.join(TEST_DIR, 'data')
+MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
 
-
-def get_gwn():
-    return GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
+########################################################################
 
 
 class TestHelperMethods(unittest.TestCase):
 
+    nullrep = TextReport('/dev/null')
+    
     def test_dump_synset(self):
         print("Test get synset by ID")
         gwn = get_gwn()
         ss = get_synset_by_id(gwn, '01775535-v')
         self.assertIsNotNone(ss)
-        self.assertGreater(len(ss.terms), 0)
+        self.assertGreater(len(ss.lemmas), 0)
         self.assertGreater(len(ss.keys), 0)
         self.assertGreater(len(ss.glosses), 0)
+        dump_synset(ss)
         pass
+
+    def test_dump_synsets(self):
+        dump_synsets(None)
+
+    def test_get_by_term(self):
+        sses = get_synsets_by_term(GWNSQL(YLConfig.GWN30_DB), 'test', report_file=self.nullrep)
+        self.assertEqual(len(sses), 13)
+
+    def test_get_by_sk(self):
+        ss = get_synset_by_sk(get_gwn(), 'test%2:41:00::', report_file=self.nullrep)
+        self.assertIsNotNone(ss)
+
+
+class TestGWNXML(unittest.TestCase):
+
+    def test_gwnxml(self):
+        xmlwn = GWNXML([MOCKUP_SYNSETS_DATA])
+        self.assertEqual(len(xmlwn.synsets), 218)
 
 
 class TestGlossWordNetSQL(unittest.TestCase):
 
     def test_get_freq(self):
         # WSQL should support get_tagcount
-        db = WSQL(WORDNET_30_PATH)
+        db = get_wn()
         c = db.get_tagcount('100002684')
         self.assertEqual(c, 51)
 
     def test_synset_info(self):
-        xmlwn = XMLGWordNet()
+        xmlwn = GWNXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
 
         ss = xmlwn.synsets[1]
@@ -114,24 +117,14 @@ class TestGlossWordNetSQL(unittest.TestCase):
 
         glosses = combine_glosses(ss.glosses)
         self.assertEqual(len(glosses), 2)
-        # for gl in glosses:
-        #     print("#\n\t>%s\n\t>%s\n\t>%s\n" % (gl.items, gl.tags, gl.groups))
 
     def test_get_gloss_synsets(self):
         print("Test get glossed synset(s)")
-        db = GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
+        db = get_gwn()
         glosses = db.schema.gloss.select()
         # select glosses
         print("Gloss count: {}".format(len(glosses)))
         print(glosses[:5])
-        # select glossitems
-        # gitems = db.schema.glossitem.select(columns='id ord gid lemma'.split())
-        # print("Glossitem count: {}".format(len(gitems)))
-        # print(gitems[:5])
-        # fetch all synsets
-        # ss = db.all_synsets()
-        # print("Synsets: {}".format(len(ss)))
-        # print(ss[:5])
         pass
 
 ########################################################################

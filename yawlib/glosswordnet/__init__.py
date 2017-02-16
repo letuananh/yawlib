@@ -42,15 +42,15 @@ from glosswordnet import SQLiteGWordNet
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, lelesk"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
-from .models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
-from .xmldao import XMLGWordNet
-from .sqlitedao import SQLiteGWordNet
+from .models import GlossedSynset, GlossRaw, Gloss, GlossGroup, SenseTag, GlossItem
+from .xmldao import GWordnetXML
+from .sqlitedao import GWordnetSQLite
 
 
-
+__all__ = ['GlossedSynset', 'GWordnetXML', 'GWordnetSQLite']

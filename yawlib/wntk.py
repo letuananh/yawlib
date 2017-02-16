@@ -45,7 +45,7 @@ This script is used to be a part of lelesk project (https://github.com/letuananh
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2016, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -55,27 +55,27 @@ __status__ = "Prototype"
 import sys
 import os.path
 import argparse
-import itertools
 import logging
 from lxml import etree
 from collections import defaultdict as dd
 from collections import namedtuple
 
-from chirptext.leutile import StringTool, Counter, Timer, uniquify, header, FileTool
+from chirptext.leutile import Counter, Timer, header, FileTool
 
-from .config import YLConfig
 from .helpers import config_logging, add_logging_config
 from .helpers import add_wordnet_config
 from .helpers import show_info
-from .helpers import get_wn, get_gwn, get_gwnxml
-from .helpers import dump_synsets, dump_synset, get_synset_by_id, get_synset_by_sk, get_synsets_by_term
-from .glosswordnet import XMLGWordNet, SQLiteGWordNet, Gloss
+from .helpers import get_gwn, get_gwnxml
+from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term
+from .glosswordnet import Gloss
 from .wordnetsql import WordNetSQL as WSQL
+
+logger = logging.getLogger()
 
 try:
     from fuzzywuzzy import fuzz
 except Exception as e:
-    logging.warning("fuzzywuzzy is not installed")
+    logger.warning("fuzzywuzzy is not installed")
     pass
 #-----------------------------------------------------------------------
 # CONFIGURATION
@@ -83,16 +83,16 @@ except Exception as e:
 # >>> WARNING: Do NOT change these values here. Change config.py instead!
 #
 
-DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
-MISALIGNED               = FileTool.abspath('data/misaligned.xml')
+GLOSSTAG_NTUMC_OUTPUT = FileTool.abspath('data/glosstag_ntumc')
+GLOSSTAG_PATCH = FileTool.abspath('data/glosstag_patch.xml')
+MISALIGNED = FileTool.abspath('data/misaligned.xml')
 
 #-----------------------------------------------------------------------
 
+
 class GlossTagPatch:
     def __init__(self):
-        self.patched = [ '01179767-a', '00022401-r', '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n',  '00781000-v', '02655135-v' ]
+        self.patched = ['01179767-a', '00022401-r', '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n', '00781000-v', '02655135-v']
         xmlwn = XMLGWordNet()
         xmlwn.read(GLOSSTAG_PATCH)
         self.synsets = xmlwn.synsets
@@ -100,6 +100,7 @@ class GlossTagPatch:
         for ss in self.synsets:
             self.synset_map[ss.get_synsetid()] = ss
         pass
+
 
 def cache_all_synsets(wng_db_loc):
     ''' Cache all Gloss Synset (SQLite) to database
@@ -423,7 +424,7 @@ def smart_search(sentence, words, getitem=lambda x:x):
     '''
     pos = 0
     prob = False
-    Word              = namedtuple("Word", "data cfrom cto")
+    Word = namedtuple("Word", "data cfrom cto")
     AnnotatedSentence = namedtuple("AnnotatedSentence", "sent words")
     asent = AnnotatedSentence(sentence, [])
     for wid, word in enumerate(words):
@@ -433,16 +434,16 @@ def smart_search(sentence, words, getitem=lambda x:x):
         idx = sentence.find(word_text, pos)
         if idx == -1:
             hint = sentence[pos:pos+20] + '...' if pos+20 < len(sentence) else sentence[pos:pos+10]
-            logging.error('\t[%s] word=[%s] pos=Not found (starting at [%s] => [%s])' % (wid,word,pos,hint))
+            logger.error('\t[%s] word=[%s] pos=Not found (starting at [%s] => [%s])' % (wid,word,pos,hint))
             prob = True
         else:
             # print("\tword=%s pos=%s" % (word, idx))
             asent.words.append(Word(word, idx, idx + len(word_text)))
             pos = idx + len(word_text)
     if prob:
-        logging.error("context: %s" % (sentence,))
-        logging.error("required: %s" % (words,))
-        logging.error("words: %s\n" % ([ (idx,w) for idx,w in enumerate(asent.words) ],))
+        logger.error("context: %s" % (sentence,))
+        logger.error("required: %s" % (words,))
+        logger.error("words: %s\n" % ([ (idx,w) for idx,w in enumerate(asent.words) ],))
     return asent
 
 #--------------------------------------------------------
@@ -451,13 +452,9 @@ def smart_search(sentence, words, getitem=lambda x:x):
 def convert(args):
     ''' Convert Gloss WordNet XML into SQLite format
     '''
-    createdb = True
-    merged_folder = os.path.join(args.gloss_xml, 'merged')
-    print("Path to glosstag folder: %s" % (merged_folder))
-    print("Path to output database: %s" % (args.glossdb))
-    print("Script to execute: %s" % (DB_INIT_SCRIPT))
+    show_info(args)
 
-    if os.path.isfile(args.glossdb):
+    if os.path.isfile(args.glossdb) and os.path.getsize(args.glossdb) > 0:
         print("DB file exists (%s | size: %s)" % (args.glossdb, os.path.getsize(args.glossdb)))
         answer = input("If you want to overwrite this file, please type CONFIRM: ")
         if answer != "CONFIRM":
@@ -465,9 +462,8 @@ def convert(args):
             exit()
 
     db = get_gwn(args)
-    if createdb:
-        header('Preparing database file ...')
-        db.setup(DB_INIT_SCRIPT)
+    header('Preparing database file ...')
+    db.setup()
     header('Importing data from XML to SQLite')
     t = Timer()
     header("Extracting Gloss WordNet (XML)")
@@ -560,9 +556,9 @@ def export_ntumc(wng_loc, wng_db_loc, mockup=False):
                     if tag.sk and tag.sk != 'purposefully_ignored%0:00:00::':
                         tagged_ss = gwn.get_synset_by_sk(tag.sk)
                         if not tagged_ss:
-                            logging.info("sk[%s] could not be found" % (tag.sk))
+                            logger.info("sk[%s] could not be found" % (tag.sk))
                         elif len(tagged_ss) > 1:
-                            logging.info("Too many synsets found for sk[%s]" % (tag.sk))
+                            logger.info("Too many synsets found for sk[%s]" % (tag.sk))
                         else:
                             # outfile.write("--%s\n" % (tagged_ss[0].get_synsetid(),))
                             outfile.write('INSERT INTO concept (sid, cid, clemma, tag, tags, comment, ntag, usrname) VALUES (%s, %s, "%s", "", "", "%s", "", "letuananh"); --sk=[%s]\n' % (sentid, conceptid, tag.lemma.replace('"', '""').replace("'", "''"), tagged_ss[0].get_synsetid(), tag.sk) );
@@ -695,28 +691,12 @@ def main():
     # Parse input arguments
     if len(sys.argv) > 1:
         args = parser.parse_args()
-        config_logging(args)
+        config_logging(args, logger)
         args.func(args)
     else:
         parser.print_help()
     return
-    # Now do something ...
-    if args.create:
-        convert(wng_loc, wng_db_loc, True)
-    elif args.synset:
-        get_synset_by_id(wng_db_loc, args.synset)
-    elif args.sensekey:
-        get_synset_by_sk(wng_db_loc, args.sensekey)
-    elif args.all:
-        cache_all_synsets(wng_db_loc)
-    elif args.term:
-        get_synsets_by_term(wng_db_loc, args.term, args.pos)
 
 
 if __name__ == "__main__":
     main()
-
-
-# Note:
-# How to use this tool
-# ./main.py candidates -i "dear|a"

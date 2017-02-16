@@ -41,53 +41,45 @@ __status__ = "Prototype"
 
 ########################################################################
 
-import sys
 import os
-import argparse
 import unittest
-from chirptext.leutile import FileTool
-from yawlib.wordnetsql import WordNetSQL as WSQL
-from yawlib.glosswordnet import XMLGWordNet
-from yawlib.glosswordnet import SQLiteGWordNet as GWNSQL
-from yawlib.glosswordnet import Gloss
-from yawlib.helpers import get_synset_by_id
-from yawlib.helpers import get_synset_by_sk
-from yawlib.helpers import get_synsets_by_term
-from yawlib.helpers import dump_synset, dump_synsets
-from yawlib.wntk import combine_glosses
+from yawlib.glosswordnet import GWordnetXML
+from yawlib.glosswordnet import GWordnetSQLite as GWNSQL
 
-from yawlib.config import YLConfig
-WORDNET_30_PATH          = YLConfig.WORDNET_30_PATH
-WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
-WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
-DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
-GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
-GLOSSTAG_XML_FILES = [
-    os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH , 'merged', 'adv.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')
-    ]
+########################################################################
 
+TEST_DIR = os.path.dirname(__file__)
+TEST_DATA = os.path.join(TEST_DIR, 'data')
+MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
+TEST_DB = os.path.join(TEST_DATA, 'test.db')
 
 ########################################################################
 
 
-def get_gwn():
-    return GWNSQL(YLConfig.WORDNET_30_GLOSS_DB_PATH)
+def get_gwn(db_path=TEST_DB):
+    db = GWNSQL(db_path)
+    if not os.path.isfile(db_path) or os.path.getsize(TEST_DB) == 0:
+        db.setup()
+        # insert dummy synsets
+        xmlwn = GWordnetXML()
+        xmlwn.read(MOCKUP_SYNSETS_DATA)
+        db.insert_synsets(xmlwn.synsets)
+    return db
 
 
 class TestGlossWordNetSQL(unittest.TestCase):
+
+    def test_xml_to_sqlite(self):
+        self.assertIsNotNone(get_gwn())
+        pass
 
     def test_get_synset_by_id(self):
         gwn = get_gwn()
         ss = gwn.get_synset_by_id('00001740-r')
         self.assertIsNotNone(ss)
         self.assertEqual('00001740-r', ss.sid)
-        self.assertEqual('a cappella', ss.terms[0].term)
-        self.assertEqual('a_cappella%4:02:00::', ss.keys[0].sensekey)
+        self.assertEqual('a cappella', ss.lemmas[0])
+        self.assertEqual('a_cappella%4:02:00::', ss.keys[0])
         self.assertEqual(2, len(ss.glosses))
         self.assertEqual('without musical accompaniment;', ss.glosses[0].text())
         self.assertEqual('they performed a cappella;', ss.glosses[1].text())
@@ -95,7 +87,7 @@ class TestGlossWordNetSQL(unittest.TestCase):
 
     def test_get_synsets_by_ids(self):
         gwn = get_gwn()
-        synsets = gwn.get_synsets_by_ids(['01828736-v', '00001740-r'])
+        synsets = gwn.get_synsets_by_ids(['00001837-r', 'r00001740'])
         self.assertEqual(len(synsets), 2)
         print(synsets)
 
@@ -106,15 +98,11 @@ class TestGlossWordNetSQL(unittest.TestCase):
         # select glosses
         print("Gloss count: {}".format(len(glosses)))
         print(glosses[:5])
-        # select glossitems
-        # gitems = db.schema.glossitem.select(columns='id ord gid lemma'.split())
-        # print("Glossitem count: {}".format(len(gitems)))
-        # print(gitems[:5])
-        # fetch all synsets
-        # ss = db.all_synsets()
-        # print("Synsets: {}".format(len(ss)))
-        # print(ss[:5])
         pass
+
+    def test_get_synset_by_term(self):
+        ss = get_gwn().get_synsets_by_term('AD')
+        self.assertGreater(len(ss), 0)
 
 ########################################################################
 

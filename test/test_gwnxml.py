@@ -41,51 +41,50 @@ __status__ = "Prototype"
 
 ########################################################################
 
-import sys
 import os
-import argparse
 import unittest
-from chirptext.leutile import FileTool
-from yawlib.glosswordnet import XMLGWordNet
-from yawlib.glosswordnet import SQLiteGWordNet as GWNSQL
-from yawlib.glosswordnet import Gloss
-from yawlib.wntk import combine_glosses
-
-from yawlib.config import YLConfig
-WORDNET_30_PATH          = YLConfig.WORDNET_30_PATH
-WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
-WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
-DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
-GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
-GLOSSTAG_XML_FILES = [
-    os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH , 'merged', 'adv.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml')
-    ,os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')
-    ]
-
+import logging
+from yawlib.glosswordnet import GWordnetXML
 
 ########################################################################
+
+TEST_DIR = os.path.dirname(__file__)
+TEST_DATA = os.path.join(TEST_DIR, 'data')
+MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
+
+########################################################################
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 
 class TestGlossWordNetXML(unittest.TestCase):
 
     def test_extract_xml(self):
         ''' Test data extraction from XML file
         '''
-        xmlwn = XMLGWordNet()
+        xmlwn = GWordnetXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
         synsets = xmlwn.synsets
         self.assertIsNotNone(synsets)
-        self.assertEqual(223, len(synsets))
+        self.assertEqual(len(synsets), 218)
         # first synset should be 00001740-r
         ss0 = synsets[0]
         self.assertEqual('00001740-r', ss0.sid)
-        self.assertEqual('a cappella', ss0.terms[0].term)
-        self.assertEqual('a_cappella%4:02:00::', ss0.keys[0].sensekey)
+        self.assertEqual('a cappella', ss0.lemmas[0])
+        self.assertEqual('a_cappella%4:02:00::', ss0.keys[0])
         self.assertEqual(2, len(ss0.glosses))
-        self.assertEqual(5, len(ss0.glosses[1]))
+        # test glosses
+        g = ss0.glosses[1]
+        self.assertEqual(5, len(g))
+        self.assertEqual(g.get_gramwords(), ['they', 'perform', 'a', 'cappella'])
+        self.assertEqual(g.text(), 'they performed a cappella;')
+        # gloss item
+        self.assertEqual(g[1].get_lemma(), 'performed')
+        self.assertEqual(g[1].get_gramwords(), {'perform'})
+        # sense tag
+        self.assertEqual(g.tags[0].lemma, 'a cappella')
+        self.assertEqual(g.tags[0].sk, 'a_cappella%4:02:00::')
 
 ########################################################################
 

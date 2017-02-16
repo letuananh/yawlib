@@ -44,9 +44,8 @@ import sqlite3
 from collections import defaultdict as dd
 from puchikarui import Schema, Execution#, DataSource, Table
 from ..config import YLConfig 
-from ..models import SenseInfo
-from ..models import SynsetID
-from ..glosswordnet.models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
+from yawlib.models import SynsetID, SenseInfo
+from ..glosswordnet.models import GlossedSynset, GlossRaw, Gloss, GlossGroup, SenseTag, GlossItem
 
 #-----------------------------------------------------------------------
 

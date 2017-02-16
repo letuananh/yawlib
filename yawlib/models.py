@@ -118,7 +118,7 @@ class SynsetID(object):
 
     def __hash__(self):
         return hash(self.to_canonical())
-    
+
     def __eq__(self, other):
         # make sure that the other instance is a SynsetID object
         if other and not isinstance(other, SynsetID):
@@ -149,6 +149,72 @@ class SenseInfo:
 
     def __str__(self):
         return "(Synset:{})".format(self.synsetid)
+
+
+class Synset(object):
+
+    def __init__(self, sid, keys=None, lemmas=None, defs=None, exes=None):
+        self.sid = SynsetID.from_string(sid)
+        self.keys = keys if keys is not None else []
+        self.lemmas = lemmas if lemmas is not None else []
+        self.defs = defs if defs else []
+        self.exes = exes if exes else []
+        pass
+
+    def add_lemma(self, lemma):
+        self.lemmas.append(lemma)
+
+    def add_key(self, key):
+        self.keys.append(key)
+
+
+class SynsetCollection:
+    ''' Synset collection which provides basic synset search function (by_sid, by_sk, etc.)
+    '''
+    def __init__(self):
+        self.synsets = []
+        self.sid_map = {}
+        self.sk_map = {}
+
+    def add(self, synset):
+        ssid = synset.sid
+        self.synsets.append(synset)
+        self.sid_map[ssid] = synset
+        if synset.keys:
+            for key in synset.keys:
+                self.sk_map[key] = synset
+
+    def __getitem__(self, name):
+        return self.synsets[name]
+
+    def by_sid(self, sid):
+        if sid and sid in self.sid_map:
+            return self.sid_map[str(sid)]
+        else:
+            return None
+
+    def by_sk(self, sk):
+        if sk in self.sk_map:
+            return self.sk_map[sk]
+        else:
+            return None
+
+    def __iter__(self):
+        return iter(self.synsets)
+
+    def count(self):
+        return len(self.synsets)
+
+    def __len__(self):
+        return self.count()
+
+    def merge(self, another_scol):
+        ''' Add synsets from another synset collection '''
+        for synset in another_scol.synsets:
+            self.add(synset)
+
+    def __str__(self):
+        return str(self.synsets)
 
 
 ########################################################################
