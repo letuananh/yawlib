@@ -36,7 +36,7 @@ Adapted from: https://github.com/letuananh/lelesk
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2016, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -45,25 +45,24 @@ __status__ = "Prototype"
 
 import os.path
 import itertools
-import argparse
 import logging
-from collections import defaultdict as dd
-from collections import namedtuple
 
-from puchikarui import Schema, Execution#, DataSource, Table
-from chirptext.leutile import StringTool, Counter, Timer, uniquify, header, jilog, TextReport, FileTool
+# from puchikarui import Schema, Execution#, DataSource, Table
+from chirptext.leutile import jilog, TextReport, FileTool
 
 from .models import SynsetID
-from .config import YLConfig
-from .glosswordnet import XMLGWordNet as GWNXML
-from .glosswordnet import SQLiteGWordNet as GWNSQL
-from .wordnetsql import WordNetSQL as WSQL
+from yawlib import YLConfig
+from yawlib import GWordnetXML as GWNXML
+from yawlib import GWordnetSQLite as GWNSQL
+from yawlib import WordNetSQL as WSQL
 
 ########################################################################
 # CONFIGURATION
 ########################################################################
 
 MOCKUP_SYNSETS_DATA = (FileTool.abspath('data/test.xml'),)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 ########################################################################
 
@@ -81,7 +80,8 @@ def get_synset_by_id(gwn, synsetid_str, report_file=None, compact=True):
         dump_synset(synset, report_file=report_file, compact=compact)
         return synset
     except Exception as e:
-        print("    >>>> Error: {} (Synset ID should be in this format 12345678-n)".format(e))
+        logger.exception(e)
+        logger.error("  >>>> Error: (Synset ID should be in this format 12345678-n)")
 
 
 def get_synset_by_sk(gwn, sk, report_file=None, compact=True):
@@ -95,7 +95,7 @@ def get_synset_by_sk(gwn, sk, report_file=None, compact=True):
     return synset
 
 
-def get_synsets_by_term(gwn, t, pos, report_file=None, compact=True):
+def get_synsets_by_term(gwn, t, pos=None, report_file=None, compact=True):
     ''' Search synset in WordNet Gloss Corpus by term'''
     if report_file is None:
         report_file = TextReport()  # Default to stdout
@@ -103,6 +103,7 @@ def get_synsets_by_term(gwn, t, pos, report_file=None, compact=True):
 
     synsets = gwn.get_synsets_by_term(t, pos)
     dump_synsets(synsets, report_file, compact=compact)
+    return synsets
 
 ##################################################################
 
@@ -117,7 +118,7 @@ def dump_synsets(synsets, report_file=None, compact=True):
     if report_file is None:
         report_file = TextReport()  # Default to stdout
 
-    if synsets:
+    if synsets is not None:
         for synset in synsets:
             dump_synset(synset, report_file=report_file, compact=compact)
         report_file.print("Found %s synset(s)" % synsets.count())
@@ -140,7 +141,7 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
         report_file = TextReport()  # Default to stdout
 
     if more_compact:
-        report_file.header("Synset: %s (terms=%s | keys=%s)" % (ss.sid.to_canonical(), ss.terms, ss.keys), 'h0')
+        report_file.header("Synset: %s (lemmas=%s | keys=%s)" % (ss.sid.to_canonical(), ss.lemmas, ss.keys), 'h0')
     else:
         report_file.header("Synset: %s" % ss, 'h0')
 
@@ -195,23 +196,28 @@ def get_gwnxml(args):
         return gwn_xml
 
 
-def get_gwn(args):
-    gwn = GWNSQL(args.glossdb)
+def get_gwn(args=None):
+    gdb = args.glossdb if args else YLConfig.GWN30_DB
+    gwn = GWNSQL(gdb)
     return gwn
 
 
-def get_wn(args):
-    wn = WSQL(args.wnsql)
+def get_wn(args=None):
+    wnsql = args.wnsql if args else YLConfig.WNSQL30_PATH
+    wn = WSQL(wnsql)
     return wn
 
 
-def config_logging(args):
+def config_logging(args, logger):
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
+        logger.setLevel(level=logging.DEBUG)
     elif args.quiet:
-        logging.basicConfig(level=logging.ERROR)
+        logging.basicConfig(level=logging.DEBUG)
+        logger.setLevel(level=logging.ERROR)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
+        logger.setLevel(level=logging.INFO)
 
 
 def add_logging_config(parser):
@@ -223,9 +229,9 @@ def add_logging_config(parser):
 
 def add_wordnet_config(parser):
     '''Where to find different wordnets data'''
-    parser.add_argument('-i', '--gloss_xml', help='Path to Gloss WordNet folder (default = )', default=YLConfig.WORDNET_30_GLOSSTAG_PATH)
-    parser.add_argument('-w', '--wnsql', help='Path to WordNet SQLite 3.0 database', default=YLConfig.WORDNET_30_PATH)
-    parser.add_argument('-g', '--glossdb', help='Path to Gloss WordNet SQLite database', default=YLConfig.WORDNET_30_GLOSS_DB_PATH)
+    parser.add_argument('-i', '--gloss_xml', help='Path to Gloss WordNet folder', default=YLConfig.GWN30_PATH)
+    parser.add_argument('-w', '--wnsql', help='Path to WordNet SQLite 3.0 DB', default=YLConfig.WNSQL30_PATH)
+    parser.add_argument('-g', '--glossdb', help='Path to Gloss WordNet SQLite DB', default=YLConfig.GWN30_DB)
     parser.add_argument('-m', '--mockup', help='Use mockup data in dev_mode', action='store_true')
     parser.set_defaults(mockup_files=MOCKUP_SYNSETS_DATA)
 

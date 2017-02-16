@@ -32,7 +32,7 @@ Adapted from: https://github.com/letuananh/lelesk
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -41,32 +41,15 @@ __status__ = "Prototype"
 
 ########################################################################
 
-import sys
-import os
-import argparse
 import unittest
-from chirptext.leutile import FileTool
-from yawlib import WordNetSQL as WSQL
-from yawlib import XMLGWordNet
-from yawlib import SQLiteGWordNet
-from yawlib.wntk import combine_glosses
+import logging
 from yawlib import SynsetID, SenseInfo
 
-from yawlib.config import YLConfig
-WORDNET_30_PATH = YLConfig.WORDNET_30_PATH
-WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
-WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
-DB_INIT_SCRIPT = YLConfig.DB_INIT_SCRIPT
-MOCKUP_SYNSETS_DATA = FileTool.abspath('data/test.xml')
-GLOSSTAG_NTUMC_OUTPUT = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH = FileTool.abspath('data/glosstag_patch.xml')
-GLOSSTAG_XML_FILES = [os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adv.xml'),
-                      os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'adj.xml'),
-                      os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'verb.xml'),
-                      os.path.join(YLConfig.WORDNET_30_GLOSSTAG_PATH, 'merged', 'noun.xml')]
-
-
 ########################################################################
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 
 class TestSynsetIDWrapper(unittest.TestCase):
 
@@ -141,6 +124,7 @@ class TestSynsetIDWrapper(unittest.TestCase):
 
 def main():
     unittest.main()
+
 
 if __name__ == "__main__":
     main()

@@ -41,18 +41,22 @@ __status__ = "Prototype"
 
 #-----------------------------------------------------------------------
 
+import os
 import itertools
 
 from puchikarui import Schema, Execution  # , DataSource, Table
 
-from ..models import SynsetID
+from yawlib.models import SynsetCollection, SynsetID
 
-from .models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
+from .models import GlossedSynset
+from .models import GlossItem
 
 #-----------------------------------------------------------------------
 
+SETUP_SCRIPT = os.path.join(os.path.dirname(__file__), 'script', 'gwn_setup.sql')
 
-class GWordNetSchema(Schema):
+
+class GWordnetSchema(Schema):
     def __init__(self, data_source=None):
         Schema.__init__(self, data_source)
         self.add_table('meta', 'title license WNVer url maintainer'.split())
@@ -69,17 +73,17 @@ class GWordNetSchema(Schema):
 # -----------------------------------------------------------------------
 
 
-class SQLiteGWordNet:
+class GWordnetSQLite:
     def __init__(self, db_path, verbose=False):
         self.db_path = db_path
-        self.schema = GWordNetSchema(self.db_path)
+        self.schema = GWordnetSchema(self.db_path)
         self.verbose = verbose
 
-    def setup(self, script_file):
+    def setup(self):
         with Execution(self.schema) as exe:
             if self.verbose:
                 print('Creating database file ...')
-            exe.ds.executefile(script_file)
+            exe.ds.executefile(SETUP_SCRIPT)
             try:
                 for meta in exe.schema.meta.select():
                     print(meta)
@@ -104,11 +108,11 @@ class SQLiteGWordNet:
                 sid = synset.sid.to_gwnsql()
                 exe.schema.synset.insert([sid, synset.sid.offset, synset.sid.pos])
                 # term;
-                for term in synset.terms:
-                    exe.schema.term.insert([sid, term.term])
+                for term in synset.lemmas:
+                    exe.schema.term.insert([sid, term])
                 # sensekey;
                 for sk in synset.keys:
-                    exe.schema.sensekey.insert([sid, sk.sensekey])
+                    exe.schema.sensekey.insert([sid, sk])
                 # gloss_raw;
                 for gloss_raw in synset.raw_glosses:
                     exe.schema.gloss_raw.insert([sid, gloss_raw.cat, gloss_raw.gloss])
@@ -139,16 +143,16 @@ class SQLiteGWordNet:
         if not synsets:
             synsets = SynsetCollection()
         for result in results:
-            ss = Synset(result.id)
+            ss = GlossedSynset(result.id)
             sid = ss.sid.to_gwnsql()
             # term;
             terms = exe.schema.term.select(where='sid=?', values=[sid])
             for term in terms:
-                ss.add_term(term.term)
+                ss.add_lemma(term.term)
             # sensekey;
             sks = exe.schema.sensekey.select(where='sid=?', values=[sid])
             for sk in sks:
-                ss.add_sensekey(sk.sensekey)
+                ss.add_key(sk.sensekey)
             # gloss_raw | sid cat gloss
             rgs = exe.schema.gloss_raw.select(where='sid=?', values=[sid])
             for rg in rgs:

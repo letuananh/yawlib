@@ -31,8 +31,8 @@ Adapted from: https://github.com/letuananh/lelesk
 #THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2014, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__copyright__ = "Copyright 2017, yawlib"
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -40,24 +40,21 @@ __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
 import os
-import inspect
+
 
 def full_path(a_path):
     return os.path.abspath(os.path.expanduser(a_path))
 
+
 class YLConfig:
-    WORDNET_30_PATH          = full_path('~/wordnet/sqlite-30.db')
     # WordNet SQLite can be downloaded from:
-    #       http://sourceforge.net/projects/wnsql/files/wnsql3/sqlite/3.0/ 
-
-    WORDNET_30_GLOSSTAG_PATH = full_path('~/wordnet/glosstag')
-    WORDNET_30_GLOSS_DB_PATH = full_path('~/wordnet/glosstag.db')
-    OMW_DB_PATH = full_path('~/wordnet/wn-ntumc.db')
-    # Gloss WordNet can be downloaded from: 
+    #       http://sourceforge.net/projects/wnsql/files/wnsql3/sqlite/3.0/
+    WNSQL30_PATH = full_path('~/wordnet/sqlite-30.db')
+    # Gloss WordNet can be downloaded from:
     #       http://wordnet.princeton.edu/glosstag.shtml
-
-    DB_INIT_SCRIPT           = full_path('yawlib/script/wngdb.sql')
-    # script used to initialise WordNet Gloss database 
+    GWN30_PATH = full_path('~/wordnet/glosstag')
+    GWN30_DB = full_path('~/wordnet/glosstag.db')
+    OMW_DB = full_path('~/wordnet/wn-ntumc.db')
 
     NTUMC_PRONOUNS = ['77000100-n', '77000057-n', '77000054-a', '77000054-n', '77000026-n', '77000065-n'
                 , '77000025-n', '77000028-n', '77000004-n', '77010118-n', '77000104-n', '77000113-r', '77000003-n'

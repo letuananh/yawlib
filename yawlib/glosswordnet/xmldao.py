@@ -46,20 +46,21 @@ from lxml import etree
 
 from chirptext.leutile import StringTool, Counter
 
-from .models import SynsetCollection
-from .models import Synset
+from yawlib.models import SynsetCollection
+
+from .models import GlossedSynset
 from .models import GlossRaw
-from .models import SenseKey
-from .models import Term
-from .models import Gloss
-from .models import GlossGroup
-from .models import SenseTag
-from .models import GlossItem
+# from .models import SenseKey
+# from .models import Term
+# from .models import Gloss
+# from .models import GlossGroup
+# from .models import SenseTag
+# from .models import GlossItem
 
 #-----------------------------------------------------------------------
 
 
-class XMLGWordNet:
+class GWordnetXML:
     ''' GWordNet XML Data Access Object
     '''
     def __init__(self, filenames=None, memory_save=False, verbose=False):
@@ -96,16 +97,17 @@ class XMLGWordNet:
             return self.synsets
 
     def parse_synset(self, element):
-        synset = Synset(element.get('id'))
+        synset = GlossedSynset(element.get('id'))
         for child in element:
             if child.tag == 'terms':
                 for grandchild in child:
+                    # term is a lemma
                     if grandchild.tag == 'term':
-                        synset.add_term(StringTool.strip(grandchild.text))
+                        synset.add_lemma(StringTool.strip(grandchild.text))
             elif child.tag == 'keys':
                 for grandchild in child:
                     if grandchild.tag == 'sk':
-                        synset.add_sensekey(StringTool.strip(grandchild.text))
+                        synset.add_key(StringTool.strip(grandchild.text))
             elif child.tag == 'gloss' and child.get('desc') == 'orig' and not self.memory_save:
                 if child[0].tag == 'orig':
                     synset.add_raw_gloss(GlossRaw.ORIG, StringTool.strip(child[0].text))
@@ -171,10 +173,10 @@ class XMLGWordNet:
             tag_obj = glossitem.gloss.tag_item(glossitem, '', '', '', '', '', coll, origid, '', sk, lemma)
         else:
             tag_obj.itemid = glossitem.origid
-            tag_obj.sk     = sk
+            tag_obj.sk = sk
             tag_obj.origid = origid
-            tag_obj.coll   = coll
-            tag_obj.lemma  = lemma
+            tag_obj.coll = coll
+            tag_obj.lemma = lemma
 
         # WEIRD STUFF: lemma="purposefully ignored" sk="purposefully_ignored%0:00:00::"
         if lemma == 'purposefully ignored' and sk == "purposefully_ignored%0:00:00::":

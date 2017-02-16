@@ -32,7 +32,7 @@ Adapted from: https://github.com/letuananh/lelesk
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
-__credits__ = ["Le Tuan Anh"]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -41,16 +41,9 @@ __status__ = "Prototype"
 
 ########################################################################
 
-import sys
-import os
-import argparse
 import unittest
-from chirptext.leutile import FileTool
+from yawlib import YLConfig
 from yawlib.wordnetsql import WordNetSQL as WSQL
-from yawlib.wntk import combine_glosses
-
-from yawlib.config import YLConfig
-WORDNET_30_PATH = YLConfig.WORDNET_30_PATH
 
 ########################################################################
 
@@ -59,7 +52,7 @@ class TestWordNetSQL(unittest.TestCase):
 
     def get_wn(self):
         # Build a WordNetSQL object (default location: ~/wordnet/sqlite-30.db)
-        return WSQL(YLConfig.WORDNET_30_PATH)
+        return WSQL(YLConfig.WNSQL30_PATH)
 
     def test_wnsql_basic(self):
         wn = self.get_wn()

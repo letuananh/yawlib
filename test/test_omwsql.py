@@ -57,7 +57,7 @@ class TestOMWSQL(unittest.TestCase):
 
     def get_wn(self):
         # Build a OMWSQL object (default location: ~/wordnet/wn-ntumc.db)
-        return OMWSQL(YLConfig.OMW_DB_PATH)
+        return OMWSQL(YLConfig.OMW_DB)
 
     def test_wnsql_basic(self):
         wn = self.get_wn()
