@@ -42,6 +42,7 @@ __status__ = "Prototype"
 ########################################################################
 
 import re
+from chirptext.leutile import uniquify
 
 ########################################################################
 
@@ -166,6 +167,14 @@ class Synset(object):
 
     def add_key(self, key):
         self.keys.append(key)
+
+    def get_tokens(self):
+        tokens = []
+        tokens.extend(self.lemmas)
+        for l in self.lemmas:
+            if ' ' in l:
+                tokens.extend(l.split())
+        return uniquify(tokens)
 
 
 class SynsetCollection:

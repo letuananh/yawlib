@@ -74,6 +74,8 @@ class TestGlossWordNetXML(unittest.TestCase):
         self.assertEqual('a cappella', ss0.lemmas[0])
         self.assertEqual('a_cappella%4:02:00::', ss0.keys[0])
         self.assertEqual(2, len(ss0.glosses))
+        tokens = ss0.get_tokens()
+        self.assertEqual(tokens, ['a cappella', 'a', 'cappella'])
         # test glosses
         g = ss0.glosses[1]
         self.assertEqual(5, len(g))
