@@ -42,11 +42,12 @@ __status__ = "Prototype"
 ########################################################################
 
 import re
+from chirptext.leutile import uniquify
 
 ########################################################################
 
 
-class POS:
+class POS(object):
     NOUN = 1
     VERB = 2
     ADJECTIVE = 3
@@ -132,43 +133,68 @@ class SynsetID(object):
         return repr(self)
 
 
-class SenseInfo:
-    '''Store WordNet Sense Information (synsetID, pos, sensekey, etc.)
-    '''
-
-    def __init__(self, synsetid, sensekey='', wordid='', gloss='', tagcount=0, lemma=''):
-        self.synsetid = SynsetID.from_string(synsetid)
-        self.sk = sensekey
-        self.wordid = wordid
-        self.gloss = gloss
-        self.tagcount = tagcount
-        self.lemma = lemma
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return "(Synset:{})".format(self.synsetid)
-
-
 class Synset(object):
 
-    def __init__(self, sid, keys=None, lemmas=None, defs=None, exes=None):
-        self.sid = SynsetID.from_string(sid)
+    def __init__(self, sid, keys=None, lemmas=None, defs=None, exes=None, tagcount=0, lemma=None):
+        self.synsetid = sid
         self.keys = keys if keys is not None else []
         self.lemmas = lemmas if lemmas is not None else []
         self.defs = defs if defs else []
         self.exes = exes if exes else []
+        self.tagcount = tagcount
+        if lemma is not None:
+            self.lemma = lemma  # Canonical lemma
         pass
 
-    def add_lemma(self, lemma):
-        self.lemmas.append(lemma)
+    @property
+    def synsetid(self):
+        ''' An alias of sid '''
+        return self.sid
+
+    @synsetid.setter
+    def synsetid(self, value):
+        self.sid = SynsetID.from_string(value)
+
+    @property
+    def lemma(self):
+        ''' Synset canonical lemma '''
+        if self.lemmas is None or len(self.lemmas) == 0:
+            return None
+        else:
+            return self.lemmas[0]
+
+    @lemma.setter
+    def lemma(self, value):
+        if value is None:
+            raise Exception("Canonical lemma cannot be None")
+        if self.lemmas is None:
+            self.lemmas = [value]
+        elif len(self.lemmas) == 0:
+            self.lemmas.append(value)
+        else:
+            self.lemmas[0] = value
+
+    def add_lemma(self, value):
+        if self.lemmas is None:
+            self.lemmas = []
+        self.lemmas.append(value)
 
     def add_key(self, key):
         self.keys.append(key)
 
+    def get_tokens(self):
+        tokens = []
+        tokens.extend(self.lemmas)
+        for l in self.lemmas:
+            if ' ' in l:
+                tokens.extend(l.split())
+        return uniquify(tokens)
 
-class SynsetCollection:
+    def __str__(self):
+        return "(Synset:{})".format(self.sid)
+
+
+class SynsetCollection(object):
     ''' Synset collection which provides basic synset search function (by_sid, by_sk, etc.)
     '''
     def __init__(self):
@@ -180,7 +206,7 @@ class SynsetCollection:
         ssid = synset.sid
         self.synsets.append(synset)
         self.sid_map[ssid] = synset
-        if synset.keys:
+        if synset.keys is not None and len(synset.keys) > 0:
             for key in synset.keys:
                 self.sk_map[key] = synset
 

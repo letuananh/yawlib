@@ -70,21 +70,37 @@ class TestGlossWordNetXML(unittest.TestCase):
         self.assertEqual(len(synsets), 218)
         # first synset should be 00001740-r
         ss0 = synsets[0]
-        self.assertEqual('00001740-r', ss0.sid)
-        self.assertEqual('a cappella', ss0.lemmas[0])
-        self.assertEqual('a_cappella%4:02:00::', ss0.keys[0])
+        self.assertEqual(ss0.sid, '00001740-r')
+        self.assertEqual(ss0.lemmas[0], 'a cappella')
+        self.assertEqual(ss0.keys[0], 'a_cappella%4:02:00::')
         self.assertEqual(2, len(ss0.glosses))
+        tokens = ss0.get_tokens()
+        self.assertEqual(tokens, ['a cappella', 'a', 'cappella'])
         # test glosses
         g = ss0.glosses[1]
         self.assertEqual(5, len(g))
         self.assertEqual(g.get_gramwords(), ['they', 'perform', 'a', 'cappella'])
         self.assertEqual(g.text(), 'they performed a cappella;')
+        self.assertEqual(ss0.get_orig_gloss(), '''without musical accompaniment; "they performed a cappella"''')
+        self.assertEqual(ss0.get_gramwords(), ['without', 'musical', 'accompaniment', 'they', 'perform', 'a', 'cappella'])
+        # get_tags() returns a list of tagged sense keys
+        self.assertEqual(ss0.get_tags(), ['musical_accompaniment%1:10:00::', 'a_cappella%4:02:00::'])
         # gloss item
         self.assertEqual(g[1].get_lemma(), 'performed')
         self.assertEqual(g[1].get_gramwords(), {'perform'})
         # sense tag
         self.assertEqual(g.tags[0].lemma, 'a cappella')
         self.assertEqual(g.tags[0].sk, 'a_cappella%4:02:00::')
+        self.assertEqual(g.get_tagged_sensekey(), ['a_cappella%4:02:00::'])
+        # str and repr
+        self.assertEqual(str(g), "{Gloss('r00001740_ex1'|'ex') they performed a cappella;}")
+        self.assertEqual(repr(g), "gloss-ex")
+        # glossitem
+        self.assertEqual(str(g[0]), "(itemid: r00001740_wf5 | id:r00001740_wf5 | tag:ignore | lemma:they | pos: | cat: | coll: | rdf:  | sep: | text:they)")
+        self.assertEqual(repr(g[0]), "'they'")
+        # tags
+        self.assertEqual(str(g.tags[0]), "a cappella (sk:a_cappella%4:02:00:: | itemid: coll:b | cat:cf | tag:auto | glob:auto | glemma:a_cappella%3|a_cappella%4 | gid:r00001740_coll.b | coll:b | origid: r00001740_id.2)")
+        self.assertEqual(repr(g.tags[0]), "a cappella (sk:a_cappella%4:02:00::)")
 
 ########################################################################
 

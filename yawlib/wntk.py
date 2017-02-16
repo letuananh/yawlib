@@ -68,7 +68,7 @@ from .helpers import show_info
 from .helpers import get_gwn, get_gwnxml
 from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term
 from .glosswordnet import Gloss
-from .wordnetsql import WordNetSQL as WSQL
+from .wordnetsql import WordnetSQL as WSQL
 
 logger = logging.getLogger()
 

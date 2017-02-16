@@ -30,7 +30,7 @@ Latest version can be found at https://github.com/letuananh/lelesk
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, lelesk"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -39,20 +39,18 @@ __status__ = "Prototype"
 
 #-----------------------------------------------------------------------
 
-import itertools
 import sqlite3
 from collections import defaultdict as dd
-from puchikarui import Schema, Execution#, DataSource, Table
-from ..config import YLConfig 
-from yawlib.models import SynsetID, SenseInfo
-from ..glosswordnet.models import GlossedSynset, GlossRaw, Gloss, GlossGroup, SenseTag, GlossItem
+from puchikarui import Schema, Execution  # DataSource, Table
+from yawlib.config import YLConfig
+from yawlib.models import SynsetID, Synset
 
 #-----------------------------------------------------------------------
 
 
-class WordNet3Schema(Schema):
-    
-    '''SQLite schema for WordNetSQL (Princeton WordNet version 3.0)'''
+class Wordnet3Schema(Schema):
+
+    '''SQLite schema for WordnetSQL (Princeton WordNet version 3.0)'''
     def __init__(self, data_source=None):
         Schema.__init__(self, data_source)
         self.add_table('wordsXsensesXsynsets', 'wordid lemma casedwordid synsetid senseid sensenum lexid tagcount sensekey pos lexdomainid definition'.split(), alias='wss')
@@ -61,11 +59,11 @@ class WordNet3Schema(Schema):
         self.add_table('samples', 'synsetid sampleid sample'.split(), alias='ex')
 
 
-class WordNetSQL:
+class WordnetSQL:
 
     def __init__(self, db_path):
         self.db_path = db_path
-        self.schema = WordNet3Schema(self.db_path)
+        self.schema = Wordnet3Schema(self.db_path)
         # Caches
         self.sk_cache = dd(set)
         self.sid_cache = dd(set)
@@ -90,7 +88,7 @@ class WordNetSQL:
         if sid in self.tagcount_cache:
             return self.tagcount_cache[sid]
         with Execution(self.schema) as exe:
-            results = exe.schema.wss.select(where='synsetid=?',values=[sid], columns=['tagcount'])
+            results = exe.schema.wss.select(where='synsetid=?', values=[sid], columns=['tagcount'])
         counter = 0
         for res in results:
             counter += res.tagcount
@@ -102,8 +100,8 @@ class WordNetSQL:
             return self.sk_cache[sk]
         result = None
         with Execution(self.schema) as exe:
-            result = exe.schema.wss.select_single(where='sensekey=?', values=[sk]
-                , columns=['pos', 'synsetid', 'sensekey'])
+            result = exe.schema.wss.select_single(where='sensekey=?', values=[sk],
+                                                  columns=['pos', 'synsetid', 'sensekey'])
         self.sk_cache[sk] = result
         return result
 
@@ -121,8 +119,9 @@ class WordNetSQL:
             return self.sid_cache[sid]
         result = None
         with Execution(self.schema) as exe:
-            result = exe.schema.wss.select_single(where='synsetid=?', values=[sid]
-                , columns=['pos', 'synsetid', 'sensekey', 'definition', 'tagcount'])
+            result = exe.schema.wss.select_single(where='synsetid=?', values=[sid],
+                                                  columns=['pos', 'synsetid',
+                                                           'sensekey', 'definition', 'tagcount'])
         self.sid_cache[sid] = result
         return result
 
@@ -152,8 +151,9 @@ class WordNetSQL:
             return self.hypehypo_cache[sid]
         result = None
         with Execution(self.schema) as exe:
-            result = exe.schema.sss.select(where='ssynsetid = ? and linkid in (1,2,3,4, 11,12,13,14,15,16,40,50,81)'
-                , values=[sid.to_wnsql()], columns=['linkid', 'dpos', 'dsynsetid', 'dsensekey', 'dwordid'])
+            result = exe.schema.sss.select(where='ssynsetid = ? and linkid in (1,2,3,4, 11,12,13,14,15,16,40,50,81)',
+                                           values=[sid.to_wnsql()],
+                                           columns=['linkid', 'dpos', 'dsynsetid', 'dsensekey', 'dwordid'])
         for r in result:
             self.hypehypo_cache[sid].add(r)
         return self.hypehypo_cache[sid]
@@ -161,21 +161,22 @@ class WordNetSQL:
     def cache_all_hypehypo(self):
         with Execution(self.schema) as exe:
             results = exe.schema.sss.select(columns=['linkid', 'dpos', 'dsynsetid', 'dsensekey', 'dwordid', 'ssynsetid'])
-            for result in results:        
+            for result in results:
                 self.hypehypo_cache[result.ssynsetid].update(result)
 
-    word_cache=dict()
+    word_cache = dict()
+
     def get_hypehypo_text(self, sid):
         senses = self.get_hypehypo(sid)
-        if not senses: 
+        if not senses:
             return []
         else:
             lemmas = []
-            wordids = [ sense.wordid for sense in senses ]
+            wordids = [sense.wordid for sense in senses]
             need_to_find = []
             for wordid in wordids:
-                if wordid in WordNetSQL.word_cache:
-                    lemmas.append(WordNetSQL.word_cache[wordid])
+                if wordid in WordnetSQL.word_cache:
+                    lemmas.append(WordnetSQL.word_cache[wordid])
                 else:
                     need_to_find.append(str(wordid))
             if len(need_to_find) > 0:
@@ -186,7 +187,7 @@ class WordNetSQL:
                 c = conn.cursor()
                 result = c.execute(query).fetchall()
                 for (wordid, lemma) in result:
-                    WordNetSQL.word_cache[wordid] = lemma
+                    WordnetSQL.word_cache[wordid] = lemma
                     lemmas.append(lemma)
                 conn.close()
             return lemmas
@@ -197,13 +198,14 @@ class WordNetSQL:
         c = conn.cursor()
         result = c.execute(query).fetchall()
         for (wordid, lemma) in result:
-                WordNetSQL.word_cache[wordid] = lemma
+                WordnetSQL.word_cache[wordid] = lemma
         conn.close()
 
-    sense_map_cache=None
-    def all_senses(self, keep_pos=False):
-        if WordNetSQL.sense_map_cache:
-            return WordNetSQL.sense_map_cache
+    sense_map_cache = None
+
+    def all_senses(self):
+        if WordnetSQL.sense_map_cache:
+            return WordnetSQL.sense_map_cache
         _query = """SELECT lemma, pos, synsetid, sensekey, definition, tagcount
                                 FROM wordsXsensesXsynsets ORDER BY lemma, pos, tagcount DESC;"""
         conn = self.get_conn()
@@ -212,37 +214,28 @@ class WordNetSQL:
         # Build lemma map
         lemma_map = {}
         for (lemma, pos, synsetid, sensekey, definition, tagcount) in result:
-            # ss_type
-            # One character code indicating the synset type:
-            # n NOUN
-            # v VERB
-            # a ADJECTIVE
-            # s ADJECTIVE SATELLITE
-            # r ADVERB
-            if not keep_pos and pos == 's' or pos == 'r':
-                pos = 'a'
-            sinfo = SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition, tagcount, lemma)
+            sinfo = Synset(synsetid, tagcount=tagcount, lemma=lemma)
             # add to map
             if lemma not in lemma_map:
                 lemma_map[lemma] = []
             lemma_map[lemma].append(sinfo)
         # close connection & return results
         conn.close()
-        WordNetSQL.sense_map_cache=lemma_map
+        WordnetSQL.sense_map_cache = lemma_map
         return lemma_map
 
-
     lemma_list_cache = dict()
+
     def search_senses(self, lemma_list, pos=None, a_conn=None):
         if len(lemma_list) == 0:
             return list()
-        
-        CACHE_JOIN_TOKEN='|\t'*12
+
+        CACHE_JOIN_TOKEN = '|\t'*12
         cache_key=CACHE_JOIN_TOKEN.join(lemma_list)
         # caching method
-        if cache_key in WordNetSQL.lemma_list_cache:
-            return WordNetSQL.lemma_list_cache[cache_key]
-        
+        if cache_key in WordnetSQL.lemma_list_cache:
+            return WordnetSQL.lemma_list_cache[cache_key]
+
         # Build query lemma, pos, synsetid, sensekey, definition, tagcount
         _query = """SELECT lemma, pos, synsetid, sensekey, definition, tagcount 
                                 FROM wordsXsensesXsynsets
@@ -263,12 +256,12 @@ class WordNetSQL:
         # Build results
         senses = []
         for (lemma, pos, synsetid, sensekey, definition, tagcount) in result:
-            senses.append(SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition, tagcount, lemma))
+            senses.append(Synset(synsetid, tagcount=tagcount, lemma=lemma))
         if not a_conn:
             conn.close()
-        
+
         # store to cache
-        WordNetSQL.lemma_list_cache[cache_key] = senses
+        WordnetSQL.lemma_list_cache[cache_key] = senses
         return senses
     
     sense_cache = dict()
@@ -277,8 +270,8 @@ class WordNetSQL:
 
         Return an object with the type of lelesk.SenseInfo
         '''
-        if (lemma, pos) in WordNetSQL.sense_cache:
-            return WordNetSQL.sense_cache[(lemma, pos)]
+        if (lemma, pos) in WordnetSQL.sense_cache:
+            return WordnetSQL.sense_cache[(lemma, pos)]
         conn = self.get_conn()
         c = conn.cursor()
         if pos:
@@ -301,7 +294,7 @@ class WordNetSQL:
                 rpos = 'a'
             senses.append(SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition, tagcount))
         conn.close()
-        WordNetSQL.sense_cache[(lemma, pos)] = senses
+        WordnetSQL.sense_cache[(lemma, pos)] = senses
         return senses
         
     def cache_all_sense_by_lemma(self):
@@ -310,9 +303,9 @@ class WordNetSQL:
             result = c.execute("""SELECT lemma, pos, synsetid, sensekey, definition FROM wordsXsensesXsynsets;""").fetchall()
 
             for (lemma, pos, synsetid, sensekey, definition) in result:
-                if lemma not in WordNetSQL.sense_cache:
-                    WordNetSQL.sense_cache[lemma] = []
-                WordNetSQL.sense_cache[lemma].append(SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition))
+                if lemma not in WordnetSQL.sense_cache:
+                    WordnetSQL.sense_cache[lemma] = []
+                WordnetSQL.sense_cache[lemma].append(SenseInfo(SynsetID.from_string(synsetid), sensekey, '', definition))
 
     def get_gloss_by_sk(self, sk):
         sid = self.get_senseinfo_by_sk(sk).get_full_sid()
@@ -320,8 +313,8 @@ class WordNetSQL:
     
     gloss_cache = dict()
     def get_gloss_by_id(self, sid):
-        if sid in WordNetSQL.gloss_cache:
-            return WordNetSQL.gloss_cache[sid]
+        if sid in WordnetSQL.gloss_cache:
+            return WordnetSQL.gloss_cache[sid]
         if not sid:
             return None
         gloss_file = self.search_by_id(sid)
@@ -358,10 +351,10 @@ class WordNetSQL:
                         features['wnsk'] = wnsk[0].get('value')
                     a_sense.tokens.append(GlossInfo.from_dict(features))
             # Read glosses data
-            WordNetSQL.gloss_cache[sid] = a_sense
+            WordnetSQL.gloss_cache[sid] = a_sense
             return a_sense
         else:
-            WordNetSQL.gloss_cache[sid] = None
+            WordnetSQL.gloss_cache[sid] = None
             return None
         pass
 
@@ -382,7 +375,7 @@ class WordNetSQL:
 
     @staticmethod
     def get_default(auto_cache=True):
-        wnsql = WordNetSQL(YLConfig.WORDNET_30_PATH, YLConfig.WORDNET_30_GLOSSTAG_PATH)
+        wnsql = WordnetSQL(YLConfig.WORDNET_30_PATH, YLConfig.WORDNET_30_GLOSSTAG_PATH)
         # Cache everything into memory if needed
         if auto_cache:
             wnsql.cache_all_words()

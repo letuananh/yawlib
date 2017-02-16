@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 
 '''
-WordNetSQLite wrapper
+Wordnet 3.0 SQLite wrapper
 Latest version can be found at https://github.com/letuananh/lelesk
 
-Usage:
-
-	[TODO] To be added
 
 @author: Le Tuan Anh <tuananh.ke@gmail.com>
 '''
 
-# Copyright (c) 2014, Le Tuan Anh <tuananh.ke@gmail.com>
+# Copyright (c) 2017, Le Tuan Anh <tuananh.ke@gmail.com>
 #
 #Permission is hereby granted, free of charge, to any person obtaining a copy
 #of this software and associated documentation files (the "Software"), to deal
@@ -32,16 +29,17 @@ Usage:
 #THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2014, lelesk"
-__credits__ = [ "Le Tuan Anh" ]
+__copyright__ = "Copyright 2017, yawlib"
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
-from .wordnetsql import WordNetSQL
+
+from .wordnetsql import WordnetSQL
+
 #------------------------------------------------------------------------------
 
-
-
+__all__ = ['WordnetSQL']

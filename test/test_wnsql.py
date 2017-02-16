@@ -43,15 +43,15 @@ __status__ = "Prototype"
 
 import unittest
 from yawlib import YLConfig
-from yawlib.wordnetsql import WordNetSQL as WSQL
+from yawlib.wordnetsql import WordnetSQL as WSQL
 
 ########################################################################
 
 
-class TestWordNetSQL(unittest.TestCase):
+class TestWordnetSQL(unittest.TestCase):
 
     def get_wn(self):
-        # Build a WordNetSQL object (default location: ~/wordnet/sqlite-30.db)
+        # Build a WordnetSQL object (default location: ~/wordnet/sqlite-30.db)
         return WSQL(YLConfig.WNSQL30_PATH)
 
     def test_wnsql_basic(self):

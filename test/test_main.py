@@ -67,7 +67,7 @@ MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
 class TestHelperMethods(unittest.TestCase):
 
     nullrep = TextReport('/dev/null')
-    
+
     def test_dump_synset(self):
         print("Test get synset by ID")
         gwn = get_gwn()
@@ -98,7 +98,7 @@ class TestGWNXML(unittest.TestCase):
         self.assertEqual(len(xmlwn.synsets), 218)
 
 
-class TestGlossWordNetSQL(unittest.TestCase):
+class TestGlossWordnetSQL(unittest.TestCase):
 
     def test_get_freq(self):
         # WSQL should support get_tagcount

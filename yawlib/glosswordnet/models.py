@@ -46,9 +46,6 @@ from chirptext.leutile import StringTool
 # CONFIGURATION
 #-----------------------------------------------------------------------
 
-# How to use this library?
-# from glosswordnet.models import SynsetCollection, Synset, GlossRaw, SenseKey, Term, Gloss, GlossGroup, SenseTag, GlossItem
-
 
 class GlossRaw:
     ''' Raw glosses extracted from WordNet Gloss Corpus.
@@ -103,6 +100,9 @@ class GlossedSynset(Synset):
         for gloss in self.glosses:
             keys.extend(gloss.get_tagged_sensekey())
         return keys
+
+    def __getitem__(self, name):
+        return self.glosses[name]
 
     def __repr__(self):
         if self.lemmas is not None and len(self.lemmas) > 0:
@@ -159,7 +159,7 @@ class Gloss:
         return "gloss-%s" % (self.cat)
 
     def __str__(self):
-        return "{Gloss oid='%s' type='%s' items: %s}" % (self.origid, self.cat, self.items)
+        return "{Gloss('%s'|'%s') %s}" % (self.origid, self.cat, self.text())
 
 
 class GlossItem:
@@ -192,13 +192,11 @@ class GlossItem:
         if nopunc and self.cat == 'punc':
             return set()
         lemmata = set()
-        if self.lemma:
+        if self.lemma is not None and len(self.lemma) > 0:
             tokens = self.lemma.split('|')
             for token in tokens:
                 parts = token.split("%")
                 lemmata.add(parts[0])
-        else:
-            lemmata.add(self.get_lemma())
         return lemmata
 
     def __repr__(self):

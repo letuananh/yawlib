@@ -68,7 +68,7 @@ from yawlib.helpers import add_wordnet_config
 from yawlib.helpers import show_info
 from yawlib import XMLGWordNet
 from yawlib import SQLiteGWordNet
-from yawlib import WordNetSQL as WSQL
+from yawlib import WordnetSQL as WSQL
 
 try:
     from fuzzywuzzy import fuzz
@@ -153,7 +153,7 @@ def export_gwnsql_synsets(args):
 
 
 def export_wnsql_synsets(args):
-    print("Exporting synsets' info (lemmas/defs/examples) from WordNetSQL (Princeton Wordnet 3.0) to text file")
+    print("Exporting synsets' info (lemmas/defs/examples) from WordnetSQL (Princeton Wordnet 3.0) to text file")
     show_info(args)
     output_with_sid_file = os.path.abspath('./data/wn30_lemmas.txt')
     output_without_sid_file = os.path.abspath('./data/wn30_lemmas_noss.txt')
