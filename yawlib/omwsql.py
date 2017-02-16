@@ -39,12 +39,7 @@ __status__ = "Prototype"
 
 #-----------------------------------------------------------------------
 
-import itertools
-import sqlite3
-from collections import defaultdict as dd
-from puchikarui import Schema, Execution#, DataSource, Table
-from yawlib.config import YLConfig 
-from yawlib.models import SenseInfo
+from puchikarui import Schema, Execution
 from yawlib.models import SynsetID
 
 #-----------------------------------------------------------------------
@@ -59,6 +54,7 @@ class OMWNTUMCSchema(Schema):
         self.add_table('sense', 'synset wordid lang rank lexid freq src'.split(), alias='sense')
         self.add_table('synset_def', 'synset lang def sid'.split(), alias='sdef')
         self.add_table('synset_ex', 'synset lang def sid'.split(), alias='sex')
+
 
 class OMWSQL:
     def __init__(self, db_path):

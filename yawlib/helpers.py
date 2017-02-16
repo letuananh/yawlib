@@ -54,7 +54,7 @@ from .models import SynsetID
 from yawlib import YLConfig
 from yawlib import GWordnetXML as GWNXML
 from yawlib import GWordnetSQLite as GWNSQL
-from yawlib import WordNetSQL as WSQL
+from yawlib import WordnetSQL as WSQL
 
 ########################################################################
 # CONFIGURATION
@@ -241,7 +241,7 @@ def show_info(args):
     '''
     print("GlossWordNet XML folder: %s" % args.gloss_xml)
     print("GlossWordNet SQlite DB : %s" % args.glossdb)
-    print("Princeton WordNetSQL DB: %s" % args.wnsql)
+    print("Princeton WordnetSQL DB: %s" % args.wnsql)
     print("Use mockup data      : %s" % args.mockup)
 
 

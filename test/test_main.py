@@ -98,7 +98,7 @@ class TestGWNXML(unittest.TestCase):
         self.assertEqual(len(xmlwn.synsets), 218)
 
 
-class TestGlossWordNetSQL(unittest.TestCase):
+class TestGlossWordnetSQL(unittest.TestCase):
 
     def test_get_freq(self):
         # WSQL should support get_tagcount

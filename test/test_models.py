@@ -43,7 +43,8 @@ __status__ = "Prototype"
 
 import unittest
 import logging
-from yawlib import SynsetID, SenseInfo
+from yawlib import SynsetID, Synset, SynsetCollection
+from yawlib.glosswordnet.models import GlossedSynset, GlossGroup
 
 ########################################################################
 
@@ -84,6 +85,7 @@ class TestSynsetIDWrapper(unittest.TestCase):
 
     def test_unusual_sid(self):
         s = SynsetID.from_string('80000683-x')
+        s = SynsetID.from_string(s)
         self.assertEqual(s.pos, 'x')
         self.assertEqual(s.offset, '80000683')
         # ?
@@ -113,11 +115,31 @@ class TestSynsetIDWrapper(unittest.TestCase):
         # no POS
         self.assertRaises(Exception, lambda: SynsetID.from_string('12345678'))
 
-    def test_sense_info(self):
-        s = SenseInfo('12345678n', lemma='foo')
+    def test_synset(self):
+        s = Synset('12345678n', lemma='foo')
+        ss = SynsetCollection()
+        ss.add(s)
         self.assertEqual(s.synsetid, '12345678-n')
+        self.assertEqual(s.sid, '12345678-n')
         self.assertEqual(s.lemma, 'foo')
 
+    def test_gsynset(self):
+        gs = GlossedSynset(112345678)
+        self.assertIsNotNone(gs)
+        self.assertEqual(str(gs), '(GSynset:12345678-n)')
+        # add an empty gloss item
+        gs.add_raw_gloss('boo', 'boo foo')
+        g = gs.add_gloss(None, None)
+        g.add_gloss_item(*([None] * 7))
+        words = gs[0].get_gramwords()
+        self.assertEqual(words, [])
+        # now a valid gloss item
+        g.add_gloss_item('', 'foo%1|boo%2', '', '', '', '', '')
+        words = g.get_gramwords()
+        self.assertEqual(set(words), {'boo', 'foo'})
+        self.assertEqual(gs.get_orig_gloss(), '')
+        # gloss group
+        self.assertIsNotNone(GlossGroup())
 
 ######################################################################
 

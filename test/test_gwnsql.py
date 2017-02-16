@@ -52,13 +52,14 @@ TEST_DIR = os.path.dirname(__file__)
 TEST_DATA = os.path.join(TEST_DIR, 'data')
 MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
 TEST_DB = os.path.join(TEST_DATA, 'test.db')
+TEST_DB_SETUP = os.path.join(TEST_DATA, 'test2.db')
 
 ########################################################################
 
 
 def get_gwn(db_path=TEST_DB):
     db = GWNSQL(db_path)
-    if not os.path.isfile(db_path) or os.path.getsize(TEST_DB) == 0:
+    if not os.path.isfile(db_path) or os.path.getsize(db_path) == 0:
         db.setup()
         # insert dummy synsets
         xmlwn = GWordnetXML()
@@ -67,11 +68,35 @@ def get_gwn(db_path=TEST_DB):
     return db
 
 
-class TestGlossWordNetSQL(unittest.TestCase):
+class TestGlossWordnetSQL(unittest.TestCase):
 
     def test_xml_to_sqlite(self):
         self.assertIsNotNone(get_gwn())
         pass
+
+    def test_setup_insert_stuff(self):
+        if os.path.isfile(TEST_DB_SETUP):
+            os.unlink(TEST_DB_SETUP)
+        db = GWNSQL(TEST_DB_SETUP)
+        db.setup()
+        xmlwn = GWordnetXML()
+        xmlwn.read(MOCKUP_SYNSETS_DATA)
+        db.insert_synset(xmlwn.synsets[0])
+        db.insert_synsets(xmlwn.synsets[1:3])
+        self.assertIsNotNone(db)
+        # test select stuff out
+        ss = db.all_synsets()
+        self.assertEqual(len(ss), 3)
+        # all tags
+        tags = db.get_all_sensekeys_tagged()
+        self.assertEqual(tags, {'not%4:02:00::', 'be_born%2:30:00::', 'christian_era%1:28:00::', 'christ%1:18:00::', 'date%1:28:04::', 'musical_accompaniment%1:10:00::', 'a_cappella%4:02:00::', 'ad%4:02:00::', 'ce%4:02:00::'})
+        # all sensekeys
+        sks = db.get_all_sensekeys()
+        self.assertEqual(len(sks), 7)
+
+    def test_results_to_synsets(self):
+        db = get_gwn()
+        db.results_to_synsets([], None)
 
     def test_get_synset_by_id(self):
         gwn = get_gwn()
@@ -96,8 +121,12 @@ class TestGlossWordNetSQL(unittest.TestCase):
         db = get_gwn()
         glosses = db.schema.gloss.select()
         # select glosses
-        print("Gloss count: {}".format(len(glosses)))
-        print(glosses[:5])
+        self.assertEqual(len(glosses), 714)
+        text = db.get_glossitems_text('00001740r')
+        self.assertEqual([x.lemma for x in text], ['without', 'musical%1|musical%3', 'accompaniment%1', '', 'they', 'perform%2', 'a', 'cappella', ''])
+        # sensetags
+        tags = db.get_sensetags('r00001740')
+        self.assertEqual([x.sk for x in tags], ['musical_accompaniment%1:10:00::', 'a_cappella%4:02:00::'])
         pass
 
     def test_get_synset_by_term(self):

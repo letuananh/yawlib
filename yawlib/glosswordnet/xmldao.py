@@ -32,7 +32,7 @@ Adapted from: https://github.com/letuananh/lelesk
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
-__credits__ = ["Le Tuan Anh"]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -207,13 +207,13 @@ class GWordnetXML:
         tag = cf_node.get('tag') if not self.memory_save else ''
         lemma = StringTool.strip(cf_node.get('lemma')) if not self.memory_save else ''
         pos = cf_node.get('pos')
-        cat = cf_node.get('type') # if cf_node.get('type') else 'cf'
+        cat = cf_node.get('type')  # if cf_node.get('type') else 'cf'
         coll = cf_node.get('coll')
         rdf = cf_node.get('rdf')
         origid = cf_node.get('id')
         sep = cf_node.get('sep')
         text = StringTool.strip(cf_node.xpath("string()"))
-        cf_obj =  gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text, 'coll:' + coll)
+        cf_obj = gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text, 'coll:' + coll)
         # Parse glob info if it's available
         for child_node in cf_node:
             if child_node.tag == 'glob':
