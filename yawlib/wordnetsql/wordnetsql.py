@@ -43,7 +43,7 @@ import sqlite3
 from collections import defaultdict as dd
 from puchikarui import Schema, Execution  # DataSource, Table
 from yawlib.config import YLConfig
-from yawlib.models import SynsetID, Synset
+from yawlib.models import SynsetID, Synset, SynsetCollection
 
 #-----------------------------------------------------------------------
 
@@ -77,6 +77,60 @@ class WordnetSQL:
     def get_all_synsets(self):
         with Execution(self.schema) as exe:
             return exe.schema.wss.select(columns=['synsetid', 'lemma', 'sensekey', 'tagcount'])
+
+    def get_synset_by_id(self, synsetid):
+        sid = self.ensure_sid(synsetid)
+        with Execution(self.schema) as exe:
+            # get synset object
+            rows = exe.schema.wss.select(where='synsetid=?', values=(sid,))
+            if rows is not None and len(rows) > 0:
+                ss = Synset(synsetid)
+                ss.definition = rows[0].definition
+                for row in rows:
+                    ss.add_lemma(row.lemma)
+                    ss.add_key(row.sensekey)
+                    ss.tagcount += row.tagcount
+                # add examples
+                exes = exe.schema.ex.select(where='synsetid=?', values=[sid], orderby='sampleid')
+                for ex in exes:
+                    ss.exes.append(ex.sample)
+                return ss
+
+    def get_synset_by_sk(self, sk):
+        with Execution(self.schema) as exe:
+            # get synset object
+            rows = exe.schema.wss.select(where='sensekey=?', values=(sk,))
+            if rows is not None and len(rows) > 0:
+                ss = Synset(rows[0].synsetid)
+                ss.definition = rows[0].definition
+                for row in rows:
+                    ss.add_lemma(row.lemma)
+                    ss.add_key(row.sensekey)
+                    ss.tagcount += row.tagcount
+                # add examples
+                exes = exe.schema.ex.select(where='synsetid=?', values=[rows[0].synsetid], orderby='sampleid')
+                for ex in exes:
+                    ss.exes.append(ex.sample)
+                return ss
+
+    def get_synsets_by_lemma(self, lemma):
+        with Execution(self.schema) as exe:
+            # get synset object
+            rows = exe.schema.wss.select(where='lemma=?', values=(lemma,))
+            synsets = SynsetCollection()
+            if rows is not None and len(rows) > 0:
+                for row in rows:
+                    ss = Synset(row.synsetid)
+                    ss.definition = row.definition
+                    ss.add_lemma(row.lemma)
+                    ss.add_key(row.sensekey)
+                    ss.tagcount = row.tagcount
+                    # add examples
+                    exes = exe.schema.ex.select(where='synsetid=?', values=[row.synsetid], orderby='sampleid')
+                    for ex in exes:
+                        ss.exes.append(ex.sample)
+                    synsets.add(ss)
+            return synsets
 
     def cache_tagcounts(self):
         with Execution(self.schema) as exe:
