@@ -60,16 +60,21 @@ TEST_DB_SETUP = os.path.join(TEST_DATA, 'test2.db')
 def get_gwn(db_path=TEST_DB):
     db = GWNSQL(db_path)
     if not os.path.isfile(db_path) or os.path.getsize(db_path) == 0:
-        db.setup()
         # insert dummy synsets
         xmlwn = GWordnetXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
         db.insert_synsets(xmlwn.synsets)
+        db.schema.close()
     return db
 
 
 class TestGlossWordnetSQL(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        print("Setting up tests")
+        gwn = get_gwn()
+        
     def test_xml_to_sqlite(self):
         self.assertIsNotNone(get_gwn())
         pass
@@ -78,7 +83,6 @@ class TestGlossWordnetSQL(unittest.TestCase):
         if os.path.isfile(TEST_DB_SETUP):
             os.unlink(TEST_DB_SETUP)
         db = GWNSQL(TEST_DB_SETUP)
-        db.setup()
         xmlwn = GWordnetXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
         db.insert_synset(xmlwn.synsets[0])

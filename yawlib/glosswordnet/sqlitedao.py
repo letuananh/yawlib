@@ -59,8 +59,8 @@ logger.setLevel(logging.INFO)
 
 
 class GWordnetSchema(Schema):
-    def __init__(self, data_source=None):
-        Schema.__init__(self, data_source)
+    def __init__(self, data_source=None, setup_file=SETUP_SCRIPT):
+        Schema.__init__(self, data_source, setup_file=SETUP_SCRIPT)
         self.add_table('meta', 'title license WNVer url maintainer'.split())
         self.add_table('synset', 'id offset pos'.split())
         # --
@@ -83,17 +83,6 @@ class GWordnetSQLite:
             logger.setLevel(logging.INFO)
         else:
             logger.setLevel(logging.WARNING)
-
-    def setup(self):
-        with Execution(self.schema) as exe:
-            logger.debug('Creating database file at {}'.format(self.db_path))
-            exe.ds.executefile(SETUP_SCRIPT)
-            try:
-                for meta in exe.schema.meta.select():
-                    logger.info(meta)
-            except Exception as e:
-                logger.exception("Error while setting up database ...")
-        pass  # end setup()
 
     def insert_synset(self, synset):
         ''' Helper method for storing a single synset
@@ -186,9 +175,9 @@ class GWordnetSQLite:
             results = exe.schema.synset.select(where='id=?', values=[sid.to_gwnsql()])
             if results:
                 synsets = self.results_to_synsets(results, exe)
-                if len(synsets) != 1:
-                    raise Exception("Cannot find synset with provided ID: {})".format(synsetid))
-        return synsets[0] if len(synsets) == 1 else None
+                if len(synsets) == 1:
+                    return synsets[0]
+        return None
 
     def get_synsets_by_ids(self, synsetids):
         sids = [str(SynsetID.from_string(x).to_gwnsql()) for x in synsetids]

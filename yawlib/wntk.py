@@ -60,7 +60,7 @@ from lxml import etree
 from collections import defaultdict as dd
 from collections import namedtuple
 
-from chirptext.leutile import Counter, Timer, header, FileTool
+from chirptext.leutile import Counter, Timer, header, FileHelper
 
 from .helpers import config_logging, add_logging_config
 from .helpers import add_wordnet_config
@@ -83,9 +83,9 @@ except Exception as e:
 # >>> WARNING: Do NOT change these values here. Change config.py instead!
 #
 
-GLOSSTAG_NTUMC_OUTPUT = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH = FileTool.abspath('data/glosstag_patch.xml')
-MISALIGNED = FileTool.abspath('data/misaligned.xml')
+GLOSSTAG_NTUMC_OUTPUT = FileHelper.abspath('data/glosstag_ntumc')
+GLOSSTAG_PATCH = FileHelper.abspath('data/glosstag_patch.xml')
+MISALIGNED = FileHelper.abspath('data/misaligned.xml')
 
 #-----------------------------------------------------------------------
 
