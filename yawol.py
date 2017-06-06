@@ -46,6 +46,7 @@ __status__ = "Prototype"
 ########################################################################
 
 import json
+import logging
 from flask import Flask, Response, abort
 from functools import wraps
 from flask import request
@@ -53,6 +54,11 @@ from yawlib import YLConfig
 from yawlib import SynsetID, SynsetCollection
 from yawlib import WordnetSQL as WSQL
 
+
+# ---------------------------------------------------------------------
+# CONFIGURATION
+# ---------------------------------------------------------------------
+logger = logging.getLogger(__name__)
 app = Flask(__name__, static_url_path="")
 wsql = WSQL(YLConfig.WNSQL30_PATH)
 
@@ -93,6 +99,7 @@ def search(query):
             return SynsetCollection().add(ss).to_json_str()
     except Exception as e:
         # not synsetid
+        logger.exception(e, "Invalid synset ID")
         pass
     # try search by lemma
     synsets = wsql.get_synsets_by_lemma(query)
@@ -107,10 +114,11 @@ def search(query):
     abort(404)
 
 
-@app.route('/yawol/ping', methods=['GET'])
+@app.route('/yawol/version', methods=['GET'])
 @jsonp
-def ping():
-    return json.dumps({'msg': 'hello'})
+def version():
+    return json.dumps({'product': 'yawol',
+                       'version': __version__})
 
 
 if __name__ == '__main__':
