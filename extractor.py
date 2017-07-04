@@ -56,7 +56,7 @@ from chirptext.leutile import Counter
 from chirptext.leutile import Timer
 from chirptext.leutile import uniquify
 from chirptext.leutile import header
-from chirptext.leutile import FileTool
+from chirptext.leutile import FileHelper
 
 from yawlib import YLConfig
 from yawlib import SynsetID
@@ -84,9 +84,9 @@ WORDNET_30_PATH          = YLConfig.WORDNET_30_PATH
 WORDNET_30_GLOSSTAG_PATH = YLConfig.WORDNET_30_GLOSSTAG_PATH
 WORDNET_30_GLOSS_DB_PATH = YLConfig.WORDNET_30_GLOSS_DB_PATH
 DB_INIT_SCRIPT           = YLConfig.DB_INIT_SCRIPT
-MOCKUP_SYNSETS_DATA      = FileTool.abspath('data/test.xml')
-GLOSSTAG_NTUMC_OUTPUT    = FileTool.abspath('data/glosstag_ntumc')
-GLOSSTAG_PATCH           = FileTool.abspath('data/glosstag_patch.xml')
+MOCKUP_SYNSETS_DATA      = FileHelper.abspath('data/test.xml')
+GLOSSTAG_NTUMC_OUTPUT    = FileHelper.abspath('data/glosstag_ntumc')
+GLOSSTAG_PATCH           = FileHelper.abspath('data/glosstag_patch.xml')
 glosstag_files = lambda x : [
     os.path.join(x, 'adv.xml')
     ,os.path.join(x, 'adj.xml')
@@ -95,7 +95,7 @@ glosstag_files = lambda x : [
     ]
 MERGED_FOLDER            = os.path.join(WORDNET_30_GLOSSTAG_PATH , 'merged')
 GLOSSTAG_XML_FILES       = glosstag_files(MERGED_FOLDER)
-MISALIGNED               = FileTool.abspath('data/misaligned.xml')
+MISALIGNED               = FileHelper.abspath('data/misaligned.xml')
 
 #-----------------------------------------------------------------------
 

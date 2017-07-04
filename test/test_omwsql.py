@@ -45,9 +45,8 @@ import sys
 import os
 import argparse
 import unittest
-from chirptext.leutile import FileTool
+from chirptext.leutile import FileHelper
 from yawlib.omwsql import OMWSQL
-
 from yawlib.config import YLConfig
 
 ########################################################################
@@ -64,7 +63,7 @@ class TestOMWSQL(unittest.TestCase):
         self.assertTrue(wn)
         # get all available synsets
         ss = wn.get_all_synsets()
-        self.assertEqual(120464, len(ss))
+        self.assertGreater(len(ss), 120000)
         self.assertEqual(ss[0].synset, "00001740-a")
 
     def test_get_synset_def(self):

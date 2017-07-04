@@ -64,6 +64,32 @@ class TestWordnetSQL(unittest.TestCase):
         examples = wn.get_examples_by_sid(SID)
         print(examples)
 
+    def test_get_synset_by_id(self):
+        db = self.get_wn()
+        ss = db.get_synset_by_id('01775164-v')
+        self.assertEqual(ss.synsetid, '01775164-v')
+        self.assertEqual(ss.definition, 'have a great affection or liking for')
+        self.assertEqual(ss.lemmas, ['love'])
+        self.assertEqual(ss.lemma, 'love')
+        self.assertEqual(ss.keys, ['love%2:37:00::'])
+        self.assertEqual(ss.tagcount, 43)
+        self.assertEqual(ss.exes, ['I love French food', 'She loves her boss and works hard for him'])
+
+    def test_get_synsets_by_lemma(self):
+        db = self.get_wn()
+        synsets = db.get_synsets_by_lemma('love')
+        self.assertEqual(len(synsets), 10)
+        self.assertEqual(synsets[0].synsetid, '07543288-n')
+        self.assertEqual(synsets[0].definition, 'a strong positive emotion of regard and affection')
+        self.assertEqual(synsets[0].tagcount, 42)
+
+    def test_get_synset_by_sk(self):
+        db = self.get_wn()
+        ss = db.get_synset_by_sk('love%2:37:00::')
+        self.assertEqual(ss.synsetid, '01775164-v')
+        self.assertEqual(ss.definition, 'have a great affection or liking for')
+        self.assertEqual(ss.tagcount, 43)
+
     def test_get_freq(self):
         # WSQL should support get_tagcount
         db = self.get_wn()

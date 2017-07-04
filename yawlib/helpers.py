@@ -48,7 +48,7 @@ import itertools
 import logging
 
 # from puchikarui import Schema, Execution#, DataSource, Table
-from chirptext.leutile import jilog, TextReport, FileTool
+from chirptext.leutile import jilog, TextReport, FileHelper
 
 from .models import SynsetID
 from yawlib import YLConfig
@@ -60,7 +60,7 @@ from yawlib import WordnetSQL as WSQL
 # CONFIGURATION
 ########################################################################
 
-MOCKUP_SYNSETS_DATA = (FileTool.abspath('data/test.xml'),)
+MOCKUP_SYNSETS_DATA = (FileHelper.abspath('data/test.xml'),)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 

@@ -41,6 +41,7 @@ __status__ = "Prototype"
 
 ########################################################################
 
+import json
 import re
 from chirptext.leutile import uniquify
 
@@ -147,6 +148,20 @@ class Synset(object):
         pass
 
     @property
+    def definition(self):
+        if self.defs is not None and len(self.defs) > 0:
+            return self.defs[0]
+
+    @definition.setter
+    def definition(self, value):
+        if self.defs is None:
+            self.defs = []
+        elif len(self.defs) == 0:
+            self.defs.append(value)
+        else:
+            self.defs[0] = value
+
+    @property
     def synsetid(self):
         ''' An alias of sid '''
         return self.sid
@@ -190,6 +205,17 @@ class Synset(object):
                 tokens.extend(l.split())
         return uniquify(tokens)
 
+    def to_json(self):
+        return {'synsetid': self.synsetid.to_canonical(),
+                'definition': self.definition,
+                'lemmas': self.lemmas,
+                'sensekeys': self.keys,
+                'tagcount': self.tagcount,
+                'examples': self.exes}
+
+    def to_json_str(self):
+        return json.dumps(self.to_json())
+
     def __str__(self):
         return "(Synset:{})".format(self.sid)
 
@@ -209,6 +235,7 @@ class SynsetCollection(object):
         if synset.keys is not None and len(synset.keys) > 0:
             for key in synset.keys:
                 self.sk_map[key] = synset
+        return self
 
     def __getitem__(self, name):
         return self.synsets[name]
@@ -238,9 +265,16 @@ class SynsetCollection(object):
         ''' Add synsets from another synset collection '''
         for synset in another_scol.synsets:
             self.add(synset)
+        return self
 
     def __str__(self):
         return str(self.synsets)
+
+    def to_json(self):
+        return [x.to_json() for x in self]
+
+    def to_json_str(self):
+        return json.dumps(self.to_json())
 
 
 ########################################################################
