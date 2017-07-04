@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-YAWOL - Yet Another Wordnet Online (REST server)
+YAWOL-Django - Yet Another Wordnet Online (REST server) for Django
 Latest version can be found at https://github.com/letuananh/yawlib
 
 References:
@@ -47,10 +47,8 @@ __status__ = "Prototype"
 
 import json
 import logging
-import flask
-from flask import Flask, Response, abort
-from functools import wraps
-from flask import request
+import django
+from django.http import HttpResponse, Http404
 from yawlib import YLConfig
 from yawlib import SynsetID, SynsetCollection
 from yawlib import WordnetSQL as WSQL
@@ -60,68 +58,70 @@ from yawlib import WordnetSQL as WSQL
 # CONFIGURATION
 # ---------------------------------------------------------------------
 logger = logging.getLogger(__name__)
-app = Flask(__name__, static_url_path="")
 wsql = WSQL(YLConfig.WNSQL30_PATH)
 
 
-# Adopted from: http://flask.pocoo.org/snippets/79/
 def jsonp(func):
-    """Wraps JSONified output for JSONP requests."""
-    @wraps(func)
-    def decorated_function(*args, **kwargs):
-        data = func(*args, **kwargs)
-        callback = request.args.get('callback', False)
-        if callback:
-            content = "{}({})".format(str(callback), data)
-            return Response(content, mimetype="application/javascript")
+    ''' JSON/JSONP decorator '''
+    def decorator(request, *args, **kwargs):
+        objects = func(request, *args, **kwargs)
+        # ignore HttpResponse
+        if isinstance(objects, HttpResponse):
+            return objects
+        # JSON/JSONP response
+        data = json.dumps(objects)
+        if 'callback' in request.GET:
+            callback = request.GET['callback']
+        elif 'callback' in request.POST:
+            callback = request.POST['callback']
         else:
-            return Response(data, mimetype="application/json")
-    return decorated_function
+            return HttpResponse(data, "application/json")
+        # is JSONP
+        # logging.debug("A jsonp response")
+        data = '{c}({d});'.format(c=callback, d=data)
+        return HttpResponse(data, "application/javascript")
+    return decorator
 
 
-@app.route('/yawol/synset/<synsetid>', methods=['GET'])
 @jsonp
-def get_synset(synsetid):
+def get_synset(request, synsetid):
+    ''' Get a synset by ID
+    Mapping: /yawol/synset/<synsetID> '''
     ss = wsql.get_synset_by_id(synsetid)
     if ss is not None:
-        return ss.to_json_str()
+        return ss.to_json()
     else:
-        abort(404)
+        raise Http404("Synset doesn't exist")
 
 
-@app.route('/yawol/search/<query>', methods=['GET'])
 @jsonp
-def search(query):
+def search(request, query):
+    ''' Search by lemma, sensekey or synsetID
+    Mapping: /yawol/search/<query>
+    '''
     # assume that query is a synset?
     try:
         sid = SynsetID.from_string(query)
         ss = wsql.get_synset_by_id(sid)
         if ss is not None:
-            return SynsetCollection().add(ss).to_json_str()
-    except Exception as e:
-        # not synsetid
-        logger.exception(e, "Invalid synset ID")
+            return SynsetCollection().add(ss).to_json()
+    except:
         pass
-    # try search by lemma
+    # try to search by lemma
     synsets = wsql.get_synsets_by_lemma(query)
     if synsets:
-        return synsets.to_json_str()
+        return synsets.to_json()
     else:
-        # search by sensekey
+        # try to search by sensekey
         ss = wsql.get_synset_by_sk(query)
         if ss:
-            return SynsetCollection().add(ss).to_json_str()
+            return SynsetCollection().add(ss).to_json()
     # invalid query
-    abort(404)
+    raise Http404('Invalid query')
 
 
-@app.route('/yawol/version', methods=['GET'])
 @jsonp
-def version():
-    return json.dumps({'product': 'yawol',
-                       'version': __version__,
-                       'server': 'yawol-flask/Flask-{}'.format(flask.__version__)})
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+def version(request):
+    return {'product': 'yawol',
+            'version': __version__,
+            'server': 'yawol-django/Django-{}'.format(django.get_version())}
