@@ -1,6 +1,6 @@
 [submodule "modules/puchikarui"]
 	path = modules/puchikarui
-	url = git@github.com:letuananh/puchikarui.git
+	url = https://github.com/letuananh/puchikarui
 [submodule "modules/chirptext"]
 	path = modules/chirptext
-	url = git@github.com:letuananh/chirptext.git
+	url = https://github.com/letuananh/chirptext

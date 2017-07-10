@@ -115,6 +115,11 @@ def search(query):
     abort(404)
 
 
+@app.route('/yawol/', methods=['GET'])
+def index():
+    return Response('Yawol {yv} - yawol-flask/Flask-{fv}'.format(yv=__version__, fv=flask.__version__), mimetype='text/html')
+
+
 @app.route('/yawol/version', methods=['GET'])
 @jsonp
 def version():
