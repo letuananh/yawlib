@@ -124,6 +124,7 @@ def index(request):
     ''' Yawol-django root '''
     return HttpResponse('Yawol {yv} - yawol-django/Django-{dv}'.format(yv=__version__, dv=django.get_version()), 'text/html')
 
+
 @jsonp
 def version(request):
     return {'product': 'yawol',
