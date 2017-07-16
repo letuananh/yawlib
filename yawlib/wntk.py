@@ -460,10 +460,7 @@ def convert(args):
         if answer != "CONFIRM":
             print("Script aborted!")
             exit()
-
     db = get_gwn(args)
-    header('Preparing database file ...')
-    db.setup()
     header('Importing data from XML to SQLite')
     t = Timer()
     header("Extracting Gloss WordNet (XML)")
@@ -657,8 +654,6 @@ def main():
     add_logging_config(parser)
     add_wordnet_config(parser)
     parser.add_argument('-p', '--pos', help='Specify part-of-speech')
-
-    parser.add_argument('-c', '--create', help='Create DB and then import data', action='store_true')
     parser.add_argument('-s', '--synset', help='Retrieve synset information by synsetid')
     parser.add_argument('-k', '--sensekey', help='Retrieve synset information by sensekey')
     parser.add_argument('-t', '--term', help='Retrieve synset information by term (word form)')
