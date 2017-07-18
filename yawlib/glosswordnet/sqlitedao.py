@@ -44,7 +44,7 @@ __status__ = "Prototype"
 import os
 import logging
 
-from puchikarui import Schema, Execution  # , DataSource, Table
+from puchikarui import Schema
 
 from yawlib.models import SynsetCollection, SynsetID
 
@@ -92,38 +92,35 @@ class GWordnetSQLite:
     def insert_synsets(self, synsets):
         ''' Store synsets with related information (sensekeys, terms, gloss, etc.)
         '''
-        with Execution(self.schema) as exe:
+        with self.schema.ds.open() as exe:
             # synset;
             for synset in synsets:
                 sid = synset.sid.to_gwnsql()
-                exe.schema.synset.insert([sid, synset.sid.offset, synset.sid.pos])
+                self.schema.synset.insert([sid, synset.sid.offset, synset.sid.pos], exe=exe)
                 # term;
                 for term in synset.lemmas:
-                    exe.schema.term.insert([sid, term])
+                    self.schema.term.insert([sid, term], exe=exe)
                 # sensekey;
                 for sk in synset.keys:
-                    exe.schema.sensekey.insert([sid, sk])
+                    self.schema.sensekey.insert([sid, sk], exe=exe)
                 # gloss_raw;
                 for gloss_raw in synset.raw_glosses:
-                    exe.schema.gloss_raw.insert([sid, gloss_raw.cat, gloss_raw.gloss])
+                    self.schema.gloss_raw.insert([sid, gloss_raw.cat, gloss_raw.gloss], exe=exe)
                 # gloss; DB: id origid sid cat | OBJ: gid origid cat
                 for gloss in synset.glosses:
-                    exe.schema.gloss.insert([gloss.origid, sid, gloss.cat])
-                    gloss.gid = exe.ds.execute('SELECT last_insert_rowid()').fetchone()[0]
+                    gloss.gid = self.schema.gloss.insert([gloss.origid, sid, gloss.cat], exe=exe)
                     # glossitem;
                     # OBJ | gloss, order, tag, lemma, pos, cat, coll, rdf, origid, sep, text
                     # DB  | id ord gid tag lemma pos cat coll rdf sep text origid
                     for item in gloss.items:
-                        exe.schema.glossitem.insert([item.order, gloss.gid, item.tag, item.lemma, item.pos, item.cat, item.coll, item.rdf, item.sep, item.text, item.origid])
-                        item.itemid = exe.ds.execute('SELECT last_insert_rowid()').fetchone()[0]
+                        item.itemid = self.schema.glossitem.insert([item.order, gloss.gid, item.tag, item.lemma, item.pos, item.cat, item.coll, item.rdf, item.sep, item.text, item.origid], exe=exe)
                     # sensetag;
                     for tag in gloss.tags:
                         # OBJ: tagid cat, tag, glob, glemma, gid, coll, origid, sid, sk, lemma
                         # DB: id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid
-                        exe.schema.sensetag.insert([tag.cat, tag.tag, tag.glob, tag.glemma,
-                                                    tag.glob_id, tag.coll, '', gloss.gid, tag.sk,
-                                                    tag.origid, tag.lemma, tag.item.itemid])
-            exe.ds.commit()
+                        self.schema.sensetag.insert([tag.cat, tag.tag, tag.glob, tag.glemma,
+                                                     tag.glob_id, tag.coll, '', gloss.gid, tag.sk,
+                                                     tag.origid, tag.lemma, tag.item.itemid], exe=exe)
         pass
 
     def results_to_synsets(self, results, exe, synsets=None):
@@ -133,25 +130,25 @@ class GWordnetSQLite:
             ss = GlossedSynset(result.id)
             sid = ss.sid.to_gwnsql()
             # term;
-            terms = exe.schema.term.select(where='sid=?', values=[sid])
+            terms = self.schema.term.select(where='sid=?', values=[sid], exe=exe)
             for term in terms:
                 ss.add_lemma(term.term)
             # sensekey;
-            sks = exe.schema.sensekey.select(where='sid=?', values=[sid])
+            sks = self.schema.sensekey.select(where='sid=?', values=[sid], exe=exe)
             for sk in sks:
                 ss.add_key(sk.sensekey)
             # gloss_raw | sid cat gloss
-            rgs = exe.schema.gloss_raw.select(where='sid=?', values=[sid])
+            rgs = self.schema.gloss_raw.select(where='sid=?', values=[sid], exe=exe)
             for rg in rgs:
                 ss.add_raw_gloss(rg.cat, rg.gloss)
             # gloss; DB: id origid sid cat | OBJ: gid origid cat
-            glosses = exe.schema.gloss.select(where='sid=?', values=[sid])
+            glosses = self.schema.gloss.select(where='sid=?', values=[sid], exe=exe)
             for gl in glosses:
                 gloss = ss.add_gloss(gl.origid, gl.cat, gl.id)
                 # glossitem;
                 # OBJ | gloss, order, tag, lemma, pos, cat, coll, rdf, origid, sep, text
                 # DB  | id ord gid tag lemma pos cat coll rdf sep text origid
-                glossitems = exe.schema.glossitem.select(where='gid=?', values=[gl.id])
+                glossitems = self.schema.glossitem.select(where='gid=?', values=[gl.id], exe=exe)
                 item_map = {}
                 for gi in glossitems:
                     item = gloss.add_gloss_item(gi.tag, gi.lemma, gi.pos, gi.cat, gi.coll, gi.rdf, gi.origid, gi.sep, gi.text, gi.id)
@@ -159,7 +156,7 @@ class GWordnetSQLite:
                 # sensetag;
                 # OBJ: tagid cat, tag, glob, glemma, gid, coll, origid, sid, sk, lemma
                 # DB: id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid
-                tags = exe.schema.sensetag.select(where='gid=?', values=[gl.id])
+                tags = self.schema.sensetag.select(where='gid=?', values=[gl.id], exe=exe)
                 for tag in tags:
                     gloss.tag_item(item_map[tag.itemid], tag.cat, tag.tag, tag.glob, tag.glob_lemma,
                                    tag.glob_id, tag.coll, tag.origid, tag.sid, tag.sk, tag.lemma, tag.id)
@@ -169,32 +166,32 @@ class GWordnetSQLite:
     def get_synset_by_id(self, synsetid):
         # ensure that synsetid is an instance of SynsetID
         sid = SynsetID.from_string(synsetid)
-
-        with Execution(self.schema) as exe:
-            # synset;
-            results = exe.schema.synset.select(where='id=?', values=[sid.to_gwnsql()])
+        with self.schema.ds.open() as exe:
+            results = self.schema.synset.select(where='id=?', values=[sid.to_gwnsql()])
             if results:
                 synsets = self.results_to_synsets(results, exe)
                 if len(synsets) == 1:
                     return synsets[0]
+                else:
+                    logger.warning("Multiple synsets retrieved for sid={}".format(synsetid))
         return None
 
     def get_synsets_by_ids(self, synsetids):
         sids = [str(SynsetID.from_string(x).to_gwnsql()) for x in synsetids]
         synsets = SynsetCollection()
-        with Execution(self.schema) as exe:
+        with self.schema.ds.open() as exe:
             # synset;
             wherecon = 'id IN (%s)' % (','.join(['?'] * len(sids)))
-            results = exe.schema.synset.select(where=wherecon, values=sids)
+            results = self.schema.synset.select(where=wherecon, values=sids, exe=exe)
             if results:
                 return self.results_to_synsets(results, exe, synsets)
         return synsets
 
     def all_synsets(self, synsets=None, deep_select=True):
         synsets = SynsetCollection()
-        with Execution(self.schema) as exe:
+        with self.schema.ds.open() as exe:
             # synset;
-            results = exe.schema.synset.select()
+            results = self.schema.synset.select(exe=exe)
             if results:
                 if deep_select:
                     return self.results_to_synsets(results, exe, synsets)
@@ -203,9 +200,9 @@ class GWordnetSQLite:
         return synsets
 
     def get_synset_by_sk(self, sensekey):
-        with Execution(self.schema) as exe:
+        with self.schema.ds.open() as exe:
             # synset;
-            results = exe.schema.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=[sensekey])
+            results = self.schema.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=[sensekey], exe=exe)
             if results:
                 synsets = self.results_to_synsets(results, exe)
                 if synsets and len(synsets) == 1:
@@ -214,22 +211,22 @@ class GWordnetSQLite:
 
     def get_synset_by_sks(self, sensekeys):
         synsets = SynsetCollection()
-        with Execution(self.schema) as exe:
+        with self.schema.ds.open() as exe:
             # synset;
             where = 'id IN (SELECT sid FROM sensekey where sensekey IN (%s))' % ','.join(['?'] * len(sensekeys))
-            results = exe.schema.synset.select(where=where, values=sensekeys)
+            results = self.schema.synset.select(where=where, values=sensekeys, exe=exe)
             if results:
                 return self.results_to_synsets(results, exe, synsets)
         return synsets
 
     def get_synsets_by_term(self, term, pos=None, synsets=None, sid_only=False):
         synsets = SynsetCollection()
-        with Execution(self.schema) as exe:
+        with self.schema.ds.open() as exe:
             # synset;
             if pos:
-                results = exe.schema.synset.select(where='pos = ? AND id IN (SELECT sid FROM term where lower(term)=?)', values=[pos, term.lower()])
+                results = self.schema.synset.select(where='pos = ? AND id IN (SELECT sid FROM term where lower(term)=?)', values=[pos, term.lower()], exe=exe)
             else:
-                results = exe.schema.synset.select(where='id IN (SELECT sid FROM term where lower(term)=?)', values=[term.lower()])
+                results = self.schema.synset.select(where='id IN (SELECT sid FROM term where lower(term)=?)', values=[term.lower()], exe=exe)
             if results:
                 if sid_only:
                     return results
@@ -238,37 +235,29 @@ class GWordnetSQLite:
         return synsets
 
     def get_all_sensekeys(self):
-        with Execution(self.schema) as exe:
-            # synset;
-            results = exe.schema.sensekey.select()
-            return results
+        return self.schema.sensekey.select()
 
     def get_all_sensekeys_tagged(self):
-        with Execution(self.schema) as exe:
-            # synset;
-            results = exe.schema.sensetag.select(columns=['sk'])
-            sensekeys = set()
-            for result in results:
-                sensekeys.add(result.sk)
-            return sensekeys
+        results = self.schema.sensetag.select(columns=['sk'])
+        sensekeys = set()
+        for result in results:
+            sensekeys.add(result.sk)
+        return sensekeys
 
     def get_glossitems_text(self, synsetid):
         sid = SynsetID.from_string(synsetid).to_gwnsql()
-        with Execution(self.schema) as exe:
-            where = 'gid IN (SELECT id FROM gloss WHERE sid = ?)'
-            results = exe.schema.glossitem.select(where=where, values=[sid],
-                                                  columns=['id', 'lemma', 'pos', 'text'])
-            items = []
-            for item in results:
-                g = GlossItem(gloss=None, tag=None, lemma=item.lemma, pos=item.pos, cat=None,
-                              coll=None, rdf=None, origid=None, sep=None, text=None, itemid=item.id)
-                items.append(g)
-            return items
+        where = 'gid IN (SELECT id FROM gloss WHERE sid = ?)'
+        results = self.schema.glossitem.select(where=where, values=[sid],
+                                               columns=['id', 'lemma', 'pos', 'text'])
+        items = []
+        for item in results:
+            g = GlossItem(gloss=None, tag=None, lemma=item.lemma, pos=item.pos, cat=None,
+                          coll=None, rdf=None, origid=None, sep=None, text=None, itemid=item.id)
+            items.append(g)
+        return items
 
     def get_sensetags(self, synsetid):
         sid = SynsetID.from_string(synsetid).to_gwnsql()
-        with Execution(self.schema) as exe:
-            results = exe.schema.sensetag.select(where='gid IN (SELECT id FROM gloss WHERE sid = ?)', values=[sid],
-                                                 columns=['id', 'lemma', 'sk'])
-            return results
-
+        return self.schema.sensetag.select(where='gid IN (SELECT id FROM gloss WHERE sid = ?)',
+                                           values=[sid],
+                                           columns=['id', 'lemma', 'sk'])

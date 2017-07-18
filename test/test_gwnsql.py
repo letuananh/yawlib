@@ -64,7 +64,6 @@ def get_gwn(db_path=TEST_DB):
         xmlwn = GWordnetXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
         db.insert_synsets(xmlwn.synsets)
-        db.schema.close()
     return db
 
 
@@ -73,8 +72,8 @@ class TestGlossWordnetSQL(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Setting up tests")
-        gwn = get_gwn()
-        
+        # gwn = get_gwn()
+
     def test_xml_to_sqlite(self):
         self.assertIsNotNone(get_gwn())
         pass

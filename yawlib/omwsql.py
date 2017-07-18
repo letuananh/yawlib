@@ -30,7 +30,7 @@ Latest version can be found at https://github.com/letuananh/yawlib
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2017, yawlib"
-__credits__ = [ "Le Tuan Anh" ]
+__credits__ = []
 __license__ = "MIT"
 __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
@@ -39,7 +39,7 @@ __status__ = "Prototype"
 
 #-----------------------------------------------------------------------
 
-from puchikarui import Schema, Execution
+from puchikarui import Schema
 from yawlib.models import SynsetID
 
 #-----------------------------------------------------------------------
@@ -63,13 +63,11 @@ class OMWSQL:
         # some cache here?
 
     def get_all_synsets(self):
-        with Execution(self.schema) as exe:
-            return exe.schema.ss.select()
+        return self.schema.ss.select()
 
     def get_synset_def(self, sid_str, lang='eng'):
         sid = SynsetID.from_string(sid_str)
-        with Execution(self.schema) as exe:
-            defs = exe.schema.sdef.select(where='synset=? and lang=?', values=[sid.to_canonical(), lang])
-            assert len(defs) in (0, 1)
-            if defs:
-                return defs[0]._2
+        defs = self.schema.sdef.select(where='synset=? and lang=?', values=[sid.to_canonical(), lang])
+        assert len(defs) in (0, 1)
+        if defs:
+            return defs[0]._2
