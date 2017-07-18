@@ -47,7 +47,6 @@ import os.path
 import itertools
 import logging
 
-# from puchikarui import Schema, Execution#, DataSource, Table
 from chirptext.leutile import jilog, TextReport, FileHelper
 
 from .models import SynsetID
