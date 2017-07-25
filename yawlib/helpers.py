@@ -47,7 +47,7 @@ import os.path
 import itertools
 import logging
 
-from chirptext.leutile import jilog, TextReport, FileHelper
+from chirptext.leutile import TextReport, FileHelper
 
 from .models import SynsetID
 from yawlib import YLConfig
@@ -246,9 +246,5 @@ def show_info(args):
 
 #--------------------------------------------------------
 
-def main():
-    jilog("This is a library, not a tool")
-
-
 if __name__ == "__main__":
-    main()
+    print("This is a library, not a tool")
