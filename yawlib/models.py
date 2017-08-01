@@ -216,6 +216,9 @@ class Synset(object):
     def to_json_str(self):
         return json.dumps(self.to_json())
 
+    def __repr__(self):
+        return str(self)
+    
     def __str__(self):
         return "(Synset:{})".format(self.sid)
 
