@@ -79,9 +79,9 @@ class WordnetSQL:
 
     def get_synset_by_id(self, synsetid):
         sid = self.ensure_sid(synsetid)
-        with self.schema.ds.open() as exe:
+        with self.schema.ds.open() as ctx:
             # get synset object
-            rows = self.schema.wss.select(where='synsetid=?', values=(sid,), exe=exe)
+            rows = ctx.wss.select(where='synsetid=?', values=(sid,))
             if rows is not None and len(rows) > 0:
                 ss = Synset(synsetid)
                 ss.definition = rows[0].definition
@@ -90,15 +90,15 @@ class WordnetSQL:
                     ss.add_key(row.sensekey)
                     ss.tagcount += row.tagcount
                 # add examples
-                exes = self.schema.ex.select(where='synsetid=?', values=[sid], orderby='sampleid', exe=exe)
+                exes = ctx.ex.select(where='synsetid=?', values=[sid], orderby='sampleid')
                 for ex in exes:
                     ss.exes.append(ex.sample)
                 return ss
 
     def get_synset_by_sk(self, sk):
-        with self.schema.ds.open() as exe:
+        with self.schema.ds.open() as ctx:
             # get synset object
-            rows = self.schema.wss.select(where='sensekey=?', values=(sk,), exe=exe)
+            rows = ctx.wss.select(where='sensekey=?', values=(sk,))
             if rows is not None and len(rows) > 0:
                 ss = Synset(rows[0].synsetid)
                 ss.definition = rows[0].definition
@@ -107,15 +107,15 @@ class WordnetSQL:
                     ss.add_key(row.sensekey)
                     ss.tagcount += row.tagcount
                 # add examples
-                exes = self.schema.ex.select(where='synsetid=?', values=[rows[0].synsetid], orderby='sampleid', exe=exe)
+                exes = self.schema.ex.select(where='synsetid=?', values=[rows[0].synsetid], orderby='sampleid', ctx=ctx)
                 for ex in exes:
                     ss.exes.append(ex.sample)
                 return ss
 
     def get_synsets_by_lemma(self, lemma):
-        with self.schema.ds.open() as exe:
+        with self.schema.ds.open() as ctx:
             # get synset object
-            rows = self.schema.wss.select(where='lemma=?', values=(lemma,), exe=exe)
+            rows = ctx.wss.select(where='lemma=?', values=(lemma,))
             synsets = SynsetCollection()
             if rows is not None and len(rows) > 0:
                 for row in rows:
@@ -125,7 +125,7 @@ class WordnetSQL:
                     ss.add_key(row.sensekey)
                     ss.tagcount = row.tagcount
                     # add examples
-                    exes = self.schema.ex.select(where='synsetid=?', values=[row.synsetid], orderby='sampleid', exe=exe)
+                    exes = ctx.ex.select(where='synsetid=?', values=[row.synsetid], orderby='sampleid')
                     for ex in exes:
                         ss.exes.append(ex.sample)
                     synsets.add(ss)
@@ -167,8 +167,8 @@ class WordnetSQL:
         if sid in self.sid_cache:
             return self.sid_cache[sid]
         result = self.schema.wss.select_single(where='synsetid=?', values=[sid],
-                                                  columns=['pos', 'synsetid',
-                                                           'sensekey', 'definition', 'tagcount'])
+                                               columns=['pos', 'synsetid',
+                                                        'sensekey', 'definition', 'tagcount'])
         self.sid_cache[sid] = result
         return result
 
