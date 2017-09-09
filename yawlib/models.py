@@ -218,7 +218,7 @@ class Synset(object):
 
     def __repr__(self):
         return str(self)
-    
+
     def __str__(self):
         return "(Synset:{})".format(self.sid)
 
@@ -226,10 +226,13 @@ class Synset(object):
 class SynsetCollection(object):
     ''' Synset collection which provides basic synset search function (by_sid, by_sk, etc.)
     '''
-    def __init__(self):
+    def __init__(self, synsets=None):
         self.synsets = []
         self.sid_map = {}
         self.sk_map = {}
+        if synsets:
+            for synset in synsets:
+                self.add(synset)
 
     def add(self, synset):
         ssid = synset.sid
@@ -240,8 +243,11 @@ class SynsetCollection(object):
                 self.sk_map[key] = synset
         return self
 
-    def __getitem__(self, name):
-        return self.synsets[name]
+    def __getitem__(self, idx):
+        return self.synsets[idx]
+
+    def __len__(self):
+        return self.count()
 
     def by_sid(self, sid):
         if sid and sid in self.sid_map:
@@ -260,9 +266,6 @@ class SynsetCollection(object):
 
     def count(self):
         return len(self.synsets)
-
-    def __len__(self):
-        return self.count()
 
     def merge(self, another_scol):
         ''' Add synsets from another synset collection '''

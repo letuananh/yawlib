@@ -43,9 +43,7 @@ __status__ = "Prototype"
 
 import sys
 import os
-import argparse
 import unittest
-from chirptext.leutile import FileHelper
 from yawlib.omwsql import OMWSQL
 from yawlib.config import YLConfig
 
@@ -70,13 +68,33 @@ class TestOMWSQL(unittest.TestCase):
         wn = self.get_wn()
         ssdef = wn.get_synset_def('05797597-n')
         self.assertEqual(ssdef, 'a search for knowledge')
-        
+
+    def test_get_synset(self):
+        wn = self.get_wn()
+        sid = '05797597-n'
+        # Princeton WordNet (by default)
+        ss = wn.get_synset(sid)
+        self.assertEqual(ss.synsetid, sid)
+        self.assertEqual(ss.lemmas, ['inquiry', 'enquiry', 'research'])
+        self.assertEqual(ss.defs, ['a search for knowledge'])
+        self.assertEqual(ss.exes, ['their pottery deserves more research than it has received'])
+        # Japanese WordNet
+        ss = wn.get_synset(sid, lang='jpn')
+        self.assertEqual(ss.synsetid, sid)
+        self.assertEqual(ss.lemmas, ['リサーチ', '問い合わせ', '質問', '調査', '照会'])
+        self.assertEqual(ss.defs, ['知識を得るための調査'])
+        self.assertEqual(ss.exes, ['彼らの陶器製造法には、今よりもずっと多くの問い合わせがあってもいい'])
+
+    def test_search(self):
+        word = 'research'
+        wn = self.get_wn()
+        synsets = wn.search(word)
+        sids = {s.synsetid.to_canonical() for s in synsets}
+        self.assertEqual(sids, {'00877327-v', '00636921-n', '05797597-n', '00648224-v'})
+        self.assertEqual(synsets.by_sid('00648224-v').to_json(), {"examples": ["the students had to research the history of the Second World War for their history project", "He searched for information on his relatives on the web", "Scientists are exploring the nature of consciousness"], "definition": "inquire into", "sensekeys": [], "lemmas": ["explore", "research", "search"], "tagcount": 0, "synsetid": "00648224-v"})
+
 ########################################################################
 
 
-def main():
-    unittest.main()
-
-
 if __name__ == "__main__":
-    main()
+    unittest.main()
