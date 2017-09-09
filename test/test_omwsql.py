@@ -92,6 +92,12 @@ class TestOMWSQL(unittest.TestCase):
         sids = {s.synsetid.to_canonical() for s in synsets}
         self.assertEqual(sids, {'00877327-v', '00636921-n', '05797597-n', '00648224-v'})
         self.assertEqual(synsets.by_sid('00648224-v').to_json(), {"examples": ["the students had to research the history of the Second World War for their history project", "He searched for information on his relatives on the web", "Scientists are exploring the nature of consciousness"], "definition": "inquire into", "sensekeys": [], "lemmas": ["explore", "research", "search"], "tagcount": 0, "synsetid": "00648224-v"})
+        # Japanese lemmas
+        synsets = wn.search("研究", lang="jpn")
+        defs = {s.definition for s in synsets}
+        sids = {s.synsetid.to_canonical() for s in synsets}
+        self.assertEqual(defs, {'本質的な特徴か意味を発見するために、詳細に検討し分析する', '勉学をする', '熱心な調査と思考', '体系的および科学的に調査することを試みる', '演奏者のある一面を伸ばすための曲', '事実を立証するための系統的な調査'})
+        self.assertEqual(sids, {'00607405-v', '00636921-n', '07048627-n', '00644583-v', '00877327-v', '05784242-n'})
 
 ########################################################################
 

@@ -79,7 +79,9 @@ class OMWSQL(OMWNTUMCSchema):
         words = ctx.word.select('wordid in (SELECT wordid FROM sense WHERE synset=?) and lang=?', (sid.to_canonical(), lang))
         synset.lemmas.extend((w.lemma for w in words))
         # select defs
-        synset.defs.append(self.get_synset_def(sid_str, lang, ctx=ctx))
+        sdef = self.get_synset_def(sid_str, lang, ctx=ctx)
+        if sdef:
+            synset.defs.append(sdef)
         # examples
         exes = ctx.sex.select('synset=? and lang=?', (sid_str, lang))
         synset.exes.extend([e._2 for e in exes])
@@ -90,16 +92,12 @@ class OMWSQL(OMWNTUMCSchema):
             with self.ctx() as ctx:
                 return self.search(lemma, lang=lang, ctx=ctx)
         # ctx is not None
-        if lang:
-            query = 'wordid in (SELECT wordid FROM word WHERE lemma LIKE ? and lang=?) AND lang=?'
-            params = (lemma, lang, lang)
-        else:
-            query = 'wordid in (SELECT wordid FROM word WHERE lemma LIKE ? and lang=?)'
-            params = (lemma,)
+        query = 'wordid in (SELECT wordid FROM word WHERE lemma LIKE ? and lang=?) AND lang=?'
+        params = (lemma, lang, lang)
         senses = ctx.sense.select(query, params)
         synsets = SynsetCollection()
         for sense in senses:
-            synsets.add(self.get_synset(sense.synset, lang=lang, ctx=ctx))
+            synsets.add(self.get_synset(sense.synset, lang=sense.lang, ctx=ctx))
         return synsets
 
     def get_synset_def(self, sid_str, lang='eng', ctx=None):
@@ -108,4 +106,4 @@ class OMWSQL(OMWNTUMCSchema):
                 return self.get_synset_def(sid_str, lang, ctx=ctx)
         sid = SynsetID.from_string(sid_str)
         sdef = ctx.sdef.select_single(where='synset=? and lang=?', values=[sid.to_canonical(), lang])
-        return sdef._2
+        return sdef._2 if sdef else None
