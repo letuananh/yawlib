@@ -79,11 +79,11 @@ class OMWSQL(OMWNTUMCSchema):
         words = ctx.word.select('wordid in (SELECT wordid FROM sense WHERE synset=?) and lang=?', (sid.to_canonical(), lang))
         synset.lemmas.extend((w.lemma for w in words))
         # select defs
-        sdef = self.get_synset_def(sid_str, lang, ctx=ctx)
+        sdef = self.get_synset_def(sid.to_canonical(), lang, ctx=ctx)
         if sdef:
             synset.defs.append(sdef)
         # examples
-        exes = ctx.sex.select('synset=? and lang=?', (sid_str, lang))
+        exes = ctx.sex.select('synset=? and lang=?', (sid.to_canonical(), lang))
         synset.exes.extend([e._2 for e in exes])
         return synset
 
