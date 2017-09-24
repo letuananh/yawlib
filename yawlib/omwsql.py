@@ -40,7 +40,7 @@ __status__ = "Prototype"
 #-----------------------------------------------------------------------
 
 from puchikarui import Schema
-from yawlib.models import SynsetID
+from yawlib.models import SynsetID, Synset, SynsetCollection
 
 #-----------------------------------------------------------------------
 
@@ -48,7 +48,7 @@ from yawlib.models import SynsetID
 class OMWNTUMCSchema(Schema):
     def __init__(self, data_source=None):
         Schema.__init__(self, data_source)
-        self.add_table('synset', 'synset pos name src'.split(), alias='ss')
+        self.add_table('synset', 'synset pos name src'.split(), alias='ss', id_cols=('synset',),)
         self.add_table('word', 'wordid lang lemma pron pos'.split(), alias='word')
         self.add_table('synlink', 'synset1 synset2 link src'.split(), alias='synlink')
         self.add_table('sense', 'synset wordid lang rank lexid freq src'.split(), alias='sense')
@@ -56,18 +56,54 @@ class OMWNTUMCSchema(Schema):
         self.add_table('synset_ex', 'synset lang def sid'.split(), alias='sex')
 
 
-class OMWSQL:
+class OMWSQL(OMWNTUMCSchema):
     def __init__(self, db_path):
+        super().__init__(db_path)
         self.db_path = db_path
-        self.schema = OMWNTUMCSchema(self.db_path)
-        # some cache here?
 
-    def get_all_synsets(self):
-        return self.schema.ss.select()
+    def get_all_synsets(self, ctx=None):
+        if ctx is None:
+            with self.ctx() as ctx:
+                return self.get_all_synsets(ctx=ctx)
+        return ctx.ss.select()
 
-    def get_synset_def(self, sid_str, lang='eng'):
+    def get_synset(self, sid_str, lang='eng', ctx=None):
+        if ctx is None:
+            with self.ctx() as ctx:
+                return self.get_synset(sid_str, lang=lang, ctx=ctx)
+        # ctx is not None
         sid = SynsetID.from_string(sid_str)
-        defs = self.schema.sdef.select(where='synset=? and lang=?', values=[sid.to_canonical(), lang])
-        assert len(defs) in (0, 1)
-        if defs:
-            return defs[0]._2
+        res = ctx.synset.by_id(sid.to_canonical())
+        synset = Synset(res.synset)
+        # select lemma
+        words = ctx.word.select('wordid in (SELECT wordid FROM sense WHERE synset=?) and lang=?', (sid.to_canonical(), lang))
+        synset.lemmas.extend((w.lemma for w in words))
+        # select defs
+        sdef = self.get_synset_def(sid.to_canonical(), lang, ctx=ctx)
+        if sdef:
+            synset.defs.append(sdef)
+        # examples
+        exes = ctx.sex.select('synset=? and lang=?', (sid.to_canonical(), lang))
+        synset.exes.extend([e._2 for e in exes])
+        return synset
+
+    def search(self, lemma, lang='eng', ctx=None):
+        if ctx is None:
+            with self.ctx() as ctx:
+                return self.search(lemma, lang=lang, ctx=ctx)
+        # ctx is not None
+        query = 'wordid in (SELECT wordid FROM word WHERE lemma LIKE ? and lang=?) AND lang=?'
+        params = (lemma, lang, lang)
+        senses = ctx.sense.select(query, params)
+        synsets = SynsetCollection()
+        for sense in senses:
+            synsets.add(self.get_synset(sense.synset, lang=sense.lang, ctx=ctx))
+        return synsets
+
+    def get_synset_def(self, sid_str, lang='eng', ctx=None):
+        if ctx is None:
+            with self.ctx() as ctx:
+                return self.get_synset_def(sid_str, lang, ctx=ctx)
+        sid = SynsetID.from_string(sid_str)
+        sdef = ctx.sdef.select_single(where='synset=? and lang=?', values=[sid.to_canonical(), lang])
+        return sdef._2 if sdef else None

@@ -25,23 +25,23 @@ This script is used to be a part of lelesk project (https://github.com/letuananh
 
 # Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2016, yawlib"
@@ -61,11 +61,12 @@ from collections import defaultdict as dd
 from collections import namedtuple
 
 from chirptext.leutile import Counter, Timer, header, FileHelper
+from chirptext.io import CSV
 
 from .helpers import config_logging, add_logging_config
 from .helpers import add_wordnet_config
 from .helpers import show_info
-from .helpers import get_gwn, get_gwnxml
+from .helpers import get_gwn, get_gwnxml, get_wn, get_omw
 from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term
 from .glosswordnet import Gloss
 from .wordnetsql import WordnetSQL as WSQL
@@ -115,7 +116,7 @@ def cache_all_synsets(wng_db_loc):
     t.start("Start caching stuff ...")
     # This should take less than 5 secs to run
     db.cache_all_sensekey()
-    #------------------------------------------
+    # ------------------------------------------
     # This should take less than 25 secs to run
     db.cache_all_hypehypo()
     t.end("Done caching!")
@@ -416,8 +417,8 @@ def test_alignment(wng_db_loc, mockup=True):
         print("See data/SYNSET_TO_FIX.txt and data/WRONG_SPLIT.txt for more information")
     else:
         print("Everything is OK!")
-    
     print("Done!")
+
 
 def smart_search(sentence, words, getitem=lambda x:x):
     ''' Link tokenized words back to original sentence
@@ -477,13 +478,12 @@ def export_ntumc(wng_loc, wng_db_loc, mockup=False):
     Export GlossTag to NTU-MC format
     '''
     print("Export GlossTag to NTU-MC")
-    merged_folder         = os.path.join(wng_loc, 'merged')
+    merged_folder = os.path.join(wng_loc, 'merged')
 #    glosstag_ntumc_script = wng_db_loc + ".ntumc.sql"
     glosstag_ntumc_script = GLOSSTAG_NTUMC_OUTPUT + ".script.sql"
-    sent_file_path        = GLOSSTAG_NTUMC_OUTPUT + '_sent.csv'
-    word_file_path        = GLOSSTAG_NTUMC_OUTPUT + '_word.csv'
-    concept_file_path     = GLOSSTAG_NTUMC_OUTPUT + '_concept.csv'    
-
+    sent_file_path = GLOSSTAG_NTUMC_OUTPUT + '_sent.csv'
+    word_file_path = GLOSSTAG_NTUMC_OUTPUT + '_word.csv'
+    concept_file_path = GLOSSTAG_NTUMC_OUTPUT + '_concept.csv'
     print("Path to glosstag folder: %s" % (merged_folder))
     print("Path to glosstag DB    : %s" % (wng_db_loc))
     print("Output file            : %s" % (glosstag_ntumc_script))
@@ -582,7 +582,6 @@ def export_ntumc(wng_loc, wng_db_loc, mockup=False):
         outfile.write("END TRANSACTION;\n");
     t.end()
     print("Done!")
-    
     pass
 
 def to_synsetid(synsetid):
@@ -591,16 +590,27 @@ def to_synsetid(synsetid):
 SYNSETS_TO_EXTRACT = [ '09524555-n', '02426634-n', '10310516-n', '01804340-n', '09520498-n', '09585218-n', '10484526-n', '09571581-n', '08311933-n', '02423787-n', '04523993-n', '09582019-n', '01259594-n', '10528493-n', '01700075-a', '01929600-a', '01496592-a', '02291632-a', '07688757-n', '01992555-a', '00627849-a', '02259817-a', '02427337-n', '02067063-a', '01279183-a', '00974697-a', '04805304-n', '11889847-n', '10237935-n', '12222334-n', '05629381-n', '07689313-n', '01024812-a', '02430756-a', '02022162-v', '08641944-n', '07497019-n', '01502262-n', '15193271-n', '09490961-n', '00624285-n', '04455835-n', '01032029-a', '08225334-n', '02516148-a', '06006609-n', '09496673-n', '09517342-n', '09573561-n', '11889473-n', '01280576-a', '10750640-n', '09564371-n', '02822601-a', '07138736-n', '02422249-n', '04066023-n', '03550420-n', '02426054-n', '09555391-n', '15282032-n', '02155233-a', '09498186-n', '04323819-n', '00038623-a', '06609785-n', '07577538-n', '00253395-n', '01385255-a', '01040390-n', '00221553-a', '01824751-a', '12322359-n', '05626618-n', '09501737-n', '03976268-n', '01034685-n', '00660313-a', '00145713-r', '09560061-n', '05278922-n', '01859970-a', '03382708-n', '02421962-n', '10689306-n', '09498072-n', '01129920-n', '15258450-n', '10545682-n', '00814611-a', '09776522-n', '00071242-a', '07330560-n', '00100883-r', '00140542-a', '02217799-a', '09495732-n', '00605893-a', '09592734-n', '09180967-n', '12216028-n', '06032752-n', '02422561-n', '02430096-a', '09495619-n', '12223405-n', '09574926-n', '12385219-n', '10119953-n', '15229408-n', '00038462-a', '09579714-n', '06457796-n', '05613170-n', '09573145-n', '09920106-n', '08180484-n', '11202477-n', '01554510-a', '05065717-n', '03884778-n', '10840769-n', '15234587-n', '09549643-n', '01268426-a', '02532200-a', '00562823-n', '09566667-n', '02425393-n', '05824985-n', '09996920-n', '02649125-a', '03348454-n', '01612053-a', '12672497-n', '00558630-n', '09495849-n', '06509210-n', '09559404-n', '10750365-n', '09550125-n', '00728065-n', '09567309-n', '03120029-n', '04102162-n', '01302811-a', '00003316-v', '02038617-n', '02427958-n', '04460634-n', '10758713-n', '00252130-a', '09579994-n', '10219778-n', '08555883-n', '09829650-n', '09521994-n', '10240921-n', '00385946-r', '01630939-a', '01559294-n', '05144663-n', '09580673-n', '09566791-n', '00557419-n', '01929062-a', '00562643-n', '12853901-n', '13996211-n', '02428229-n', '05039106-n', '04605163-n', '11750855-n', '09549983-n', '00509377-a', '00458286-n', '10588860-n', '09593044-n', '04990781-n', '00727901-n', '00727743-n', '04055861-n', '09501198-n', '09498697-n', '02437853-a', '12486732-n', '09566436-n', '10158222-n', '00139919-n', '05082116-n', '02933954-a', '11455386-n', '01222100-a', '09829506-n', '03090598-n', '10557404-n', '00818678-n', '14342132-n', '02463990-v', '01971519-a', '06385434-n', '09682122-n', '10496393-n', '01929312-a', '01753721-n', '15204201-n', '03877472-n', '13813591-n', '15192890-n', '07281099-n', '14413831-n', '15231634-n', '07211503-n', '00230335-a', '02380819-a', '07543910-n', '14359459-n', '01142636-v', '13762836-n', '02107386-a', '00563360-v', '09494280-n', '02421308-n', '10375690-n', '14453290-n', '02010864-v', '00507913-v', '02531919-a', '09556580-n', '09566544-n', '00970081-a', '00509735-a', '04991389-n', '15227593-n', '07689003-n', '07851054-n', '07535532-n', '02818507-n', '00468587-r', '06804728-n', '02268133-a', '00456610-r', '00192523-a', '09520617-n', '09684352-n', '05628403-n', '09566320-n', '01193714-a', '02264752-v', '01235463-n', '02426339-n', '03085333-n', '12353604-n', '06464419-n', '10996533-n', '09575033-n' ]
 # '00100506-a', '00710741-a', '01846815-a', '02171024-a', '02404081-a', '02773862-a', '00515154-v', '00729109-v', '00781000-v', '01572728-v', '01593254-v', '01915365-v', '02162162-v', '02655135-v', '02711114-v', '00442115-n', '01219722-n', '07192129-n', '13997529-n', '14457976-n'
 
+
+def export(args):
+    wn = get_omw(args)
+    if args.dataset == 'words':
+        print("Exporting ...")
+        words = wn.word.select("lang=? and wordid IN (SELECT wordid FROM sense WHERE lang=?)", (args.lang, args.lang), orderby='pos')
+        print("Found: {}".format(len(words)))
+        CSV.write_tsv(args.outfile, [(w.lemma, w.pos) for w in words])
+    else:
+        print("Unknown dataset")
+    pass
+
+
 def extract_synsets_xml():
     xfile_path = 'data/extract.xml'
     synsets = etree.Element("synsets")
     t = Timer()
     c = Counter()
-    
     # Loop through elements in glosstag xml files
     t.start("Extracting synsets from glosstag ...")
     for xml_file in GLOSSTAG_XML_FILES: 
-    # for xml_file in [ MOCKUP_SYNSETS_DATA ]:
         tree = etree.iterparse(xml_file)
         for event, element in tree:
             if event == 'end' and element.tag == 'synset':
@@ -660,6 +670,12 @@ def main():
 
     tasks = parser.add_subparsers(title='task', help='Task to be performed')
 
+    # extract words
+    cmd_export = tasks.add_parser('export', help='Export WordNet data')
+    cmd_export.add_argument('dataset', help='Which dataset to be exported')
+    cmd_export.add_argument('outfile', help='Output file')
+    cmd_export.add_argument('lang', help='Language profile', nargs="?", default='eng')
+    cmd_export.set_defaults(func=export)
     # Convert GWordnetXML into GWordnetSQL
     cmd_convert = tasks.add_parser('create', help='Create DB and then import data')
     cmd_convert.set_defaults(func=convert)

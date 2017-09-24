@@ -54,6 +54,7 @@ from yawlib import YLConfig
 from yawlib import GWordnetXML as GWNXML
 from yawlib import GWordnetSQLite as GWNSQL
 from yawlib import WordnetSQL as WSQL
+from yawlib.omwsql import OMWSQL
 
 ########################################################################
 # CONFIGURATION
@@ -207,6 +208,11 @@ def get_wn(args=None):
     return wn
 
 
+def get_omw(args=None):
+    db_path = args.omw if args is not None and args.omw else YLConfig.OMW_DB
+    return OMWSQL(db_path)
+
+
 def config_logging(args, logger):
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
@@ -231,6 +237,7 @@ def add_wordnet_config(parser):
     parser.add_argument('-i', '--gloss_xml', help='Path to Gloss WordNet folder', default=YLConfig.GWN30_PATH)
     parser.add_argument('-w', '--wnsql', help='Path to WordNet SQLite 3.0 DB', default=YLConfig.WNSQL30_PATH)
     parser.add_argument('-g', '--glossdb', help='Path to Gloss WordNet SQLite DB', default=YLConfig.GWN30_DB)
+    parser.add_argument('-o', '--omw', help='Path to Open Multilingual WordNet SQLite DB', default=YLConfig.OMW_DB)
     parser.add_argument('-m', '--mockup', help='Use mockup data in dev_mode', action='store_true')
     parser.set_defaults(mockup_files=MOCKUP_SYNSETS_DATA)
 

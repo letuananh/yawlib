@@ -45,6 +45,7 @@ __status__ = "Prototype"
 
 ########################################################################
 
+import os
 import json
 import logging
 import django
@@ -52,13 +53,14 @@ from django.http import HttpResponse, Http404
 from yawlib import YLConfig
 from yawlib import SynsetID, SynsetCollection
 from yawlib import WordnetSQL as WSQL
-
+from yawlib.omwsql import OMWSQL
 
 # ---------------------------------------------------------------------
 # CONFIGURATION
 # ---------------------------------------------------------------------
 logger = logging.getLogger(__name__)
 wsql = WSQL(YLConfig.WNSQL30_PATH)
+omwsql = OMWSQL(YLConfig.OMW_DB) if os.path.isfile(YLConfig.OMW_DB) else None
 
 
 def jsonp(func):
@@ -88,6 +90,9 @@ def get_synset(request, synsetid):
     ''' Get a synset by ID
     Mapping: /yawol/synset/<synsetID> '''
     ss = wsql.get_synset_by_id(synsetid)
+    if ss is None and omwsql is not None:
+        # try to search in OMW
+        ss = omwsql.get_synset(synsetid)
     if ss is not None:
         return ss.to_json()
     else:
@@ -103,13 +108,20 @@ def search(request, query):
     try:
         sid = SynsetID.from_string(query)
         ss = wsql.get_synset_by_id(sid)
+        if ss is None and omwsql is not None:
+            # try to search by OMW
+            print("Searching in OMW")
+            ss = omwsql.get_synset(sid)
+            print("OMW SS", ss)
         if ss is not None:
             return SynsetCollection().add(ss).to_json()
     except:
+        logger.exception("Cannot find by synsetID")
         pass
     # try to search by lemma
     synsets = wsql.get_synsets_by_lemma(query)
-    if synsets:
+    if synsets is not None and len(synsets) > 0:
+        logger.info("Query: {} - Results: {}".format(query, synsets))
         return synsets.to_json()
     else:
         # try to search by sensekey
