@@ -220,7 +220,7 @@ class Synset(object):
         return str(self)
 
     def __str__(self):
-        return "(Synset:{})".format(self.sid)
+        return "Synset('{}')".format(self.sid)
 
 
 class SynsetCollection(object):

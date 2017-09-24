@@ -121,6 +121,7 @@ def search(request, query):
     # try to search by lemma
     synsets = wsql.get_synsets_by_lemma(query)
     if synsets is not None and len(synsets) > 0:
+        logger.info("Query: {} - Results: {}".format(query, synsets))
         return synsets.to_json()
     else:
         # try to search by sensekey
