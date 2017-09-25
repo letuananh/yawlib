@@ -1,6 +1,5 @@
-# yawlib
-
-Yet Another WordNet library for Python
+YAWlib - Yet Another WordNet library for Python
+===============
 
 This library provides interfaces to all major WordNet releases (e.g. Gloss WordNet, Open Multilingual WordNet, WordNetSQL, etc.)
 
@@ -12,7 +11,7 @@ WordNet glosstag: http://wordnet.princeton.edu/glosstag.shtml
 
 ## Google Drive links
 
-WordNet-3.0-SQLite.zip   : https://drive.google.com/file/d/0Bwko6IfQbRUJWjZPOWJ2ZU5KMnc/view
+WordNet-3.0-SQLite.zip   : https://drive.google.com/open?id=0Bwko6IfQbRUJMlN1NmdHcWNCWUk
 
 WordNet glosstag         : https://drive.google.com/open?id=0Bwko6IfQbRUJVUlkNEswMldJS2s
 
