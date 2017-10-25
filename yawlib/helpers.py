@@ -76,7 +76,7 @@ def get_synset_by_id(gwn, synsetid_str, report_file=None, compact=True):
     # Get synset infro from GlossWordnet
     try:
         synsetid = SynsetID.from_string(synsetid_str)
-        synset = gwn.get_synset_by_id(synsetid.to_gwnsql())
+        synset = gwn.get_synset(synsetid.to_gwnsql())
         dump_synset(synset, report_file=report_file, compact=compact)
         return synset
     except Exception as e:
@@ -101,7 +101,7 @@ def get_synsets_by_term(gwn, t, pos=None, report_file=None, compact=True):
         report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by term (Provided: %s | pos = %s)\n" % (t, pos))
 
-    synsets = gwn.get_synsets_by_term(t, pos)
+    synsets = gwn.search(t, pos)
     dump_synsets(synsets, report_file, compact=compact)
     return synsets
 
@@ -141,7 +141,7 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
         report_file = TextReport()  # Default to stdout
 
     if more_compact:
-        report_file.header("Synset: %s (lemmas=%s | keys=%s)" % (ss.sid.to_canonical(), ss.lemmas, ss.keys), 'h0')
+        report_file.header("Synset: %s (lemmas=%s | keys=%s)" % (ss.synsetid.to_canonical(), ss.lemmas, ss.sensekeys), 'h0')
     else:
         report_file.header("Synset: %s" % ss, 'h0')
 
@@ -174,6 +174,7 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
                 for tag in gloss.tags:
                     report_file.print("%s" % tag, level=1)
     report_file.print('')
+
 
 #############################################################
 # argparse enhancement

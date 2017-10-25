@@ -37,17 +37,17 @@ __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
 from puchikarui import Schema
 from yawlib.models import SynsetID, Synset, SynsetCollection
 
-#-----------------------------------------------------------------------
 
+# -----------------------------------------------------------------------
 
 class OMWNTUMCSchema(Schema):
-    def __init__(self, data_source=None):
-        Schema.__init__(self, data_source)
+    def __init__(self, data_source=None, *args, **kwargs):
+        Schema.__init__(self, data_source, *args, **kwargs)
         self.add_table('synset', 'synset pos name src'.split(), alias='ss', id_cols=('synset',),)
         self.add_table('word', 'wordid lang lemma pron pos'.split(), alias='word')
         self.add_table('synlink', 'synset1 synset2 link src'.split(), alias='synlink')
@@ -57,8 +57,8 @@ class OMWNTUMCSchema(Schema):
 
 
 class OMWSQL(OMWNTUMCSchema):
-    def __init__(self, db_path):
-        super().__init__(db_path)
+    def __init__(self, db_path, *args, **kwargs):
+        super().__init__(db_path, *args, **kwargs)
         self.db_path = db_path
 
     def get_all_synsets(self, ctx=None):
@@ -79,22 +79,28 @@ class OMWSQL(OMWNTUMCSchema):
         words = ctx.word.select('wordid in (SELECT wordid FROM sense WHERE synset=?) and lang=?', (sid.to_canonical(), lang))
         synset.lemmas.extend((w.lemma for w in words))
         # select defs
-        sdef = self.get_synset_def(sid.to_canonical(), lang, ctx=ctx)
-        if sdef:
-            synset.defs.append(sdef)
+        def_rows = ctx.sdef.select("synset=? AND lang=?", (sid.to_canonical(), lang))
+        for row in def_rows:
+            synset.definitions.append(row._2)
         # examples
         exes = ctx.sex.select('synset=? and lang=?', (sid.to_canonical(), lang))
-        synset.exes.extend([e._2 for e in exes])
+        synset.examples.extend([e._2 for e in exes])
         return synset
 
-    def search(self, lemma, lang='eng', ctx=None):
+    def search(self, lemma, pos=None, lang='eng', ctx=None):
         if ctx is None:
             with self.ctx() as ctx:
-                return self.search(lemma, lang=lang, ctx=ctx)
+                return self.search(lemma, pos=pos, lang=lang, ctx=ctx)
+        wid_filter = ['lemma LIKE ?', 'lang=?']
+        params = [lemma, lang]
+        if pos is not None:
+            wid_filter.append('pos = ?')
+            params.append(pos)
         # ctx is not None
-        query = 'wordid in (SELECT wordid FROM word WHERE lemma LIKE ? and lang=?) AND lang=?'
-        params = (lemma, lang, lang)
-        senses = ctx.sense.select(query, params)
+        query = ['wordid in (SELECT wordid FROM word WHERE {})'.format(' AND '.join(wid_filter))]
+        query.append('lang=?')
+        params.append(lang)
+        senses = ctx.sense.select(' AND '.join(query), params)
         synsets = SynsetCollection()
         for sense in senses:
             synsets.add(self.get_synset(sense.synset, lang=sense.lang, ctx=ctx))

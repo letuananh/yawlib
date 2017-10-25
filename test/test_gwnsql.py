@@ -12,23 +12,23 @@ Adapted from: https://github.com/letuananh/lelesk
 
 # Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
@@ -42,12 +42,18 @@ __status__ = "Prototype"
 ########################################################################
 
 import os
+import logging
 import unittest
+from chirptext import Counter, header
+from chirptext.io import CSV
+from chirptext.texttaglib import TaggedSentence
+from yawlib import YLConfig
 from yawlib.glosswordnet import GWordnetXML
 from yawlib.glosswordnet import GWordnetSQLite as GWNSQL
 
 ########################################################################
 
+logger = logging.getLogger(__name__)
 TEST_DIR = os.path.dirname(__file__)
 TEST_DATA = os.path.join(TEST_DIR, 'data')
 MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
@@ -91,10 +97,10 @@ class TestGlossWordnetSQL(unittest.TestCase):
         ss = db.all_synsets()
         self.assertEqual(len(ss), 3)
         # all tags
-        tags = db.get_all_sensekeys_tagged()
+        tags = db.tagged_sensekeys()
         self.assertEqual(tags, {'not%4:02:00::', 'be_born%2:30:00::', 'christian_era%1:28:00::', 'christ%1:18:00::', 'date%1:28:04::', 'musical_accompaniment%1:10:00::', 'a_cappella%4:02:00::', 'ad%4:02:00::', 'ce%4:02:00::'})
         # all sensekeys
-        sks = db.get_all_sensekeys()
+        sks = db.sensekeys()
         self.assertEqual(len(sks), 7)
 
     def test_results_to_synsets(self):
@@ -103,11 +109,11 @@ class TestGlossWordnetSQL(unittest.TestCase):
 
     def test_get_synset_by_id(self):
         gwn = get_gwn()
-        ss = gwn.get_synset_by_id('00001740-r')
+        ss = gwn.get_synset('00001740-r')
         self.assertIsNotNone(ss)
-        self.assertEqual('00001740-r', ss.sid)
+        self.assertEqual('00001740-r', ss.synsetid)
         self.assertEqual('a cappella', ss.lemmas[0])
-        self.assertEqual('a_cappella%4:02:00::', ss.keys[0])
+        self.assertEqual('a_cappella%4:02:00::', ss.sensekeys[0])
         self.assertEqual(2, len(ss.glosses))
         self.assertEqual('without musical accompaniment;', ss.glosses[0].text())
         self.assertEqual('they performed a cappella;', ss.glosses[1].text())
@@ -124,7 +130,7 @@ class TestGlossWordnetSQL(unittest.TestCase):
         db = get_gwn()
         glosses = db.schema.gloss.select()
         # select glosses
-        self.assertEqual(len(glosses), 714)
+        self.assertEqual(len(glosses), 716)
         text = db.get_glossitems_text('00001740r')
         self.assertEqual([x.lemma for x in text], ['without', 'musical%1|musical%3', 'accompaniment%1', '', 'they', 'perform%2', 'a', 'cappella', ''])
         # sensetags
@@ -133,11 +139,89 @@ class TestGlossWordnetSQL(unittest.TestCase):
         pass
 
     def test_get_synset_by_term(self):
-        ss = get_gwn().get_synsets_by_term('AD')
+        ss = get_gwn().search('AD')
         self.assertGreater(len(ss), 0)
 
-########################################################################
+    def test_single_match(self):
+        gwn = GWNSQL(YLConfig.GWN30_DB)
+        ss = gwn.get_synset('r00008007')
+        # print(ss.match_surface())
+        # print(ss.get_orig().split())
+        # for g in ss.glosses:
+        #     print("{} ({})".format(g.text(), g.cat))
+        # find def raw
+        raws = ss.get_orig().split()
+        d = ss.get_def()
+        for idx, r in enumerate(raws):
+            sent = TaggedSentence(r)
+            try:
+                tokens = [i.text for i in d.items]
+                sent.import_tokens(tokens)
+                # found the def raw
+                if "(" in r:
+                    new_part = r.replace("(", ";(").split(";")
+                    raws[idx] = new_part[0]
+                    for loc, part in enumerate(new_part[1:]):
+                        raws.insert(idx + loc + 1, part)
+                    break
+            except:
+                continue
+        print("Before:", ss.get_orig().split())
+        print("After:", raws)
 
+    def test_match_surface(self):
+        fixed = CSV.read("data/fixed_surface.tab")
+        raws_map = {x[0]: x[1:] for x in fixed if x}
+        gwn = GWNSQL(YLConfig.GWN30_DB)
+        sid = 'v02681795'
+        ss = gwn.get_synset(sid)
+        raws = raws_map[sid] if sid in raws_map else ss.get_orig().split()
+        print("raws: {}".format(raws))
+        print("glosses: {}".format([(x.text(), x.cat) for x in ss.glosses]))
+        for r, g in zip(raws, ss.glosses):
+            tokens = [t.text for t in g]
+            while tokens[-1] == ';':
+                tokens.pop()
+            sent = TaggedSentence(r)
+            sent.import_tokens(tokens)
+            print("{} --- {}".format(r, tokens))
+        self.assertTrue(ss.match_surface(raws=raws))
+        for g in ss.glosses:
+            print(g.items, g.surface)
+
+    def test_surface_naive(self):
+        fixed = CSV.read("data/fixed_surface.tab")
+        raws_map = {x[0]: x[1:] for x in fixed if x}
+        to_fix = []
+        gwn = GWNSQL(YLConfig.GWN30_DB)
+        with gwn.ctx() as ctx:
+            sinfos = ctx.synset.select(limit=50)
+            c = Counter()
+            for sinfo in sinfos:
+                ss = gwn.get_synset(sinfo.ID, ctx=ctx)
+                raws = raws_map[sinfo.ID] if sinfo.ID in raws_map else ss.get_orig().split()
+                try:
+                    if ss.match_surface(raws=raws):
+                        c.count("OK")
+                    else:
+                        to_fix.append([sinfo.ID] + raws)
+                        header("NOT OK - {}".format(sinfo.ID))
+                        print("\n".join(raws))
+                        print("===")
+                        for g in ss.glosses:
+                            print("{} ({})".format(g.text(), g.cat))
+                        c.count("not OK")
+                except:
+                    to_fix.append([sinfo.ID] + raws)
+                    header("cannot import - {}".format(sinfo.ID))
+                    for r, g in zip(raws, ss.glosses):
+                        print("{} --- {} ({})".format(r, g.text(), g.cat))
+                    c.count("same - wrong import")
+            c.summarise()
+            CSV.write_tsv("data/manual.txt", to_fix, quoting=CSV.QUOTE_MINIMAL)
+
+
+########################################################################
 
 def main():
     unittest.main()

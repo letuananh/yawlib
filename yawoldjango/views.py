@@ -106,8 +106,8 @@ def search(request, query):
     '''
     # assume that query is a synset?
     try:
-        sid = SynsetID.from_string(query)
-        ss = wsql.get_synset_by_id(sid)
+        sid = SynsetID.from_string(query.strip())
+        ss = wsql.get_synset(sid)
         if ss is None and omwsql is not None:
             # try to search by OMW
             print("Searching in OMW")
@@ -119,7 +119,7 @@ def search(request, query):
         logger.exception("Cannot find by synsetID")
         pass
     # try to search by lemma
-    synsets = wsql.get_synsets_by_lemma(query)
+    synsets = wsql.search(lemma=query)
     if synsets is not None and len(synsets) > 0:
         logger.info("Query: {} - Results: {}".format(query, synsets))
         return synsets.to_json()

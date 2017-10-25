@@ -44,211 +44,217 @@ __status__ = "Prototype"
 import os
 import logging
 
-from puchikarui import Schema
+from puchikarui import Schema, with_ctx
 
-from yawlib.models import SynsetCollection, SynsetID
+from yawlib.models import SynsetCollection, Synset, SynsetID
 
 from .models import GlossedSynset
 from .models import GlossItem
 
-#-----------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+# Configuration
+# -------------------------------------------------------------------------------
 
 SETUP_SCRIPT = os.path.join(os.path.dirname(__file__), 'script', 'gwn_setup.sql')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+# -------------------------------------------------------------------------------
+# Schema
+# -------------------------------------------------------------------------------
+
 class GWordnetSchema(Schema):
     def __init__(self, data_source=None, setup_file=SETUP_SCRIPT):
         Schema.__init__(self, data_source, setup_file=SETUP_SCRIPT)
         self.add_table('meta', 'title license WNVer url maintainer'.split())
-        self.add_table('synset', 'id offset pos'.split())
+        self.add_table('synset', 'ID offset pos'.split()).set_id('ID')
         # --
         self.add_table('term', 'sid term'.split())
         self.add_table('gloss_raw', 'sid cat gloss'.split())
         self.add_table('sensekey', 'sid sensekey'.split())
         # --
-        self.add_table('gloss', 'id origid sid cat'.split())
+        self.add_table('gloss', 'id origid sid cat surface'.split())
         self.add_table('glossitem', 'id ord gid tag lemma pos cat coll rdf sep text origid'.split())
         self.add_table('sensetag', 'id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid'.split())
 
-# -----------------------------------------------------------------------
 
+# -------------------------------------------------------------------------------
+# Features
+# -------------------------------------------------------------------------------
 
-class GWordnetSQLite:
-    def __init__(self, db_path, verbose=False):
-        self.db_path = db_path
-        self.schema = GWordnetSchema(self.db_path)
-        if verbose:
-            logger.setLevel(logging.INFO)
-        else:
-            logger.setLevel(logging.WARNING)
+class GWordnetSQLite(GWordnetSchema):
 
-    def insert_synset(self, synset):
+    def __init__(self, db_path, **kwargs):
+        super().__init__(data_source=db_path, **kwargs)
+        # self.db_path = db_path
+        # self.schema = GWordnetSchema(self.db_path)
+
+    @property
+    def schema(self):
+        return self
+
+    @with_ctx
+    def insert_synset(self, synset, ctx=None):
         ''' Helper method for storing a single synset
         '''
         self.insert_synsets([synset])
 
-    def insert_synsets(self, synsets):
+    @with_ctx
+    def insert_synsets(self, synsets, ctx=None):
         ''' Store synsets with related information (sensekeys, terms, gloss, etc.)
         '''
-        with self.schema.ds.open() as ctx:
-            # synset;
-            for synset in synsets:
-                sid = synset.sid.to_gwnsql()
-                ctx.synset.insert(sid, synset.sid.offset, synset.sid.pos)
-                # term;
-                for term in synset.lemmas:
-                    ctx.term.insert(sid, term)
-                # sensekey;
-                for sk in synset.keys:
-                    ctx.sensekey.insert(sid, sk)
-                # gloss_raw;
-                for gloss_raw in synset.raw_glosses:
-                    ctx.gloss_raw.insert(sid, gloss_raw.cat, gloss_raw.gloss)
-                # gloss; DB: id origid sid cat | OBJ: gid origid cat
-                for gloss in synset.glosses:
-                    gloss.gid = ctx.gloss.insert(gloss.origid, sid, gloss.cat)
-                    # glossitem;
-                    # OBJ | gloss, order, tag, lemma, pos, cat, coll, rdf, origid, sep, text
-                    # DB  | id ord gid tag lemma pos cat coll rdf sep text origid
-                    for item in gloss.items:
-                        item.itemid = ctx.glossitem.insert(item.order, gloss.gid, item.tag, item.lemma, item.pos, item.cat, item.coll, item.rdf, item.sep, item.text, item.origid)
-                    # sensetag;
-                    for tag in gloss.tags:
-                        # OBJ: tagid cat, tag, glob, glemma, gid, coll, origid, sid, sk, lemma
-                        # DB: id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid
-                        ctx.sensetag.insert(tag.cat, tag.tag, tag.glob, tag.glemma,
-                                            tag.glob_id, tag.coll, '', gloss.gid, tag.sk,
-                                            tag.origid, tag.lemma, tag.item.itemid)
-        pass
-
-    def results_to_synsets(self, results, ctx, synsets=None):
-        if synsets is None:
-            synsets = SynsetCollection()
-        for result in results:
-            ss = GlossedSynset(result.id)
-            sid = ss.sid.to_gwnsql()
+        # synset;
+        for synset in synsets:
+            sid = synset.ID.to_gwnsql()
+            ctx.synset.insert(sid, synset.ID.offset, synset.ID.pos)
             # term;
-            terms = ctx.term.select(where='sid=?', values=[sid])
-            for term in terms:
-                ss.add_lemma(term.term)
+            for term in synset.lemmas:
+                ctx.term.insert(sid, term)
             # sensekey;
-            sks = self.schema.sensekey.select(where='sid=?', values=[sid], ctx=ctx)
-            for sk in sks:
-                ss.add_key(sk.sensekey)
-            # gloss_raw | sid cat gloss
-            rgs = self.schema.gloss_raw.select(where='sid=?', values=[sid], ctx=ctx)
-            for rg in rgs:
-                ss.add_raw_gloss(rg.cat, rg.gloss)
+            for sk in synset.sensekeys:
+                ctx.sensekey.insert(sid, sk)
+            # gloss_raw;
+            for gloss_raw in synset.raw_glosses:
+                ctx.gloss_raw.insert(sid, gloss_raw.cat, gloss_raw.gloss)
             # gloss; DB: id origid sid cat | OBJ: gid origid cat
-            glosses = self.schema.gloss.select(where='sid=?', values=[sid], ctx=ctx)
-            for gl in glosses:
-                gloss = ss.add_gloss(gl.origid, gl.cat, gl.id)
+            for gloss in synset.glosses:
+                gloss.gid = ctx.gloss.insert(gloss.origid, sid, gloss.cat, gloss.surface)
                 # glossitem;
                 # OBJ | gloss, order, tag, lemma, pos, cat, coll, rdf, origid, sep, text
                 # DB  | id ord gid tag lemma pos cat coll rdf sep text origid
-                glossitems = self.schema.glossitem.select(where='gid=?', values=[gl.id], ctx=ctx)
-                item_map = {}
-                for gi in glossitems:
-                    item = gloss.add_gloss_item(gi.tag, gi.lemma, gi.pos, gi.cat, gi.coll, gi.rdf, gi.origid, gi.sep, gi.text, gi.id)
-                    item_map[item.itemid] = item
+                for item in gloss.items:
+                    item.itemid = ctx.glossitem.insert(item.order, gloss.gid, item.tag, item.lemma, item.pos, item.cat, item.coll, item.rdf, item.sep, item.text, item.origid)
                 # sensetag;
-                # OBJ: tagid cat, tag, glob, glemma, gid, coll, origid, sid, sk, lemma
-                # DB: id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid
-                tags = self.schema.sensetag.select(where='gid=?', values=[gl.id], ctx=ctx)
-                for tag in tags:
-                    gloss.tag_item(item_map[tag.itemid], tag.cat, tag.tag, tag.glob, tag.glob_lemma,
-                                   tag.glob_id, tag.coll, tag.origid, tag.sid, tag.sk, tag.lemma, tag.id)
+                for tag in gloss.tags:
+                    # OBJ: tagid cat, tag, glob, glemma, gid, coll, origid, sid, sk, lemma
+                    # DB: id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid
+                    ctx.sensetag.insert(tag.cat, tag.tag, tag.glob, tag.glemma,
+                                        tag.glob_id, tag.coll, '', gloss.gid, tag.sk,
+                                        tag.origid, tag.lemma, tag.item.itemid)
+        pass
+
+    @with_ctx
+    def get_synset(self, sid, ctx=None):
+        ss = GlossedSynset(sid)
+        sid = ss.ID.to_gwnsql()
+        # terms = lemmas;
+        terms = ctx.term.select(where='sid=?', values=(sid,))
+        for term in terms:
+            ss.add_lemma(term.term)
+        # sensekey;
+        sks = ctx.sensekey.select(where='sid=?', values=(sid,))
+        for sk in sks:
+            ss.add_key(sk.sensekey)
+        # gloss_raw | sid cat gloss
+        rgs = ctx.gloss_raw.select(where='sid=?', values=(sid,))
+        for rg in rgs:
+            ss.add_raw_gloss(rg.cat, rg.gloss)
+        # gloss; DB: id origid sid cat | OBJ: gid origid cat
+        glosses = ctx.gloss.select(where='sid=?', values=(sid,))
+        for gl in glosses:
+            gloss = ss.add_gloss(gl.origid, gl.cat, gl.id)
+            gloss.surface = gl.surface
+            # glossitem;
+            # OBJ | gloss, order, tag, lemma, pos, cat, coll, rdf, origid, sep, text
+            # DB  | id ord gid tag lemma pos cat coll rdf sep text origid
+            glossitems = ctx.glossitem.select(where='gid=?', values=(gl.id,))
+            item_map = {}
+            for gi in glossitems:
+                item = gloss.add_gloss_item(gi.tag, gi.lemma, gi.pos, gi.cat, gi.coll, gi.rdf, gi.origid, gi.sep, gi.text, gi.id)
+                item_map[item.itemid] = item
+            # sensetag;
+            # OBJ: tagid cat, tag, glob, glemma, gid, coll, origid, sid, sk, lemma
+            # DB: id cat tag glob glob_lemma glob_id coll sid gid sk origid lemma itemid
+            tags = ctx.sensetag.select(where='gid=?', values=(gl.id,))
+            for tag in tags:
+                gloss.tag_item(item_map[tag.itemid], tag.cat, tag.tag, tag.glob, tag.glob_lemma,
+                               tag.glob_id, tag.coll, tag.origid, tag.sid, tag.sk, tag.lemma, tag.id)
+        return ss
+
+    @with_ctx
+    def results_to_synsets(self, results, synsets=None, ctx=None):
+        if synsets is None:
+            synsets = SynsetCollection()
+        for result in results:
+            ss = self.get_synset(sid=result.ID, ctx=ctx)
             synsets.add(ss)
         return synsets
 
-    def get_synset_by_id(self, synsetid):
-        # ensure that synsetid is an instance of SynsetID
-        sid = SynsetID.from_string(synsetid)
-        with self.schema.ds.open() as exe:
-            results = self.schema.synset.select(where='id=?', values=[sid.to_gwnsql()])
-            if results:
-                synsets = self.results_to_synsets(results, exe)
-                if len(synsets) == 1:
-                    return synsets[0]
-                else:
-                    logger.warning("Multiple synsets retrieved for sid={}".format(synsetid))
-        return None
-
-    def get_synsets_by_ids(self, synsetids):
-        sids = [str(SynsetID.from_string(x).to_gwnsql()) for x in synsetids]
+    @with_ctx
+    def get_synsets_by_ids(self, synsetids, ctx=None):
         synsets = SynsetCollection()
-        with self.schema.ds.open() as ctx:
-            # synset;
-            wherecon = 'id IN (%s)' % (','.join(['?'] * len(sids)))
-            results = ctx.synset.select(where=wherecon, values=sids)
-            if results:
-                return self.results_to_synsets(results, ctx, synsets)
+        for sid in synsetids:
+            ss = self.get_synset(sid, ctx=ctx)
+            synsets.add(ss)
         return synsets
 
-    def all_synsets(self, synsets=None, deep_select=True):
+    @with_ctx
+    def all_synsets(self, synsets=None, deep_select=True, ctx=None):
         synsets = SynsetCollection()
-        with self.schema.ds.open() as ctx:
-            # synset;
-            results = self.schema.synset.select(ctx=ctx)
-            if results:
-                if deep_select:
-                    return self.results_to_synsets(results, ctx, synsets)
-                else:
-                    return results
+        results = ctx.synset.select()
+        if deep_select:
+            return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
+        else:
+            for result in results:
+                synsets.add(Synset(result.ID))
+            return synsets
+
+    @with_ctx
+    def get_synset_by_sk(self, sensekey, ctx=None):
+        # synset;
+        results = ctx.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=(sensekey,))
+        if len(results) == 0:
+            raise Exception("Could not find any synset with provided key {}".format(sensekey))
+        elif len(results) > 1:
+            raise Exception("Found more than one synsetID with provided key {}".format(sensekey))
+        else:
+            return self.get_synset(results[0].ID, ctx=ctx)
+
+    @with_ctx
+    def get_synset_by_sks(self, sensekeys, ctx=None):
+        where = 'id IN (SELECT sid FROM sensekey where sensekey IN (%s))' % ','.join(['?'] * len(sensekeys))
+        results = ctx.synset.select(where=where, values=sensekeys)
+        return self.results_to_synsets(results, ctx=ctx)
+
+    @with_ctx
+    def get_synsets_by_lemma(self, lemma, ctx=None):
+        rows = ctx.term.select('lower(term)=?', (lemma.lower(),))
+        synsets = SynsetCollection()
+        for row in rows:
+            synsets.add(self.get_synset(row.sid, ctx=ctx))
         return synsets
 
-    def get_synset_by_sk(self, sensekey):
-        with self.schema.ds.open() as ctx:
-            # synset;
-            results = ctx.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=[sensekey])
-            if results:
-                synsets = self.results_to_synsets(results, ctx)
-                if synsets and len(synsets) == 1:
-                    return synsets[0]
-        raise Exception("Could not find any synset with provided key {}".format(sensekey))
+    @with_ctx
+    def search(self, lemma, pos=None, deep_select=True, synsets=None, ignore_case=True, ctx=None):
+        if ignore_case:
+            query = ['ID IN (SELECT sid FROM term WHERE lower(term) LIKE ?)']
+            params = [lemma.lower()]
+        else:
+            query = ['ID IN (SELECT sid FROM term WHERE term LIKE ?)']
+            params = [lemma]
+        if pos:
+            query.append('pos = ?')
+            params.append(pos)
+        # query synsetids
+        results = ctx.synset.select(' AND '.join(query), params)
+        return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
 
-    def get_synset_by_sks(self, sensekeys):
-        synsets = SynsetCollection()
-        with self.schema.ds.open() as ctx:
-            # synset;
-            where = 'id IN (SELECT sid FROM sensekey where sensekey IN (%s))' % ','.join(['?'] * len(sensekeys))
-            results = ctx.synset.select(where=where, values=sensekeys)
-            if results:
-                return self.results_to_synsets(results, ctx, synsets)
-        return synsets
+    @with_ctx
+    def sensekeys(self, ctx=None):
+        return ctx.sensekey.select()
 
-    def get_synsets_by_term(self, term, pos=None, synsets=None, sid_only=False):
-        synsets = SynsetCollection()
-        with self.schema.ds.open() as ctx:
-            # synset;
-            if pos:
-                results = ctx.synset.select(where='pos = ? AND id IN (SELECT sid FROM term where lower(term)=?)', values=[pos, term.lower()])
-            else:
-                results = ctx.synset.select(where='id IN (SELECT sid FROM term where lower(term)=?)', values=[term.lower()])
-            if results:
-                if sid_only:
-                    return results
-                else:
-                    return self.results_to_synsets(results, ctx, synsets)
-        return synsets
+    @with_ctx
+    def tagged_sensekeys(self, ctx=None):
+        results = ctx.sensetag.select(columns=['sk'])
+        return set((x.sk for x in results))
 
-    def get_all_sensekeys(self):
-        return self.schema.sensekey.select()
-
-    def get_all_sensekeys_tagged(self):
-        results = self.schema.sensetag.select(columns=['sk'])
-        sensekeys = set()
-        for result in results:
-            sensekeys.add(result.sk)
-        return sensekeys
-
-    def get_glossitems_text(self, synsetid):
+    @with_ctx
+    def get_glossitems_text(self, synsetid, ctx=None):
         sid = SynsetID.from_string(synsetid).to_gwnsql()
         where = 'gid IN (SELECT id FROM gloss WHERE sid = ?)'
-        results = self.schema.glossitem.select(where=where, values=[sid],
-                                               columns=['id', 'lemma', 'pos', 'text'])
+        results = ctx.glossitem.select(where=where, values=[sid],
+                                       columns=['id', 'lemma', 'pos', 'text'])
         items = []
         for item in results:
             g = GlossItem(gloss=None, tag=None, lemma=item.lemma, pos=item.pos, cat=None,
@@ -256,8 +262,9 @@ class GWordnetSQLite:
             items.append(g)
         return items
 
-    def get_sensetags(self, synsetid):
+    @with_ctx
+    def get_sensetags(self, synsetid, ctx=None):
         sid = SynsetID.from_string(synsetid).to_gwnsql()
-        return self.schema.sensetag.select(where='gid IN (SELECT id FROM gloss WHERE sid = ?)',
-                                           values=[sid],
-                                           columns=['id', 'lemma', 'sk'])
+        return ctx.sensetag.select(where='gid IN (SELECT id FROM gloss WHERE sid = ?)',
+                                   values=[sid],
+                                   columns=['id', 'lemma', 'sk'])

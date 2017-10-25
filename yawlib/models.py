@@ -127,6 +127,12 @@ class SynsetID(object):
             other = SynsetID.from_string(str(other))
         return other is not None and self.offset == other.offset and self.pos == other.pos
 
+    def __lt__(self, other):
+        # make sure that the other instance is a SynsetID object
+        if other and not isinstance(other, SynsetID):
+            other = SynsetID.from_string(str(other))
+        return other is not None and self.offset < other.offset and self.pos < other.pos
+
     def __repr__(self):
         return self.to_canonical()
 
@@ -137,38 +143,42 @@ class SynsetID(object):
 class Synset(object):
 
     def __init__(self, sid, keys=None, lemmas=None, defs=None, exes=None, tagcount=0, lemma=None):
-        self.synsetid = sid
-        self.keys = keys if keys is not None else []
+        self.synsetid = sid  # synsetid.setter
+        self.__keys = keys if keys is not None else []
         self.lemmas = lemmas if lemmas is not None else []
-        self.defs = defs if defs else []
-        self.exes = exes if exes else []
+        self.__defs = defs if defs else []
+        self.__exes = exes if exes else []
         self.tagcount = tagcount
         if lemma is not None:
             self.lemma = lemma  # Canonical lemma
         pass
 
     @property
+    def ID(self):
+        return self.__sid
+
+    @ID.setter
+    def ID(self, value):
+        self.__sid = SynsetID.from_string(value)
+
+    @property
     def definition(self):
-        if self.defs is not None and len(self.defs) > 0:
-            return self.defs[0]
+        return "; ".join(self.__defs)
 
     @definition.setter
     def definition(self, value):
-        if self.defs is None:
-            self.defs = []
-        elif len(self.defs) == 0:
-            self.defs.append(value)
-        else:
-            self.defs[0] = value
+        self.definitions = [x.strip() for x in value.split(";")]
 
     @property
-    def synsetid(self):
-        ''' An alias of sid '''
-        return self.sid
+    def definitions(self):
+        return self.__defs
 
-    @synsetid.setter
-    def synsetid(self, value):
-        self.sid = SynsetID.from_string(value)
+    @definitions.setter
+    def definitions(self, values):
+        self.__defs = values
+
+    def add_def(self, definition):
+        self.__defs.append(definition)
 
     @property
     def lemma(self):
@@ -194,8 +204,45 @@ class Synset(object):
             self.lemmas = []
         self.lemmas.append(value)
 
+    @property
+    def sensekeys(self):
+        return self.__keys
+
     def add_key(self, key):
-        self.keys.append(key)
+        self.__keys.append(key)
+
+    @property
+    def examples(self):
+        return self.__exes
+
+    def add_example(self, example):
+        self.__exes.append(example)
+
+    # Aliases
+
+    @property
+    def synsetid(self):
+        ''' An alias of synset.ID '''
+        return self.__sid
+
+    @synsetid.setter
+    def synsetid(self, value):
+        ''' An alias of synset.ID '''
+        self.ID = value
+
+    @property
+    def keys(self):
+        return self.sensekeys
+
+    @property
+    def defs(self):
+        ''' An alias of synset.definitions '''
+        return self.definitions
+
+    @property
+    def exes(self):
+        ''' An alias of synset.examples '''
+        return self.examples
 
     def get_tokens(self):
         tokens = []
@@ -209,9 +256,9 @@ class Synset(object):
         return {'synsetid': self.synsetid.to_canonical(),
                 'definition': self.definition,
                 'lemmas': self.lemmas,
-                'sensekeys': self.keys,
+                'sensekeys': self.sensekeys,
                 'tagcount': self.tagcount,
-                'examples': self.exes}
+                'examples': self.examples}
 
     def to_json_str(self):
         return json.dumps(self.to_json())
@@ -220,7 +267,7 @@ class Synset(object):
         return str(self)
 
     def __str__(self):
-        return "Synset('{}')".format(self.sid)
+        return "Synset('{}')".format(self.synsetid)
 
 
 class SynsetCollection(object):
@@ -235,12 +282,11 @@ class SynsetCollection(object):
                 self.add(synset)
 
     def add(self, synset):
-        ssid = synset.sid
+        ssid = synset.synsetid
         self.synsets.append(synset)
         self.sid_map[ssid] = synset
-        if synset.keys is not None and len(synset.keys) > 0:
-            for key in synset.keys:
-                self.sk_map[key] = synset
+        for key in synset.sensekeys:
+            self.sk_map[key] = synset
         return self
 
     def __getitem__(self, idx):

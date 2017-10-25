@@ -37,15 +37,14 @@ __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
-import sqlite3
 from collections import defaultdict as dd
-from puchikarui import Schema
+from puchikarui import Schema, with_ctx
 from yawlib.config import YLConfig
 from yawlib.models import SynsetID, Synset, SynsetCollection
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
 
 class Wordnet3Schema(Schema):
@@ -55,48 +54,60 @@ class Wordnet3Schema(Schema):
         Schema.__init__(self, data_source)
         self.add_table('wordsXsensesXsynsets', 'wordid lemma casedwordid synsetid senseid sensenum lexid tagcount sensekey pos lexdomainid definition'.split(), alias='wss')
         self.add_table('sensesXsemlinksXsenses', 'linkid ssynsetid swordid ssenseid scasedwordid ssensenum slexid stagcount ssensekey spos slexdomainid sdefinition dsynsetid dwordid dsenseid dcasedwordid dsensenum dlexid dtagcount dsensekey dpos dlexdomainid ddefinition'.split(), alias='sss')
-        self.add_table('synsets', 'synsetid pos definition'.split(), alias='ss')
+        self.add_table('synsets', 'synsetid pos lexdomainid definition'.split(), alias='ss').set_id('synsetid')
         self.add_table('samples', 'synsetid sampleid sample'.split(), alias='ex')
+        self.add_table('senses', 'wordid casedwordid synsetid senseid sensenum lexid tagcount sensekey'.split())
 
 
-class WordnetSQL:
+class WordnetSQL(Wordnet3Schema):
 
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.schema = Wordnet3Schema(self.db_path)
+    def __init__(self, db_path, **kwargs):
+        super().__init__(data_source=db_path, **kwargs)
         # Caches
         self.sk_cache = dd(set)
         self.sid_cache = dd(set)
         self.hypehypo_cache = dd(set)
         self.tagcount_cache = dd(lambda: 0)
 
-    def get_conn(self):
-        conn = sqlite3.connect(self.db_path)
-        return conn
+    @property
+    def schema(self):
+        return self
 
     def get_all_synsets(self):
-        return self.schema.wss.select(columns=['synsetid', 'lemma', 'sensekey', 'tagcount'])
+        return self.wss.select(columns=['synsetid', 'lemma', 'sensekey', 'tagcount'])
 
-    def get_synset_by_id(self, synsetid):
+    def ensure_sid(self, sid):
+        '''Ensure that a given synset ID is an instance of SynsetID'''
+        if isinstance(sid, SynsetID):
+            sid = sid.to_wnsql()
+        else:
+            sid = SynsetID.from_string(str(sid)).to_wnsql()
+        return sid
+
+    @with_ctx
+    def get_synset(self, synsetid, ctx=None):
         sid = self.ensure_sid(synsetid)
-        with self.schema.ds.open() as ctx:
-            # get synset object
-            rows = ctx.wss.select(where='synsetid=?', values=(sid,))
-            if rows is not None and len(rows) > 0:
-                ss = Synset(synsetid)
-                ss.definition = rows[0].definition
-                for row in rows:
-                    ss.add_lemma(row.lemma)
-                    ss.add_key(row.sensekey)
-                    ss.tagcount += row.tagcount
-                # add examples
-                exes = ctx.ex.select(where='synsetid=?', values=[sid], orderby='sampleid')
-                for ex in exes:
-                    ss.exes.append(ex.sample)
-                return ss
+        # get synset object
+        synset_info = ctx.ss.by_id(sid)
+        if synset_info is None:
+            return None
+        else:
+            ss = Synset(synset_info.synsetid)
+            ss.definition = synset_info.definition
+            # add lemmas, sensekeys and tag count
+            rows = ctx.wss.select('synsetid=?', (sid,), columns=('lemma', 'sensekey', 'tagcount'))
+            for row in rows:
+                ss.add_lemma(row.lemma)
+                ss.add_key(row.sensekey)
+                ss.tagcount += row.tagcount
+            # add examples
+            exes = ctx.ex.select(where='synsetid=?', values=[sid], orderby='sampleid')
+            for ex in exes:
+                ss.examples.append(ex.sample)
+            return ss
 
     def get_synset_by_sk(self, sk):
-        with self.schema.ds.open() as ctx:
+        with self.ctx() as ctx:
             # get synset object
             rows = ctx.wss.select(where='sensekey=?', values=(sk,))
             if rows is not None and len(rows) > 0:
@@ -109,7 +120,7 @@ class WordnetSQL:
                 # add examples
                 exes = self.schema.ex.select(where='synsetid=?', values=[rows[0].synsetid], orderby='sampleid', ctx=ctx)
                 for ex in exes:
-                    ss.exes.append(ex.sample)
+                    ss.examples.append(ex.sample)
                 return ss
 
     def get_synsets_by_lemma(self, lemma):
@@ -127,9 +138,31 @@ class WordnetSQL:
                     # add examples
                     exes = ctx.ex.select(where='synsetid=?', values=[row.synsetid], orderby='sampleid')
                     for ex in exes:
-                        ss.exes.append(ex.sample)
+                        ss.examples.append(ex.sample)
                     synsets.add(ss)
             return synsets
+
+    @with_ctx
+    def search(self, lemma, pos=None, deep_select=True, synsets=None, ignore_case=True, ctx=None):
+        # Build query
+        if ignore_case:
+            query = ['wordid IN (SELECT wordid FROM words WHERE lower(lemma) LIKE ?)']
+            params = [lemma.lower()]
+        else:
+            query = ['wordid IN (SELECT wordid FROM words WHERE lemma LIKE ?)']
+            params = [lemma]
+        if pos:
+            query.append('pos = ?')
+            params.append(pos)
+        # find synsetIDs first
+        senses = ctx.senses.select(' AND '.join(query), params, columns=('synsetid',))
+        # get synset object
+        synsets = SynsetCollection()
+        if senses:
+            for sense in senses:
+                ss = self.get_synset(sense.synsetid, ctx=ctx)
+                synsets.add(ss)
+        return synsets
 
     def cache_tagcounts(self):
         results = self.schema.wss.select(columns=['synsetid', 'tagcount'])
@@ -153,14 +186,6 @@ class WordnetSQL:
                                                columns=['pos', 'synsetid', 'sensekey'])
         self.sk_cache[sk] = result
         return result
-
-    def ensure_sid(self, sid):
-        '''Ensure that a given synset ID is an instance of SynsetID'''
-        if isinstance(sid, SynsetID):
-            sid = sid.to_wnsql()
-        else:
-            sid = SynsetID.from_string(str(sid)).to_wnsql()
-        return sid
 
     def get_senseinfo_by_sid(self, synsetid):
         sid = self.ensure_sid(synsetid)
