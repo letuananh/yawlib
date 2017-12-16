@@ -48,8 +48,8 @@ from chirptext.leutile import StringTool, Counter
 
 from yawlib.models import SynsetCollection
 
-from .models import GlossedSynset
-from .models import GlossRaw
+from .gwnmodels import GlossedSynset
+from .gwnmodels import GlossRaw
 # from .models import SenseKey
 # from .models import Term
 # from .models import Gloss

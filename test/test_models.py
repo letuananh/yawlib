@@ -45,7 +45,7 @@ import unittest
 import logging
 from yawlib import POS, SynsetID, Synset, SynsetCollection
 from yawlib import WordnetException
-from yawlib.glosswordnet.models import GlossedSynset, GlossGroup, GlossRaw, Gloss
+from yawlib.glosswordnet import GlossedSynset, GlossGroup, GlossRaw
 
 ########################################################################
 

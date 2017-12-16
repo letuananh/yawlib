@@ -9,11 +9,11 @@ Usage:
 
 from glosswordnet import XMLGWordNet
 xmlwn = XMLGWordNet()
-xmlwn.read(xml_file)    
+xmlwn.read(xml_file)
 for ss in xmlwn.synsets:
     print(ss)
 
-or 
+or
 from glosswordnet import SQLiteGWordNet
 [TODO] WIP
 
@@ -48,9 +48,9 @@ __version__ = "0.1"
 __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
-from .models import GlossedSynset, GlossRaw, Gloss, GlossItem, GlossGroup, SenseTag
-from .xmldao import GWordnetXML
-from .sqlitedao import GWordnetSQLite
+from .gwnmodels import GlossedSynset, GlossRaw, Gloss, GlossItem, GlossGroup, SenseTag
+from .gwnxml import GWordnetXML
+from .gwnsqlite import GWordnetSQLite
 
 
 __all__ = ['GlossedSynset', 'GWordnetXML', 'GWordnetSQLite',

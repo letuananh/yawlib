@@ -49,8 +49,8 @@ from puchikarui import Schema, with_ctx
 from yawlib.models import SynsetCollection, SynsetID
 from yawlib.common import SynsetNotFoundException, WordnetFeatureNotSupported
 
-from .models import GlossedSynset
-from .models import GlossItem
+from .gwnmodels import GlossedSynset
+from .gwnmodels import GlossItem
 
 # -------------------------------------------------------------------------------
 # Configuration
