@@ -49,9 +49,8 @@ from yawlib import GWordnetSQLite as GWNSQL
 from yawlib.helpers import get_synset_by_id
 from yawlib.helpers import get_synset_by_sk
 from yawlib.helpers import get_synsets_by_term
-from yawlib.helpers import get_gwn, get_wn
+from yawlib.helpers import get_gwn
 from yawlib.helpers import dump_synset, dump_synsets
-from yawlib.wntk import combine_glosses
 
 from yawlib import YLConfig
 
@@ -100,39 +99,26 @@ class TestGWNXML(unittest.TestCase):
 
 class TestGlossWordnetSQL(unittest.TestCase):
 
-    def test_get_freq(self):
-        # WSQL should support get_tagcount
-        db = get_wn()
-        c = db.get_tagcount('100002684')
-        self.assertEqual(c, 51)
-
     def test_synset_info(self):
         xmlwn = GWNXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
-
-        ss = xmlwn.synsets[1]
+        synsets = list(xmlwn.synsets)
+        ss = synsets[1]
         self.assertIsNotNone(ss)
         self.assertEqual(len(ss.raw_glosses), 2)
         self.assertTrue(ss.raw_glosses[0].gloss)
 
-        glosses = combine_glosses(ss.glosses)
-        self.assertEqual(len(glosses), 2)
-
     def test_get_gloss_synsets(self):
         print("Test get glossed synset(s)")
         db = get_gwn()
-        glosses = db.schema.gloss.select()
+        glosses = db.gloss.select()
         # select glosses
         print("Gloss count: {}".format(len(glosses)))
         print(glosses[:5])
         pass
 
+
 ########################################################################
 
-
-def main():
-    unittest.main()
-
-
 if __name__ == "__main__":
-    main()
+    unittest.main()

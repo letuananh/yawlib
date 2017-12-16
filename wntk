@@ -1,3 +1,8 @@
 #!/usr/bin/sh
 
+if [ -z "$YAWLIB_HOME" ]; then
+    export YAWLIB_HOME=~/local/yawlib/
+fi
+cd ${YAWLIB_HOME}
+# setup alias
 python3 -m yawlib.wntk "$@"

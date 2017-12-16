@@ -47,7 +47,7 @@ import unittest
 import logging
 import json
 
-from chirptext import header, TextReport
+from chirptext import header
 from chirptext.texttaglib import TaggedDoc, TaggedSentence
 from yawlib.glosswordnet import GWordnetXML
 
@@ -61,8 +61,9 @@ MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
 # Configuration
 # -------------------------------------------------------------------------------
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+
+def get_logger():
+    return logging.getLogger(__name__)
 
 
 # -------------------------------------------------------------------------------
@@ -93,7 +94,8 @@ class TestGlossWordNetXML(unittest.TestCase):
         xmlwn.read(MOCKUP_SYNSETS_DATA)
         doc = TaggedDoc("~/tmp/doc", "glosstest")
         sc = 0
-        for ss in xmlwn.synsets[-50:]:
+        synsets = list(xmlwn.synsets)
+        for ss in synsets[-50:]:
             for g in ss:
                 g.to_ttl(doc)
                 sc += 1
@@ -121,15 +123,25 @@ class TestGlossWordNetXML(unittest.TestCase):
             idx = 0
             self.assertIsNotNone(ss.get_def())
             self.assertIsNotNone(ss.get_aux())
+            try:
+                ss.match_surface()
+            except Exception as e:
+                get_logger().exception("error")
+                header(ss.get_surface())
+                print(ss.definition)
+                if ss.get_aux():
+                    print([x.surface for x in ss.get_aux()])
+                for e in ss.examples:
+                    print(e)
             for g in ss:
-                if g.cat == 'aux':
+                if g.cat == 'aux' or g.cat == 'classif':
                     self.assertIsNone(g.origid)
-                elif idx == 0:
-                    defid = "{}{}_d".format(ss.synsetid.pos, ss.sid.offset)
+                elif g.cat == 'def':
+                    defid = "{}{}_d".format(ss.ID.pos, ss.ID.offset)
                     self.assertEqual(g.origid, defid)
                     idx += 1
                 else:
-                    exid = "{}{}_ex{}".format(ss.synsetid.pos, ss.sid.offset, idx)
+                    exid = "{}{}_ex{}".format(ss.synsetid.pos, ss.ID.offset, idx)
                     self.assertEqual(g.origid, exid)
                     idx += 1
 
@@ -138,7 +150,7 @@ class TestGlossWordNetXML(unittest.TestCase):
         '''
         xmlwn = GWordnetXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
-        synsets = xmlwn.synsets
+        synsets = list(xmlwn.synsets)
         self.assertIsNotNone(synsets)
         self.assertEqual(len(synsets), 219)
         # first synset should be 00001740-r
@@ -180,9 +192,5 @@ class TestGlossWordNetXML(unittest.TestCase):
 # Main method
 # -------------------------------------------------------------------------------
 
-def main():
-    unittest.main()
-
-
 if __name__ == "__main__":
-    main()
+    unittest.main()

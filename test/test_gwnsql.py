@@ -48,6 +48,7 @@ from chirptext import Counter, header
 from chirptext.io import CSV
 from chirptext.texttaglib import TaggedSentence
 from yawlib import YLConfig
+from yawlib import WordnetException
 from yawlib.glosswordnet import GWordnetXML
 from yawlib.glosswordnet import GWordnetSQLite as GWNSQL
 
@@ -63,7 +64,7 @@ TEST_DB_SETUP = os.path.join(TEST_DATA, 'test2.db')
 ########################################################################
 
 
-def get_gwn(db_path=TEST_DB):
+def get_test_gwn(db_path=TEST_DB):
     db = GWNSQL(db_path)
     if not os.path.isfile(db_path) or os.path.getsize(db_path) == 0:
         # insert dummy synsets
@@ -73,42 +74,46 @@ def get_gwn(db_path=TEST_DB):
     return db
 
 
+def setup_ram_gwn(db, ctx):
+    xmlwn = GWordnetXML()
+    xmlwn.read(MOCKUP_SYNSETS_DATA)
+    db.insert_synsets(xmlwn.synsets, ctx=ctx)
+
+
 class TestGlossWordnetSQL(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         print("Setting up tests")
-        # gwn = get_gwn()
 
     def test_xml_to_sqlite(self):
-        self.assertIsNotNone(get_gwn())
+        self.assertIsNotNone(get_test_gwn())
         pass
 
     def test_setup_insert_stuff(self):
-        if os.path.isfile(TEST_DB_SETUP):
-            os.unlink(TEST_DB_SETUP)
-        db = GWNSQL(TEST_DB_SETUP)
+        db = GWNSQL(":memory:")
         xmlwn = GWordnetXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
-        db.insert_synset(xmlwn.synsets[0])
-        db.insert_synsets(xmlwn.synsets[1:3])
-        self.assertIsNotNone(db)
-        # test select stuff out
-        ss = db.all_synsets()
-        self.assertEqual(len(ss), 3)
-        # all tags
-        tags = db.tagged_sensekeys()
-        self.assertEqual(tags, {'not%4:02:00::', 'be_born%2:30:00::', 'christian_era%1:28:00::', 'christ%1:18:00::', 'date%1:28:04::', 'musical_accompaniment%1:10:00::', 'a_cappella%4:02:00::', 'ad%4:02:00::', 'ce%4:02:00::'})
-        # all sensekeys
-        sks = db.sensekeys()
-        self.assertEqual(len(sks), 7)
+        with db.ctx() as ctx:
+            synsets = list(xmlwn.synsets)
+            db.insert_synset(synsets[0], ctx=ctx)
+            db.insert_synsets(synsets[1:3], ctx=ctx)
+            # test select stuff out
+            ssids = ctx.synset.select()
+            self.assertEqual(len(ssids), 3)
+            # all tags
+            tags = db.tagged_sensekeys(ctx=ctx)
+            self.assertEqual(tags, {'not%4:02:00::', 'be_born%2:30:00::', 'christian_era%1:28:00::', 'christ%1:18:00::', 'date%1:28:04::', 'musical_accompaniment%1:10:00::', 'a_cappella%4:02:00::', 'ad%4:02:00::', 'ce%4:02:00::'})
+            # all sensekeys
+            sks = ctx.sensekey.select()
+            self.assertEqual(len(sks), 7)
 
     def test_results_to_synsets(self):
-        db = get_gwn()
+        db = get_test_gwn()
         db.results_to_synsets([], None)
 
     def test_get_synset_by_id(self):
-        gwn = get_gwn()
+        gwn = get_test_gwn()
         ss = gwn.get_synset('00001740-r')
         self.assertIsNotNone(ss)
         self.assertEqual('00001740-r', ss.synsetid)
@@ -120,15 +125,15 @@ class TestGlossWordnetSQL(unittest.TestCase):
         pass
 
     def test_get_synsets_by_ids(self):
-        gwn = get_gwn()
-        synsets = gwn.get_synsets_by_ids(['00001837-r', 'r00001740'])
+        gwn = get_test_gwn()
+        synsets = gwn.get_synsets(['00001837-r', 'r00001740'])
         self.assertEqual(len(synsets), 2)
         print(synsets)
 
     def test_get_gloss_synsets(self):
         print("Test get glossed synset(s)")
-        db = get_gwn()
-        glosses = db.schema.gloss.select()
+        db = get_test_gwn()
+        glosses = db.gloss.select()
         # select glosses
         self.assertEqual(len(glosses), 716)
         text = db.get_glossitems_text('00001740r')
@@ -139,17 +144,12 @@ class TestGlossWordnetSQL(unittest.TestCase):
         pass
 
     def test_get_synset_by_term(self):
-        ss = get_gwn().search('AD')
+        ss = get_test_gwn().search('AD')
         self.assertGreater(len(ss), 0)
 
     def test_single_match(self):
         gwn = GWNSQL(YLConfig.GWN30_DB)
         ss = gwn.get_synset('r00008007')
-        # print(ss.match_surface())
-        # print(ss.get_orig().split())
-        # for g in ss.glosses:
-        #     print("{} ({})".format(g.text(), g.cat))
-        # find def raw
         raws = ss.get_orig().split()
         d = ss.get_def()
         for idx, r in enumerate(raws):
@@ -193,7 +193,7 @@ class TestGlossWordnetSQL(unittest.TestCase):
         fixed = CSV.read("data/fixed_surface.tab")
         raws_map = {x[0]: x[1:] for x in fixed if x}
         to_fix = []
-        gwn = GWNSQL(YLConfig.GWN30_DB)
+        gwn = get_test_gwn()
         with gwn.ctx() as ctx:
             sinfos = ctx.synset.select(limit=50)
             c = Counter()
@@ -220,12 +220,54 @@ class TestGlossWordnetSQL(unittest.TestCase):
             c.summarise()
             CSV.write_tsv("data/manual.txt", to_fix, quoting=CSV.QUOTE_MINIMAL)
 
+    def test_all_api(self):
+        gwn = GWNSQL(':memory:')
+        with gwn.ctx() as ctx:
+            setup_ram_gwn(gwn, ctx)
+            self.assertRaises(WordnetException, lambda: gwn.get_synset('00001740-n', ctx=ctx))
+            ssids = ctx.synset.select(columns=('ID',))
+            self.assertEqual(len(ssids), 219)
+            # test get_synset() and get_synsets()
+            r00008007 = gwn.get_synset('00008007-r', ctx=ctx)
+            self.assertTrue(r00008007)
+            self.assertTrue(r00008007.definition)
+            self.assertTrue(r00008007.examples)
+            self.assertTrue(r00008007.get_aux())
+            for ss in gwn.get_synsets(('a01179767', 'n03095965', 'r00001837'), ctx=ctx):
+                self.assertTrue(ss.ID)
+                self.assertTrue(ss.definition)
+                self.assertTrue(ss.keys)
+            # test get by key
+            r00008007 = gwn.get_by_key('wholly%4:02:00::', ctx=ctx)
+            self.assertTrue(r00008007)
+            self.assertTrue(r00008007.definition)
+            self.assertTrue(r00008007.examples)
+            self.assertTrue(r00008007.get_aux())
+            # test get_by_keys
+            synsets = gwn.get_by_keys(('divine%3:00:02:heavenly:00', 'wholly%4:02:00::'), ctx=ctx)
+            for ss in synsets:
+                self.assertTrue(ss.definition)
+                self.assertTrue(ss.keys)
+                self.assertTrue(ss.examples)
+            # test sk2sid
+            self.assertEqual(gwn.sk2sid('wholly%4:02:00::', ctx=ctx), 'r00008007')
+            # test search
+            lemma = 'automatically'
+            synsets = gwn.search(lemma=lemma, ctx=ctx)
+            self.assertTrue(synsets)
+            for ss in synsets:
+                self.assertTrue(ss.keys)
+                self.assertTrue(ss.definition)
+                self.assertIn(lemma, ss.lemmas)
+            # limit by POS
+            self.assertFalse(gwn.search(lemma=lemma, pos='v', ctx=ctx))
+            # hypernyms, hyponyms, hypehypo are not supported
+            self.assertRaises(WordnetException, lambda: gwn.hypernyms('r00008007', ctx=ctx))
+            self.assertRaises(WordnetException, lambda: gwn.hyponyms('r00008007', ctx=ctx))
+            self.assertRaises(WordnetException, lambda: gwn.hypehypo('r00008007', ctx=ctx))
+
 
 ########################################################################
 
-def main():
-    unittest.main()
-
-
 if __name__ == "__main__":
-    main()
+    unittest.main()

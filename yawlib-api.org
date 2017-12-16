@@ -1,0 +1,27 @@
+#+TITLE: Standard Yawlib API
+
+* Must-support APIs
+** Select by ID(s)
+- get_synset(synsetid)
+- get_synsets(synsetids)
+
+** Select by sensekey(s)
+- get_by_key(sensekey)
+- get_by_keys(sensekeys)
+
+** Helpers
+sk2sid(sensekey)
+
+** Search by lemma, pos
+- search(lemma, pos=None, deep_select=True, ignore_case=True)
+
+** Get related synsets
+These functions should return a list of synset objects
+- hypernyms(synsetid, deep_select=True)
+- hyponyms(synsetid, deep_select=True)
+- hypehypo(synsetid, deep_select=True)
+
+* Support datasets
+** WordnetSQL
+** GlossedWordnet
+** Open Multilingual Wordnet

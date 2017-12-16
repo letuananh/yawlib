@@ -39,14 +39,15 @@ __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
 import os
 import logging
 
 from puchikarui import Schema, with_ctx
 
-from yawlib.models import SynsetCollection, Synset, SynsetID
+from yawlib.models import SynsetCollection, SynsetID
+from yawlib.common import SynsetNotFoundException, WordnetFeatureNotSupported
 
 from .models import GlossedSynset
 from .models import GlossItem
@@ -87,18 +88,12 @@ class GWordnetSQLite(GWordnetSchema):
 
     def __init__(self, db_path, **kwargs):
         super().__init__(data_source=db_path, **kwargs)
-        # self.db_path = db_path
-        # self.schema = GWordnetSchema(self.db_path)
-
-    @property
-    def schema(self):
-        return self
 
     @with_ctx
     def insert_synset(self, synset, ctx=None):
         ''' Helper method for storing a single synset
         '''
-        self.insert_synsets([synset])
+        self.insert_synsets([synset], ctx=ctx)
 
     @with_ctx
     def insert_synsets(self, synsets, ctx=None):
@@ -132,26 +127,27 @@ class GWordnetSQLite(GWordnetSchema):
                     ctx.sensetag.insert(tag.cat, tag.tag, tag.glob, tag.glemma,
                                         tag.glob_id, tag.coll, '', gloss.gid, tag.sk,
                                         tag.origid, tag.lemma, tag.item.itemid)
-        pass
 
     @with_ctx
-    def get_synset(self, sid, ctx=None):
-        ss = GlossedSynset(sid)
-        sid = ss.ID.to_gwnsql()
+    def get_synset(self, synsetid, ctx=None):
+        ss = GlossedSynset(synsetid)
+        synsetid = ss.ID.to_gwnsql()
+        if not ctx.synset.by_id(synsetid):
+            raise SynsetNotFoundException(synsetid)
         # terms = lemmas;
-        terms = ctx.term.select(where='sid=?', values=(sid,))
+        terms = ctx.term.select(where='sid=?', values=(synsetid,))
         for term in terms:
             ss.add_lemma(term.term)
         # sensekey;
-        sks = ctx.sensekey.select(where='sid=?', values=(sid,))
+        sks = ctx.sensekey.select(where='sid=?', values=(synsetid,))
         for sk in sks:
             ss.add_key(sk.sensekey)
         # gloss_raw | sid cat gloss
-        rgs = ctx.gloss_raw.select(where='sid=?', values=(sid,))
+        rgs = ctx.gloss_raw.select(where='sid=?', values=(synsetid,))
         for rg in rgs:
             ss.add_raw_gloss(rg.cat, rg.gloss)
         # gloss; DB: id origid sid cat | OBJ: gid origid cat
-        glosses = ctx.gloss.select(where='sid=?', values=(sid,))
+        glosses = ctx.gloss.select(where='sid=?', values=(synsetid,))
         for gl in glosses:
             gloss = ss.add_gloss(gl.origid, gl.cat, gl.id)
             gloss.surface = gl.surface
@@ -177,12 +173,13 @@ class GWordnetSQLite(GWordnetSchema):
         if synsets is None:
             synsets = SynsetCollection()
         for result in results:
-            ss = self.get_synset(sid=result.ID, ctx=ctx)
+            ss = self.get_synset(synsetid=result.ID, ctx=ctx)
             synsets.add(ss)
         return synsets
 
     @with_ctx
-    def get_synsets_by_ids(self, synsetids, ctx=None):
+    def get_synsets(self, synsetids, ctx=None):
+        ''' Get synsets by synsetids '''
         synsets = SynsetCollection()
         for sid in synsetids:
             ss = self.get_synset(sid, ctx=ctx)
@@ -190,18 +187,7 @@ class GWordnetSQLite(GWordnetSchema):
         return synsets
 
     @with_ctx
-    def all_synsets(self, synsets=None, deep_select=True, ctx=None):
-        synsets = SynsetCollection()
-        results = ctx.synset.select()
-        if deep_select:
-            return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
-        else:
-            for result in results:
-                synsets.add(Synset(result.ID))
-            return synsets
-
-    @with_ctx
-    def get_synset_by_sk(self, sensekey, ctx=None):
+    def get_by_key(self, sensekey, ctx=None):
         # synset;
         results = ctx.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=(sensekey,))
         if len(results) == 0:
@@ -212,21 +198,18 @@ class GWordnetSQLite(GWordnetSchema):
             return self.get_synset(results[0].ID, ctx=ctx)
 
     @with_ctx
-    def get_synset_by_sks(self, sensekeys, ctx=None):
+    def get_by_keys(self, sensekeys, ctx=None):
         where = 'id IN (SELECT sid FROM sensekey where sensekey IN (%s))' % ','.join(['?'] * len(sensekeys))
         results = ctx.synset.select(where=where, values=sensekeys)
         return self.results_to_synsets(results, ctx=ctx)
 
     @with_ctx
-    def get_synsets_by_lemma(self, lemma, ctx=None):
-        rows = ctx.term.select('lower(term)=?', (lemma.lower(),))
-        synsets = SynsetCollection()
-        for row in rows:
-            synsets.add(self.get_synset(row.sid, ctx=ctx))
-        return synsets
+    def sk2sid(self, sensekey, ctx=None):
+        result = ctx.sensekey.select_single('sensekey=?', (sensekey,))
+        return SynsetID.from_string(result.sid) if result else None
 
     @with_ctx
-    def search(self, lemma, pos=None, deep_select=True, synsets=None, ignore_case=True, ctx=None):
+    def search(self, lemma, pos=None, deep_select=True, ignore_case=True, synsets=None, ctx=None):
         if ignore_case:
             query = ['ID IN (SELECT sid FROM term WHERE lower(term) LIKE ?)']
             params = [lemma.lower()]
@@ -237,15 +220,24 @@ class GWordnetSQLite(GWordnetSchema):
             query.append('pos = ?')
             params.append(pos)
         # query synsetids
-        results = ctx.synset.select(' AND '.join(query), params)
+        results = ctx.synset.select(' AND '.join(query), params, columns=('ID',))
         return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
 
     @with_ctx
-    def sensekeys(self, ctx=None):
-        return ctx.sensekey.select()
+    def hypernyms(self, synsetid, deep_select=False, ctx=None):
+        raise WordnetFeatureNotSupported("This feature is not available for this Wordnet")
+
+    @with_ctx
+    def hyponyms(self, synsetid, deep_select=False, ctx=None):
+        raise WordnetFeatureNotSupported("This feature is not available for this Wordnet")
+
+    @with_ctx
+    def hypehypo(self, synsetid, deep_select=False, ctx=None):
+        raise WordnetFeatureNotSupported("This feature is not available for this Wordnet")
 
     @with_ctx
     def tagged_sensekeys(self, ctx=None):
+        ''' Get all sensekeys used for tagging '''
         results = ctx.sensetag.select(columns=['sk'])
         return set((x.sk for x in results))
 

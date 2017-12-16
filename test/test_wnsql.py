@@ -42,31 +42,26 @@ __status__ = "Prototype"
 ########################################################################
 
 import unittest
-from yawlib import YLConfig
-from yawlib.wordnetsql import WordnetSQL as WSQL
+from yawlib.helpers import get_wn
 
 ########################################################################
+
+wn = get_wn()
 
 
 class TestWordnetSQL(unittest.TestCase):
 
-    def get_wn(self):
-        # Build a WordnetSQL object (default location: ~/wordnet/sqlite-30.db)
-        return WSQL(YLConfig.WNSQL30_PATH)
-
     def test_wnsql_basic(self):
-        wn = self.get_wn()
         self.assertTrue(wn)
         # get sense info
         SID = 300001740
-        sinfo = wn.get_senseinfo_by_sid(SID)
-        print("Sense info: %s" % (sinfo,))
-        examples = wn.get_examples_by_sid(SID)
-        print(examples)
+        ss = wn.get_synset(SID)
+        self.assertTrue(ss)
+        self.assertTrue(ss.definition)
+        self.assertTrue(ss.examples)
 
     def test_get_synset_by_id(self):
-        db = self.get_wn()
-        ss = db.get_synset('01775164-v')
+        ss = wn.get_synset('01775164-v')
         self.assertEqual(ss.synsetid, '01775164-v')
         self.assertEqual(ss.definition, 'have a great affection or liking for')
         self.assertEqual(ss.lemmas, ['love'])
@@ -76,40 +71,41 @@ class TestWordnetSQL(unittest.TestCase):
         self.assertEqual(ss.examples, ['I love French food', 'She loves her boss and works hard for him'])
 
     def test_get_synsets_by_lemma(self):
-        db = self.get_wn()
-        synsets = db.get_synsets_by_lemma('love')
+        synsets = wn.search('love')
         self.assertEqual(len(synsets), 10)
-        self.assertEqual(synsets[0].synsetid, '07543288-n')
-        self.assertEqual(synsets[0].definition, 'a strong positive emotion of regard and affection')
-        self.assertEqual(synsets[0].tagcount, 42)
+        n07543288 = synsets.by_sid('07543288-n')
+        self.assertEqual(n07543288.ID, 107543288)
+        self.assertEqual(n07543288.definition, 'a strong positive emotion of regard and affection')
+        self.assertEqual(n07543288.tagcount, 42)
+        # love, nouns only
+        synsets = wn.search('love', pos='n')
+        self.assertEqual(set(s.ID for s in synsets), {'13596569-n', '00846515-n', '07488340-n', '09849598-n', '05813229-n', '07543288-n'})
 
-    def test_get_synset_by_sk(self):
-        db = self.get_wn()
-        ss = db.get_synset_by_sk('love%2:37:00::')
-        self.assertEqual(ss.synsetid, '01775164-v')
-        self.assertEqual(ss.definition, 'have a great affection or liking for')
-        self.assertEqual(ss.tagcount, 43)
+    def test_get_by_keys(self):
+        with wn.ctx() as ctx:
+            ss = wn.get_by_key('love%2:37:00::', ctx=ctx)
+            self.assertEqual(ss.synsetid, '01775164-v')
+            self.assertEqual(ss.definition, 'have a great affection or liking for')
+            self.assertEqual(ss.tagcount, 43)
+            synsets = wn.get_by_keys(['canis_familiaris%1:05:00::', 'dog%1:05:00::', 'domestic_dog%1:05:00::'], ctx=ctx)
+            self.assertEqual([s.ID for s in synsets], ['02084071-n'])
 
     def test_get_freq(self):
         # WSQL should support get_tagcount
-        db = self.get_wn()
-        c = db.get_tagcount('100002684')
+        c = wn.get_tagcount(100002684)
         self.assertEqual(c, 51)
+        c = wn.get_tagcount(100007846)
+        self.assertEqual(c, 6909)
 
     def test_hypenym_hyponym(self):
-        db = self.get_wn()
-        sinfo = db.get_senseinfo_by_sk('pleasure%1:09:00::')
-        self.assertIsNotNone(sinfo)
+        sid = wn.sk2sid('pleasure%1:09:00::')
+        self.assertIsNotNone(sid)
         # Hypenyms, hyponyms
-        hypehypos = db.get_hypehypo(sinfo.synsetid)
+        hypehypos = wn.hypehypo(sid)
         self.assertEqual(1, len(hypehypos))
+
 
 ########################################################################
 
-
-def main():
-    unittest.main()
-
-
 if __name__ == "__main__":
-    main()
+    unittest.main()

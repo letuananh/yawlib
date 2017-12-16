@@ -43,8 +43,9 @@ __status__ = "Prototype"
 
 import unittest
 import logging
-from yawlib import SynsetID, Synset, SynsetCollection
-from yawlib.glosswordnet.models import GlossedSynset, GlossGroup
+from yawlib import POS, SynsetID, Synset, SynsetCollection
+from yawlib import WordnetException
+from yawlib.glosswordnet.models import GlossedSynset, GlossGroup, GlossRaw, Gloss
 
 ########################################################################
 
@@ -92,6 +93,22 @@ class TestSynsetIDWrapper(unittest.TestCase):
         s = SynsetID.from_string('02315002-a')
 
     def test_pos(self):
+        self.assertEqual(POS.num2pos(1), 'n')
+        self.assertEqual(POS.num2pos("1"), 'n')
+        self.assertRaises(WordnetException, lambda: POS.num2pos("7"))
+        self.assertRaises(WordnetException, lambda: POS.num2pos(None))
+        self.assertRaises(WordnetException, lambda: POS.num2pos(0))
+        self.assertEqual(POS.pos2num("n"), '1')
+        self.assertEqual(POS.pos2num("v"), '2')
+        self.assertEqual(POS.pos2num("a"), '3')
+        self.assertEqual(POS.pos2num("r"), '4')
+        self.assertEqual(POS.pos2num("s"), '5')
+        self.assertEqual(POS.pos2num("x"), '6')
+        self.assertRaises(WordnetException, lambda: POS.pos2num(None))
+        self.assertRaises(WordnetException, lambda: POS.pos2num("g"))
+        self.assertRaises(WordnetException, lambda: POS.pos2num(""))
+        self.assertRaises(WordnetException, lambda: POS.pos2num(1))
+        self.assertRaises(WordnetException, lambda: POS.pos2num("n "))
         self.assertEqual(SynsetID.from_string('112345678').pos, 'n')
         self.assertEqual(SynsetID.from_string('212345678').pos, 'v')
         self.assertEqual(SynsetID.from_string('312345678').pos, 'a')
@@ -122,10 +139,32 @@ class TestSynsetIDWrapper(unittest.TestCase):
         self.assertEqual(s.synsetid, '12345678-n')
         self.assertEqual(s.lemma, 'foo')
 
+    def test_collection(self):
+        s = Synset('12345678n', lemma='foo')
+        ss = SynsetCollection()
+        ss.add(s)
+        self.assertIn(112345678, ss)
+        self.assertIs(ss[112345678], s)
+        self.assertEqual(len(ss), 1)
+
+    def test_assign_synsetid(self):
+        s1 = SynsetID.from_string('12345678-n')
+        ss = Synset(s1)
+        ssid = ss.ID
+        self.assertIs(ss.ID, ssid)
+        self.assertEqual(ss.ID, s1)
+        self.assertIsNot(ss.ID, s1)  # must not be the same instance SynsetID
+
+
+class testGSynset(unittest.TestCase):
+
     def test_gsynset(self):
         gs = GlossedSynset(112345678)
         self.assertIsNotNone(gs)
         self.assertEqual(str(gs), '(GSynset:12345678-n)')
+        # def should be none now
+        self.assertIsNone(gs.get_def())
+        self.assertIsNone(gs.definition)
         # add an empty gloss item
         gs.add_raw_gloss('boo', 'boo foo')
         g = gs.add_gloss(None, None)
@@ -140,12 +179,13 @@ class TestSynsetIDWrapper(unittest.TestCase):
         # gloss group
         self.assertIsNotNone(GlossGroup())
 
+    def test_glossraw(self):
+        g = GlossRaw(None, GlossRaw.ORIG, 'without musical accompaniment; "they performed a cappella"')
+        self.assertEqual(str(g), '[gloss-orig] without musical accompaniment; "they performed a cappella"')
+        self.assertEqual(g.split(), ['without musical accompaniment', ' "they performed a cappella"'])
+
+
 ######################################################################
 
-
-def main():
-    unittest.main()
-
-
 if __name__ == "__main__":
-    main()
+    unittest.main()

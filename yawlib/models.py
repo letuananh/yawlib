@@ -43,7 +43,9 @@ __status__ = "Prototype"
 
 import json
 import re
+import copy
 from chirptext.leutile import uniquify
+from .common import WordnetException
 
 ########################################################################
 
@@ -61,14 +63,16 @@ class POS(object):
     num2pos_map = dict(zip(NUMS, POSES))
     pos2num_map = dict(zip(POSES, NUMS))
 
+    @staticmethod
     def num2pos(pos_num):
-        if pos_num not in POS.num2pos_map:
-            raise Exception('Invalid POS number')
-        return POS.num2pos_map[pos_num]
+        if not pos_num or str(pos_num) not in POS.num2pos_map:
+            raise WordnetException('Invalid POS number')
+        return POS.num2pos_map[str(pos_num)]
 
+    @staticmethod
     def pos2num(pos):
         if pos not in POS.pos2num_map:
-            raise Exception('Invalid POS')
+            raise WordnetException('Invalid POS')
         else:
             return POS.pos2num_map[pos]
 
@@ -159,7 +163,10 @@ class Synset(object):
 
     @ID.setter
     def ID(self, value):
-        self.__sid = SynsetID.from_string(value)
+        if isinstance(value, SynsetID):
+            self.__sid = copy.copy(value)
+        else:
+            self.__sid = SynsetID.from_string(value)
 
     @property
     def definition(self):
@@ -219,7 +226,6 @@ class Synset(object):
         self.__exes.append(example)
 
     # Aliases
-
     @property
     def synsetid(self):
         ''' An alias of synset.ID '''
@@ -282,15 +288,21 @@ class SynsetCollection(object):
                 self.add(synset)
 
     def add(self, synset):
-        ssid = synset.synsetid
         self.synsets.append(synset)
-        self.sid_map[ssid] = synset
+        self.sid_map[synset.ID] = synset
         for key in synset.sensekeys:
             self.sk_map[key] = synset
         return self
 
-    def __getitem__(self, idx):
-        return self.synsets[idx]
+    def __getitem__(self, sid):
+        if not isinstance(sid, SynsetID):
+            sid = SynsetID.from_string(sid)
+        return self.sid_map[sid]
+
+    def __contains__(self, sid):
+        if not isinstance(sid, SynsetID):
+            sid = SynsetID.from_string(sid)
+        return sid in self.sid_map
 
     def __len__(self):
         return self.count()

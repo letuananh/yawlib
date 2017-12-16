@@ -160,8 +160,6 @@ class GlossedSynset(Synset):
                     break
             except:
                 continue
-        # if len(raws) != len(glosses):
-        #     return False
         while len(raws) > 0:
             raw = raws.pop()
             s = TaggedSentence(raw)
@@ -171,12 +169,6 @@ class GlossedSynset(Synset):
                     tokens.pop()
                 try:
                     s.import_tokens(tokens)
-                    # cfrom = min(t.cfrom for t in s)
-                    # cto = max(t.cto for t in s)
-                    # remain = s.text[:cfrom] + s.text[cto:]
-                    # if REMAIN_PATTERN.sub('', remain):
-                    #     raise Exception("not fully matched ==> {}".format(remain))
-                    # seem OK?
                     g.surface = raw
                     glosses.pop(idx)  # remove this gloss as it's matched
                     break
@@ -184,7 +176,7 @@ class GlossedSynset(Synset):
                     # move on to the next one
                     pass
         if len(glosses) > 0:
-            raise Exception("mismatched")
+            raise Exception("mismatched {}".format(glosses))
         return True
 
     def __getitem__(self, name):
