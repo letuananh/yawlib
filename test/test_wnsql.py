@@ -41,12 +41,23 @@ __status__ = "Prototype"
 
 ########################################################################
 
+import os
+import logging
 import unittest
+
 from yawlib.helpers import get_wn
+from chirptext.cli import setup_logging
 
 ########################################################################
 
+MY_DIR = os.path.dirname(__file__)
+TEST_DATA = os.path.join(MY_DIR, 'data')
 wn = get_wn()
+setup_logging(os.path.join(MY_DIR, 'logging.json'), os.path.join(MY_DIR, 'logs'))
+
+
+def getLogger():
+    return logging.getLogger(__name__)
 
 
 class TestWordnetSQL(unittest.TestCase):
@@ -80,6 +91,13 @@ class TestWordnetSQL(unittest.TestCase):
         # love, nouns only
         synsets = wn.search('love', pos='n')
         self.assertEqual(set(s.ID for s in synsets), {'13596569-n', '00846515-n', '07488340-n', '09849598-n', '05813229-n', '07543288-n'})
+        # search adjective/adverb/etc.
+        synsets = wn.search('quick', 'a')
+        print(synsets)
+
+    def test_get_satellite(self):
+        for s in ['00032733-a', '00919018-a', '00978754-a', '00979366-a', '01270486-a', '01335903-a']:
+            self.assertEqual(wn.get_synset(s).ID, s)
 
     def test_get_by_keys(self):
         with wn.ctx() as ctx:

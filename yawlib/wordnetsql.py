@@ -39,11 +39,16 @@ __status__ = "Prototype"
 
 # -----------------------------------------------------------------------
 
+import logging
 from collections import defaultdict as dd
 from puchikarui import Schema, with_ctx
 from yawlib.models import SynsetID, Synset, SynsetCollection
 
+
 # -----------------------------------------------------------------------
+
+def getLogger():
+    return logging.getLogger(__name__)
 
 
 class Wordnet3Schema(Schema):
@@ -52,6 +57,7 @@ class Wordnet3Schema(Schema):
     def __init__(self, data_source=None):
         Schema.__init__(self, data_source)
         self.add_table('wordsXsensesXsynsets', 'wordid lemma casedwordid synsetid senseid sensenum lexid tagcount sensekey pos lexdomainid definition'.split(), alias='wss')
+        self.add_table('wordsXsenses', 'wordid lemma casedwordid synsetid senseid sensenum lexid tagcount sensekey'.split(), alias='wordsense')
         self.add_table('sensesXsemlinksXsenses', 'linkid ssynsetid swordid ssenseid scasedwordid ssensenum slexid stagcount ssensekey spos slexdomainid sdefinition dsynsetid dwordid dsenseid dcasedwordid dsensenum dlexid dtagcount dsensekey dpos dlexdomainid ddefinition'.split(), alias='sss')
         self.add_table('synsets', 'synsetid pos lexdomainid definition'.split(), alias='ss').set_id('synsetid')
         self.add_table('samples', 'synsetid sampleid sample'.split(), alias='ex')
@@ -88,7 +94,7 @@ class WordnetSQL(Wordnet3Schema):
             ss = Synset(synset_info.synsetid)
             ss.definition = synset_info.definition
             # add lemmas, sensekeys and tag count
-            rows = ctx.wss.select('synsetid=?', (sid,), columns=('lemma', 'sensekey', 'tagcount'))
+            rows = ctx.wordsense.select('synsetid=?', (sid,), columns=('lemma', 'sensekey', 'tagcount'))
             for row in rows:
                 ss.add_lemma(row.lemma)
                 ss.add_key(row.sensekey)
@@ -153,7 +159,15 @@ class WordnetSQL(Wordnet3Schema):
         else:
             query = ['wordid IN (SELECT wordid FROM words WHERE lemma LIKE ?)']
             params = [lemma]
-        if pos:
+        if pos == 'a':
+            # ss_type: https://wordnet.princeton.edu/man/wndb.5WN.html
+            # n    NOUN
+            # v    VERB
+            # a    ADJECTIVE
+            # s    ADJECTIVE SATELLITE
+            # r    ADVERB
+            query.append("synsetid IN (SELECT synsetid FROM synsets WHERE pos IN ('a', 's'))")
+        elif pos:
             query.append('synsetid IN (SELECT synsetid FROM synsets WHERE pos = ?)')
             params.append(pos)
         # find synsetIDs first
