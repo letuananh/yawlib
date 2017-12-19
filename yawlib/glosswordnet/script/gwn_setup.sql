@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS gloss (
        ,origid TEXT -- Original ID
        ,sid TEXT    -- fkey to synsetid
        ,cat TEXT    -- category (def/ex)
+       ,surface TEXT -- original text extracted from gloss_orig
        ,FOREIGN KEY (sid) REFERENCES synset(sid) 
 );
 

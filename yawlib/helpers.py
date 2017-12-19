@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''
@@ -16,23 +15,23 @@ Adapted from: https://github.com/letuananh/lelesk
 
 # Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2016, yawlib"
@@ -71,12 +70,12 @@ def get_synset_by_id(gwn, synsetid_str, report_file=None, compact=True):
     ''' Search synset in WordNet Gloss Corpus by synset ID'''
     if report_file is None:
         report_file = TextReport()  # Default to stdout
-    report_file.print("Looking for synsets by synsetid (Provided: %s)\n" % synsetid_str)
+    report_file.print("Looking for synsets by synsetid (Provided: %s)" % synsetid_str)
 
     # Get synset infro from GlossWordnet
     try:
         synsetid = SynsetID.from_string(synsetid_str)
-        synset = gwn.get_synset_by_id(synsetid.to_gwnsql())
+        synset = gwn.get_synset(synsetid.to_gwnsql())
         dump_synset(synset, report_file=report_file, compact=compact)
         return synset
     except Exception as e:
@@ -88,9 +87,9 @@ def get_synset_by_sk(gwn, sk, report_file=None, compact=True):
     ''' Search synset in WordNet Gloss Corpus by sensekey'''
     if report_file is None:
         report_file = TextReport()  # Default to stdout
-    report_file.print("Looking for synsets by sensekey (Provided: %s)\n" % sk)
+    report_file.print("Looking for synsets by sensekey (Provided: %s)" % sk)
 
-    synset = gwn.get_synset_by_sk(sk)
+    synset = gwn.get_by_key(sk)
     dump_synset(synset, report_file=report_file, compact=compact)
     return synset
 
@@ -99,9 +98,9 @@ def get_synsets_by_term(gwn, t, pos=None, report_file=None, compact=True):
     ''' Search synset in WordNet Gloss Corpus by term'''
     if report_file is None:
         report_file = TextReport()  # Default to stdout
-    report_file.print("Looking for synsets by term (Provided: %s | pos = %s)\n" % (t, pos))
+    report_file.print("Looking for synsets by term (Provided: %s | pos = %s)" % (t, pos))
 
-    synsets = gwn.get_synsets_by_term(t, pos)
+    synsets = gwn.search(t, pos)
     dump_synsets(synsets, report_file, compact=compact)
     return synsets
 
@@ -141,23 +140,25 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
         report_file = TextReport()  # Default to stdout
 
     if more_compact:
-        report_file.header("Synset: %s (lemmas=%s | keys=%s)" % (ss.sid.to_canonical(), ss.lemmas, ss.keys), 'h0')
+        report_file.header("〔Synset〕 %s 〔Lemmas〕%s 〔Keys〕%s" % (ss.ID, '; '.join(ss.lemmas), ' '.join(ss.sensekeys)), level='h1')
     else:
-        report_file.header("Synset: %s" % ss, 'h0')
+        report_file.header("Synset: %s" % ss, level='h0')
 
-    for rgloss in ss.raw_glosses:
-        if more_compact:
-            if rgloss.cat != 'orig':
-                continue
-        report_file.print(rgloss)
+    if not more_compact:
+        for rgloss in ss.raw_glosses:
+            if compact:
+                if rgloss.cat != 'orig':
+                    continue
+            report_file.print(rgloss)
 
     gloss_count = itertools.count(1)
     for gloss in ss.glosses:
         if compact:
-            report_file.print("({cat}) {txt}".format(cat=gloss.cat, txt=gloss.text()))
+            txt = gloss.text() if gloss.cat != 'def' else '“{}”'.format(gloss.text())
+            report_file.print("({cat}) {txt}".format(cat=gloss.cat, txt=txt))
         else:
             report_file.print('')
-            report_file.header("Gloss #%s: %s" % (next(gloss_count), gloss), 'h2')
+            report_file.header("Gloss #%s: %s" % (next(gloss_count), gloss), level='h2')
 
             # Dump gloss items
             if compact_gloss:
@@ -174,6 +175,7 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
                 for tag in gloss.tags:
                     report_file.print("%s" % tag, level=1)
     report_file.print('')
+
 
 #############################################################
 # argparse enhancement
@@ -213,25 +215,6 @@ def get_omw(args=None):
     return OMWSQL(db_path)
 
 
-def config_logging(args, logger):
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-        logger.setLevel(level=logging.DEBUG)
-    elif args.quiet:
-        logging.basicConfig(level=logging.DEBUG)
-        logger.setLevel(level=logging.ERROR)
-    else:
-        logging.basicConfig(level=logging.DEBUG)
-        logger.setLevel(level=logging.INFO)
-
-
-def add_logging_config(parser):
-    # Optional argument(s)
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("-v", "--verbose", action="store_true")
-    group.add_argument("-q", "--quiet", action="store_true")
-
-
 def add_wordnet_config(parser):
     '''Where to find different wordnets data'''
     parser.add_argument('-i', '--gloss_xml', help='Path to Gloss WordNet folder', default=YLConfig.GWN30_PATH)
@@ -242,16 +225,15 @@ def add_wordnet_config(parser):
     parser.set_defaults(mockup_files=MOCKUP_SYNSETS_DATA)
 
 
-def show_info(args):
+def show_info(cli, args):
     ''' Show configuration information
     '''
     print("GlossWordNet XML folder: %s" % args.gloss_xml)
     print("GlossWordNet SQlite DB : %s" % args.glossdb)
     print("Princeton WordnetSQL DB: %s" % args.wnsql)
-    print("Use mockup data      : %s" % args.mockup)
-
-
-#--------------------------------------------------------
-
-if __name__ == "__main__":
-    print("This is a library, not a tool")
+    print("OMW DB                 : %s" % args.omw)
+    print("Use mockup data        : %s" % args.mockup)
+    if args.verbose:
+        print("--verbose              : %s" % args.verbose)
+    if args.quiet:
+        print("--quiet                : %s" % args.quiet)

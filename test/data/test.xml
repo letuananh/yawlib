@@ -12655,5 +12655,48 @@
    </ex>
   </gloss>
  </synset>
-
+ <synset id="n03095965" ofs="03095965" pos="n">
+  <terms>
+   <term>containment</term>
+  </terms>
+  <keys>
+   <sk>containment%1:06:00::</sk>
+  </keys>
+  <gloss desc="orig">
+   <orig>(physics) a system designed to prevent the accidental release of radioactive material from a reactor</orig>
+  </gloss>
+  <gloss desc="text">
+   <text>( physics ) a system designed to prevent the accidental release of radioactive material from a reactor</text>
+  </gloss>
+  <gloss desc="wsd">
+   <classif type="cat">
+    <wf id="n03095965_tok1" sep="" tag="ignore" type="punc">(</wf>
+    <wf id="n03095965_tok2" lemma="physic%1|physics%1" sep="" tag="un">physics</wf>
+    <wf id="n03095965_tok3" tag="ignore" type="punc">)</wf>
+   </classif>
+   <def id="n03095965_d">
+    <wf id="n03095965_wf1" lemma="a" pos="DT" tag="ignore">a</wf>
+    <wf id="n03095965_wf2" lemma="system%1" pos="NN" tag="un">system</wf>
+    <wf id="n03095965_wf3" lemma="design%2|designed%3" pos="VBN" tag="man">
+     <id id="n03095965_id.2" lemma="design" sk="design%2:31:00::"/>designed</wf>
+    <wf id="n03095965_wf4" lemma="to" pos="TO" tag="ignore">to</wf>
+    <wf id="n03095965_wf5" lemma="prevent%2" pos="VB" tag="man">
+     <id id="n03095965_id.4" lemma="prevent" sk="prevent%2:41:01::"/>prevent</wf>
+    <wf id="n03095965_wf6" lemma="the" pos="DT" tag="ignore">the</wf>
+    <wf id="n03095965_wf7" lemma="accidental%1|accidental%3" pos="JJ" tag="un">accidental</wf>
+    <wf id="n03095965_wf8" lemma="release%1|release%2" pos="NN" tag="un">release</wf>
+    <wf id="n03095965_wf9" lemma="of" pos="IN" tag="ignore">of</wf>
+    <cf coll="a" id="n03095965_wf10" lemma="radioactive%3" pos="JJ" tag="un">
+     <glob coll="a" glob="auto" id="n03095965_coll.a" lemma="radioactive_material%1" tag="auto">
+      <id coll="a" id="n03095965_id.1" lemma="radioactive material" sk="radioactive_material%1:27:00::"/>
+    </glob>radioactive</cf>
+    <cf coll="a" id="n03095965_wf11" lemma="material%1|material%3" pos="NN" tag="un">material</cf>
+    <wf id="n03095965_wf12" lemma="from" pos="IN" tag="ignore">from</wf>
+    <wf id="n03095965_wf13" lemma="a" pos="DT" tag="ignore">a</wf>
+    <wf id="n03095965_wf14" lemma="reactor%1" pos="NN" sep="" tag="man">
+     <id id="n03095965_id.3" lemma="reactor" sk="reactor%1:06:00::"/>reactor</wf>
+    <wf id="n03095965_wf15" pos=":" tag="ignore" type="punc">;</wf>
+   </def>
+  </gloss>
+ </synset>
 </wordnet>

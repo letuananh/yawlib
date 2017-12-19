@@ -12,23 +12,23 @@ Adapted from: https://github.com/letuananh/lelesk
 
 # Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
@@ -39,7 +39,7 @@ __maintainer__ = "Le Tuan Anh"
 __email__ = "<tuananh.ke@gmail.com>"
 __status__ = "Prototype"
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
 import logging
 from lxml import etree
@@ -48,8 +48,8 @@ from chirptext.leutile import StringTool, Counter
 
 from yawlib.models import SynsetCollection
 
-from .models import GlossedSynset
-from .models import GlossRaw
+from .gwnmodels import GlossedSynset
+from .gwnmodels import GlossRaw
 # from .models import SenseKey
 # from .models import Term
 # from .models import Gloss
@@ -57,7 +57,7 @@ from .models import GlossRaw
 # from .models import SenseTag
 # from .models import GlossItem
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
 
 class GWordnetXML:
@@ -116,15 +116,13 @@ class GWordnetXML:
                     synset.add_raw_gloss(GlossRaw.TEXT, StringTool.strip(child[0].text))
             elif child.tag == 'gloss' and child.get('desc') == 'wsd':
                 for grandchild in child:
-                    # [2016-02-12 LTA] aux should be parsed as well 
-                    if grandchild.tag in ('def', 'ex', 'aux'):
-                        gloss = synset.add_gloss(grandchild.get('id'), StringTool.strip(grandchild.tag))
+                    # [2016-02-12 LTA] aux should be parsed as well
+                    # [2017-10-25 LTA] classif = domain
+                    if grandchild.tag in ('def', 'ex', 'aux', 'classif'):
+                        gloss = synset.add_gloss(origid=grandchild.get('id'), cat=StringTool.strip(grandchild.tag))
                         self.parse_gloss(grandchild, gloss)
                         # rip definition
                         pass
-        #print("A synset")
-        # print len(element)
-        #print ','.join([ '%s (%s)' % (x.tag, ','.join([y.tag for y in x])) for x in element ])
         return synset
 
     def parse_gloss(self, a_node, gloss):
@@ -140,7 +138,7 @@ class GWordnetXML:
 
     def parse_node(self, a_node, gloss):
         ''' Parse node in a def node or an ex node.
-            There are 5 possible tags: 
+            There are 5 possible tags:
             wf : single-word form
             cf : collocation form
             mwf: multi-word form
@@ -188,12 +186,12 @@ class GWordnetXML:
         tag = wf_node.get('tag') if not self.memory_save else ''
         lemma = wf_node.get('lemma') if not self.memory_save else ''
         pos = wf_node.get('pos')
-        cat = wf_node.get('type') # if wf_node.get('type') else 'wf'
-        coll = None # wf_node.get('coll')
+        cat = wf_node.get('type')  # if wf_node.get('type') else 'wf'
+        coll = None  # wf_node.get('coll')
         rdf = wf_node.get('rdf')
         origid = wf_node.get('id')
         sep = wf_node.get('sep')
-        text = StringTool.strip(wf_node.xpath("string()")) # XML mixed content, don't use text attr here
+        text = StringTool.strip(wf_node.xpath("string()"))  # XML mixed content, don't use text attr here
         wf_obj = gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text, origid)
         # Then parse id tag if available
         for child in wf_node:
@@ -230,7 +228,7 @@ class GWordnetXML:
         return cf_obj
 
     def parse_mwf(self, mwf_node, gloss):
-        child_nodes = [] 
+        child_nodes = []
         for child_node in mwf_node:
             a_node = self.parse_node(child_node, gloss)
         # [TODO] Add mwf tag to child nodes

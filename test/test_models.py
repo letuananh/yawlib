@@ -12,23 +12,23 @@ Adapted from: https://github.com/letuananh/lelesk
 
 # Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in
-#all copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#THE SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 __author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
 __copyright__ = "Copyright 2014, yawlib"
@@ -43,8 +43,9 @@ __status__ = "Prototype"
 
 import unittest
 import logging
-from yawlib import SynsetID, Synset, SynsetCollection
-from yawlib.glosswordnet.models import GlossedSynset, GlossGroup
+from yawlib import POS, SynsetID, Synset, SynsetCollection
+from yawlib import WordnetException
+from yawlib.glosswordnet import GlossedSynset, GlossGroup, GlossRaw
 
 ########################################################################
 
@@ -92,6 +93,22 @@ class TestSynsetIDWrapper(unittest.TestCase):
         s = SynsetID.from_string('02315002-a')
 
     def test_pos(self):
+        self.assertEqual(POS.num2pos(1), 'n')
+        self.assertEqual(POS.num2pos("1"), 'n')
+        self.assertRaises(WordnetException, lambda: POS.num2pos("7"))
+        self.assertRaises(WordnetException, lambda: POS.num2pos(None))
+        self.assertRaises(WordnetException, lambda: POS.num2pos(0))
+        self.assertEqual(POS.pos2num("n"), '1')
+        self.assertEqual(POS.pos2num("v"), '2')
+        self.assertEqual(POS.pos2num("a"), '3')
+        self.assertEqual(POS.pos2num("r"), '4')
+        self.assertEqual(POS.pos2num("s"), '5')
+        self.assertEqual(POS.pos2num("x"), '6')
+        self.assertRaises(WordnetException, lambda: POS.pos2num(None))
+        self.assertRaises(WordnetException, lambda: POS.pos2num("g"))
+        self.assertRaises(WordnetException, lambda: POS.pos2num(""))
+        self.assertRaises(WordnetException, lambda: POS.pos2num(1))
+        self.assertRaises(WordnetException, lambda: POS.pos2num("n "))
         self.assertEqual(SynsetID.from_string('112345678').pos, 'n')
         self.assertEqual(SynsetID.from_string('212345678').pos, 'v')
         self.assertEqual(SynsetID.from_string('312345678').pos, 'a')
@@ -120,13 +137,34 @@ class TestSynsetIDWrapper(unittest.TestCase):
         ss = SynsetCollection()
         ss.add(s)
         self.assertEqual(s.synsetid, '12345678-n')
-        self.assertEqual(s.sid, '12345678-n')
         self.assertEqual(s.lemma, 'foo')
+
+    def test_collection(self):
+        s = Synset('12345678n', lemma='foo')
+        ss = SynsetCollection()
+        ss.add(s)
+        self.assertIn(112345678, ss)
+        self.assertIs(ss[112345678], s)
+        self.assertEqual(len(ss), 1)
+
+    def test_assign_synsetid(self):
+        s1 = SynsetID.from_string('12345678-n')
+        ss = Synset(s1)
+        ssid = ss.ID
+        self.assertIs(ss.ID, ssid)
+        self.assertEqual(ss.ID, s1)
+        self.assertIsNot(ss.ID, s1)  # must not be the same instance SynsetID
+
+
+class testGSynset(unittest.TestCase):
 
     def test_gsynset(self):
         gs = GlossedSynset(112345678)
         self.assertIsNotNone(gs)
         self.assertEqual(str(gs), '(GSynset:12345678-n)')
+        # def should be none now
+        self.assertIsNone(gs.get_def())
+        self.assertIsNone(gs.definition)
         # add an empty gloss item
         gs.add_raw_gloss('boo', 'boo foo')
         g = gs.add_gloss(None, None)
@@ -137,16 +175,17 @@ class TestSynsetIDWrapper(unittest.TestCase):
         g.add_gloss_item('', 'foo%1|boo%2', '', '', '', '', '')
         words = g.get_gramwords()
         self.assertEqual(set(words), {'boo', 'foo'})
-        self.assertEqual(gs.get_orig_gloss(), '')
+        self.assertEqual(gs.get_surface(), '')
         # gloss group
         self.assertIsNotNone(GlossGroup())
 
+    def test_glossraw(self):
+        g = GlossRaw(None, GlossRaw.ORIG, 'without musical accompaniment; "they performed a cappella"')
+        self.assertEqual(str(g), '[gloss-orig] without musical accompaniment; "they performed a cappella"')
+        self.assertEqual(g.split(), ['without musical accompaniment', ' "they performed a cappella"'])
+
+
 ######################################################################
 
-
-def main():
-    unittest.main()
-
-
 if __name__ == "__main__":
-    main()
+    unittest.main()
