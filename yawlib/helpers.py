@@ -50,6 +50,7 @@ from chirptext.leutile import TextReport, FileHelper
 
 from .models import SynsetID
 from yawlib import YLConfig
+from yawlib.glosswordnet.gwnmodels import GlossedSynset
 from yawlib import GWordnetXML as GWNXML
 from yawlib import GWordnetSQLite as GWNSQL
 from yawlib import WordnetSQL as WSQL
@@ -66,7 +67,7 @@ logger.setLevel(logging.INFO)
 ########################################################################
 
 
-def get_synset_by_id(gwn, synsetid_str, report_file=None, compact=True):
+def get_synset_by_id(wn, synsetid_str, report_file=None, compact=True, lang=None):
     ''' Search synset in WordNet Gloss Corpus by synset ID'''
     if report_file is None:
         report_file = TextReport()  # Default to stdout
@@ -75,32 +76,31 @@ def get_synset_by_id(gwn, synsetid_str, report_file=None, compact=True):
     # Get synset infro from GlossWordnet
     try:
         synsetid = SynsetID.from_string(synsetid_str)
-        synset = gwn.get_synset(synsetid.to_gwnsql())
+        synset = wn.get_synset(synsetid, lang=lang)
         dump_synset(synset, report_file=report_file, compact=compact)
         return synset
     except Exception as e:
-        logger.exception(e)
-        logger.error("  >>>> Error: (Synset ID should be in this format 12345678-n)")
+        logger.exception("Error occurred. (Synset ID should be in this format 12345678-n)")
 
 
-def get_synset_by_sk(gwn, sk, report_file=None, compact=True):
+def get_synset_by_sk(wn, sk, report_file=None, compact=True, lang=None):
     ''' Search synset in WordNet Gloss Corpus by sensekey'''
     if report_file is None:
         report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by sensekey (Provided: %s)" % sk)
 
-    synset = gwn.get_by_key(sk)
+    synset = wn.get_by_key(sk, lang=lang)
     dump_synset(synset, report_file=report_file, compact=compact)
     return synset
 
 
-def get_synsets_by_term(gwn, t, pos=None, report_file=None, compact=True):
+def get_synsets_by_term(wn, t, pos=None, report_file=None, compact=True, lang=None):
     ''' Search synset in WordNet Gloss Corpus by term'''
     if report_file is None:
         report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by term (Provided: %s | pos = %s)" % (t, pos))
 
-    synsets = gwn.search(t, pos)
+    synsets = wn.search(t, pos, lang=lang)
     dump_synsets(synsets, report_file, compact=compact)
     return synsets
 
@@ -139,41 +139,50 @@ def dump_synset(ss, compact_gloss=False, compact_tags=False, more_compact=True, 
     if report_file is None:
         report_file = TextReport()  # Default to stdout
 
-    if more_compact:
-        report_file.header("〔Synset〕 %s 〔Lemmas〕%s 〔Keys〕%s" % (ss.ID, '; '.join(ss.lemmas), ' '.join(ss.sensekeys)), level='h1')
-    else:
-        report_file.header("Synset: %s" % ss, level='h0')
+    ss_header = ["〔Synset〕{}".format(ss.ID)]
+    if ss.lemmas:
+        ss_header.append("〔Lemmas〕{}".format('; '.join(ss.lemmas)))
+    if ss.sensekeys:
+        ss_header.append("〔Keys〕{}".format(' '.join(ss.sensekeys)))
+    report_file.header(" ".join(ss_header), level='h1')
 
-    if not more_compact:
-        for rgloss in ss.raw_glosses:
+    if isinstance(ss, GlossedSynset):
+        if not more_compact:
+            for rgloss in ss.raw_glosses:
+                if compact:
+                    if rgloss.cat != 'orig':
+                        continue
+                report_file.print(rgloss)
+        gloss_count = itertools.count(1)
+        for gloss in ss.glosses:
             if compact:
-                if rgloss.cat != 'orig':
-                    continue
-            report_file.print(rgloss)
-
-    gloss_count = itertools.count(1)
-    for gloss in ss.glosses:
-        if compact:
-            txt = gloss.text() if gloss.cat != 'def' else '“{}”'.format(gloss.text())
-            report_file.print("({cat}) {txt}".format(cat=gloss.cat, txt=txt))
-        else:
-            report_file.print('')
-            report_file.header("Gloss #%s: %s" % (next(gloss_count), gloss), level='h2')
-
-            # Dump gloss items
-            if compact_gloss:
-                report_file.print("Tokens => %s" % gloss.get_gramwords(), level=2)
+                txt = gloss.text() if gloss.cat != 'def' else '“{}”'.format(gloss.text())
+                report_file.print("({cat}) {txt}".format(cat=gloss.cat, txt=txt))
             else:
-                for item in gloss.items:
-                    # print("\t%s - { %s }" % (uniquify(item.get_gramwords()), item))
-                    report_file.print("%s - { %s }" % (set(item.get_gramwords()), item), level=2)
-                report_file.print(("-" * 10), level=1)
-            # Dump tags
-            if compact_tags:
-                report_file.print("Tags => %s" % gloss.get_tagged_sensekey(), level=2)
-            else:
-                for tag in gloss.tags:
-                    report_file.print("%s" % tag, level=1)
+                report_file.print('')
+                report_file.header("Gloss #%s: %s" % (next(gloss_count), gloss), level='h2')
+
+                # Dump gloss items
+                if compact_gloss:
+                    report_file.print("Tokens => %s" % gloss.get_gramwords(), level=2)
+                else:
+                    for item in gloss.items:
+                        # print("\t%s - { %s }" % (uniquify(item.get_gramwords()), item))
+                        report_file.print("%s - { %s }" % (set(item.get_gramwords()), item), level=2)
+                    report_file.print(("-" * 10), level=1)
+                # Dump tags
+                if compact_tags:
+                    report_file.print("Tags => %s" % gloss.get_tagged_sensekey(), level=2)
+                else:
+                    for tag in gloss.tags:
+                        report_file.print("%s" % tag, level=1)
+    else:
+        # print def, exs
+        if ss.definition:
+            print("(def) {}".format(ss.definition))
+        if ss.examples:
+            for ex in ss.examples:
+                print("(ex) {}".format(ex))
     report_file.print('')
 
 
