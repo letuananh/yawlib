@@ -84,7 +84,7 @@ class WordnetSQL(Wordnet3Schema):
         return sid
 
     @with_ctx
-    def get_synset(self, synsetid, ctx=None):
+    def get_synset(self, synsetid, ctx=None, **kwargs):
         sid = self.ensure_sid(synsetid)
         # get synset object
         synset_info = ctx.ss.by_id(sid)
@@ -106,7 +106,7 @@ class WordnetSQL(Wordnet3Schema):
             return ss
 
     @with_ctx
-    def get_synsets(self, synsetids, ctx=None):
+    def get_synsets(self, synsetids, ctx=None, **kwargs):
         ''' Get synsets by synsetids '''
         synsets = SynsetCollection()
         for sid in synsetids:
@@ -119,13 +119,13 @@ class WordnetSQL(Wordnet3Schema):
         return ctx.select_scalar('select synsetid from senses where sensekey=?', (sensekey,))
 
     @with_ctx
-    def get_by_key(self, sensekey, ctx=None):
+    def get_by_key(self, sensekey, ctx=None, **kwargs):
         # get synset object
         sid = self.sk2sid(sensekey, ctx=ctx)
         return self.get_synset(sid, ctx=ctx)
 
     @with_ctx
-    def get_by_keys(self, sensekeys, ctx=None):
+    def get_by_keys(self, sensekeys, ctx=None, **kwargs):
         query = 'sensekey IN ({})'.format(', '.join(len(sensekeys) * ['?']))
         results = ctx.senses.select(query, sensekeys, columns=('synsetid',))
         # get synset object
@@ -151,7 +151,7 @@ class WordnetSQL(Wordnet3Schema):
             return synsets
 
     @with_ctx
-    def search(self, lemma, pos=None, deep_select=True, synsets=None, ignore_case=True, ctx=None):
+    def search(self, lemma, pos=None, deep_select=True, synsets=None, ignore_case=True, ctx=None, **kwargs):
         # Build query
         if ignore_case:
             query = ['wordid IN (SELECT wordid FROM words WHERE lower(lemma) LIKE ?)']
@@ -195,6 +195,6 @@ class WordnetSQL(Wordnet3Schema):
         return self.hypehypo_cache[sid]
 
     @with_ctx
-    def get_tagcount(self, sid, ctx=None):
+    def get_tagcount(self, sid, ctx=None, **kwargs):
         sid = self.ensure_sid(sid)
         return ctx.select_scalar('SELECT SUM(tagcount) FROM senses WHERE synsetid=?', (sid,))

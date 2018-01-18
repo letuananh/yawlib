@@ -56,11 +56,11 @@ import os.path
 import logging
 
 from chirptext.leutile import Timer, header, FileHelper
-from chirptext.cli import CLIApp
+from chirptext.cli import CLIApp, setup_logging
 
 from .helpers import add_wordnet_config
 from .helpers import show_info
-from .helpers import get_gwn, get_gwnxml
+from .helpers import get_gwn, get_gwnxml, get_omw, get_wn
 from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term
 
 # -----------------------------------------------------------------------
@@ -71,6 +71,11 @@ from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term
 GLOSSTAG_NTUMC_OUTPUT = FileHelper.abspath('data/glosstag_ntumc')
 GLOSSTAG_PATCH = FileHelper.abspath('data/glosstag_patch.xml')
 MISALIGNED = FileHelper.abspath('data/misaligned.xml')
+
+# WN profiles
+PWN30 = 'pwn30'
+GWN = 'gwn'
+OMW = 'omw'
 
 
 def get_logger():
@@ -102,23 +107,35 @@ def convert(cli, args):
     pass
 
 
+def get_wn_profile(cli, args):
+    cli.logger.info("Loading Wordnet profile: {}".format(args.wn))
+    if args.wn == GWN:
+        return get_gwn(args)
+    elif args.wn == PWN30:
+        return get_wn(args)
+    elif args.wn == OMW:
+        return get_omw(args)
+    else:
+        raise Exception("Wordnet profile {} is not supported".format(args.wn))
+
+
 def search_by_id(cli, args):
     ''' Retrieve synset information by synsetid '''
-    gwn = get_gwn(args)
-    get_synset_by_id(gwn, args.synsetid, compact=not args.detail)
+    wn = get_wn_profile(cli, args)
+    get_synset_by_id(wn, args.synsetid, compact=not args.detail, lang=args.lang)
 
 
 def search_by_key(cli, args):
     ''' Retrieve synset information by sensekey'''
-    gwn = get_gwn(args)
-    get_synset_by_sk(gwn, args.sensekey, compact=not args.detail)
+    wn = get_wn_profile(cli, args)
+    get_synset_by_sk(wn, args.sensekey, compact=not args.detail, lang=args.lang)
     pass
 
 
 def search_by_lemma(cli, args):
     ''' Retrieve synset information by lemma (term)'''
-    gwn = get_gwn(args)
-    get_synsets_by_term(gwn, args.lemma, args.pos, compact=not args.detail)
+    wn = get_wn_profile(cli, args)
+    get_synsets_by_term(wn, args.lemma, args.pos, compact=not args.detail, lang=args.lang)
     pass
 
 
@@ -128,6 +145,7 @@ def search_by_lemma(cli, args):
 
 def main():
     '''Wordnet toolkit - CLI main() '''
+    setup_logging('logging.json', 'logs')
     app = CLIApp(desc="WordNet Toolkit - For accessing and manipulating WordNet", logger=__name__)
     add_wordnet_config(app.parser)
     # Convert GWordnetXML into GWordnetSQL
@@ -136,15 +154,21 @@ def main():
     task = app.add_task('synset', func=search_by_id)
     task.add_argument('synsetid', help='Synset ID (e.g. 12345678-n)')
     task.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
+    task.add_argument('--wn', help='Which Wordnet to use', choices=[GWN, PWN30, OMW], default=GWN)
+    task.add_argument('--lang', help='Search language', default='eng')
     # by sensekey
     task = app.add_task('key', func=search_by_key)
     task.add_argument('sensekey', help='sensekey (e.g. )')
     task.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
+    task.add_argument('--wn', help='Which Wordnet to use', choices=[GWN, PWN30, OMW], default=GWN)
+    task.add_argument('--lang', help='Search language', default='eng')
     # by lemma (term)
     task = app.add_task('lemma', func=search_by_lemma)
     task.add_argument('lemma', help='lemma (term, word form, etc.)')
     task.add_argument('pos', nargs='?', help='Part-of-speech (a, n, r, x)')
     task.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
+    task.add_argument('--wn', help='Which Wordnet to use', choices=[GWN, PWN30, OMW], default=GWN)
+    task.add_argument('--lang', help='Search language', default='eng')
     # show info
     task = app.add_task('info', func=show_info)
     # run app

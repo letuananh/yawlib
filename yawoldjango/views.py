@@ -125,7 +125,10 @@ def search(request, query):
         return synsets.to_json()
     else:
         # try to search by sensekey
-        ss = wsql.get_synset_by_sk(query)
+        try:
+            ss = wsql.get_by_key(query)
+        except:
+            ss = None
         if ss:
             return SynsetCollection().add(ss).to_json()
     # invalid query

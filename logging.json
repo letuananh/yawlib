@@ -1,0 +1,56 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        }
+    },
+    
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout"
+        },
+
+        "file_handler_important": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "WARNING",
+            "formatter": "simple",
+            "filename": "logs/logging_important.log",
+            "maxBytes": 1000000,
+            "backupCount": 20,
+            "encoding": "utf8"
+        },
+
+        "file_handler_verbose": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "filename": "logs/logging_details.log",
+            "maxBytes": 1000000,
+            "backupCount": 20,
+            "encoding": "utf8"
+        }
+
+    },
+
+    "loggers": {
+        "__main__": {
+            "level": "WARNING",
+            "handlers": ["file_handler_important", "file_handler_verbose"],
+            "propagate": "no"
+        },
+        "puchikarui.puchikarui": {
+          "level": "WARNING",
+          "handlers": ["file_handler_verbose"]
+        }
+    },
+
+    "root": {
+        "level": "WARNING",
+        "handlers": ["file_handler_important"]
+    }
+}

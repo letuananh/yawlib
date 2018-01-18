@@ -129,7 +129,7 @@ class GWordnetSQLite(GWordnetSchema):
                                         tag.origid, tag.lemma, tag.item.itemid)
 
     @with_ctx
-    def get_synset(self, synsetid, ctx=None):
+    def get_synset(self, synsetid, ctx=None, **kwargs):
         ss = GlossedSynset(synsetid)
         synsetid = ss.ID.to_gwnsql()
         if not ctx.synset.by_id(synsetid):
@@ -169,25 +169,25 @@ class GWordnetSQLite(GWordnetSchema):
         return ss
 
     @with_ctx
-    def results_to_synsets(self, results, synsets=None, ctx=None):
+    def results_to_synsets(self, results, synsets=None, ctx=None, **kwargs):
         if synsets is None:
             synsets = SynsetCollection()
         for result in results:
-            ss = self.get_synset(synsetid=result.ID, ctx=ctx)
+            ss = self.get_synset(synsetid=result.ID, ctx=ctx, **kwargs)
             synsets.add(ss)
         return synsets
 
     @with_ctx
-    def get_synsets(self, synsetids, ctx=None):
+    def get_synsets(self, synsetids, ctx=None, **kwargs):
         ''' Get synsets by synsetids '''
         synsets = SynsetCollection()
         for sid in synsetids:
-            ss = self.get_synset(sid, ctx=ctx)
+            ss = self.get_synset(sid, ctx=ctx, **kwargs)
             synsets.add(ss)
         return synsets
 
     @with_ctx
-    def get_by_key(self, sensekey, ctx=None):
+    def get_by_key(self, sensekey, ctx=None, **kwargs):
         # synset;
         results = ctx.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=(sensekey,))
         if len(results) == 0:
@@ -198,10 +198,10 @@ class GWordnetSQLite(GWordnetSchema):
             return self.get_synset(results[0].ID, ctx=ctx)
 
     @with_ctx
-    def get_by_keys(self, sensekeys, ctx=None):
+    def get_by_keys(self, sensekeys, ctx=None, **kwargs):
         where = 'id IN (SELECT sid FROM sensekey where sensekey IN (%s))' % ','.join(['?'] * len(sensekeys))
         results = ctx.synset.select(where=where, values=sensekeys)
-        return self.results_to_synsets(results, ctx=ctx)
+        return self.results_to_synsets(results, ctx=ctx, **kwargs)
 
     @with_ctx
     def sk2sid(self, sensekey, ctx=None):
@@ -209,7 +209,7 @@ class GWordnetSQLite(GWordnetSchema):
         return SynsetID.from_string(result.sid) if result else None
 
     @with_ctx
-    def search(self, lemma, pos=None, deep_select=True, ignore_case=True, synsets=None, ctx=None):
+    def search(self, lemma, pos=None, deep_select=True, ignore_case=True, synsets=None, ctx=None, **kwargs):
         if ignore_case:
             query = ['ID IN (SELECT sid FROM term WHERE lower(term) LIKE ?)']
             params = [lemma.lower()]
