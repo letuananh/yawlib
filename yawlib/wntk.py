@@ -62,6 +62,7 @@ from .helpers import add_wordnet_config
 from .helpers import show_info
 from .helpers import get_gwn, get_gwnxml, get_omw, get_wn
 from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term
+from .helpers import smart_wn_search
 
 # -----------------------------------------------------------------------
 # CONFIGURATION
@@ -139,6 +140,13 @@ def search_by_lemma(cli, args):
     pass
 
 
+def search_everywhere(cli, args):
+    ''' Search for lemma and definitions'''
+    wn = get_wn_profile(cli, args)
+    smart_wn_search(wn, args.query, args.pos, compact=not args.detail, lang=args.lang)
+    pass
+
+
 ##############################################################
 # MAIN
 ##############################################################
@@ -169,6 +177,15 @@ def main():
     task.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
     task.add_argument('--wn', help='Which Wordnet to use', choices=[GWN, PWN30, OMW], default=GWN)
     task.add_argument('--lang', help='Search language', default='eng')
+
+    # search everywhere
+    task = app.add_task('search', func=search_everywhere)
+    task.add_argument('query', help='a query (term, word form, etc.) to search in lemmas and definitions')
+    task.add_argument('pos', nargs='?', help='Part-of-speech (a, n, r, x)')
+    task.add_argument('-d', '--detail', help='Display all gloss information (for debugging?)', action='store_true')
+    task.add_argument('--wn', help='Which Wordnet to use', choices=[GWN, PWN30, OMW], default=GWN)
+    task.add_argument('--lang', help='Search language', default='eng')
+
     # show info
     task = app.add_task('info', func=show_info)
     # run app

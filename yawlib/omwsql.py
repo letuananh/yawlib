@@ -39,12 +39,17 @@ __status__ = "Prototype"
 
 # -----------------------------------------------------------------------
 
+import logging
 from puchikarui import Schema, with_ctx
 from yawlib.models import SynsetID, Synset, SynsetCollection
-from yawlib.common import WordnetFeatureNotSupported
+from yawlib.common import WordnetFeatureNotSupported, InvalidSynsetID
 
 
 # -----------------------------------------------------------------------
+
+def getLogger():
+    return logging.getLogger(__name__)
+
 
 class OMWNTUMCSchema(Schema):
     def __init__(self, data_source=None, *args, **kwargs):
@@ -66,7 +71,7 @@ class OMWSQL(OMWNTUMCSchema):
     def get_synset(self, synsetid, lang='eng', ctx=None):
         synsetid = self.ensure_sid(synsetid)
         res = ctx.synset.by_id(synsetid)
-        synset = Synset(res.synset)
+        synset = Synset(res.synset, lang=lang)
         # select lemma
         words = ctx.word.select('wordid in (SELECT wordid FROM sense WHERE synset=?) and lang=?', (synsetid, lang))
         synset.lemmas.extend((w.lemma for w in words))
@@ -92,7 +97,10 @@ class OMWSQL(OMWNTUMCSchema):
         if isinstance(synsetid, SynsetID):
             return synsetid.to_canonical()
         else:
-            return SynsetID.from_string(synsetid).to_canonical()
+            try:
+                return SynsetID.from_string(synsetid).to_canonical()
+            except:
+                raise InvalidSynsetID(synsetid)
 
     @with_ctx
     def get_by_key(self, sensekey, lang='eng', ctx=None):
@@ -134,9 +142,13 @@ class OMWSQL(OMWNTUMCSchema):
             return [Synset(sid) for sid in synsetids]
 
     @with_ctx
-    def search(self, lemma, pos=None, lang='eng', ctx=None):
-        wid_filter = ['lemma LIKE ?', 'lang=?']
-        params = [lemma, lang]
+    def search(self, lemma, pos=None, lang='eng', deep_select=True, ignore_case=True, synsets=None, ctx=None, **kwargs):
+        if ignore_case:
+            wid_filter = ['lower(lemma) LIKE ?', 'lang=?']
+            params = [lemma.lower(), lang]
+        else:
+            wid_filter = ['lemma LIKE ?', 'lang=?']
+            params = [lemma, lang]
         if pos is not None:
             wid_filter.append('pos = ?')
             params.append(pos)
@@ -144,10 +156,44 @@ class OMWSQL(OMWNTUMCSchema):
         query = ['wordid in (SELECT wordid FROM word WHERE {})'.format(' AND '.join(wid_filter))]
         query.append('lang=?')
         params.append(lang)
-        senses = ctx.sense.select(' AND '.join(query), params)
-        synsets = SynsetCollection()
+        senses = ctx.sense.select(' AND '.join(query), params, columns=('synset', 'lang',))
+        if synsets is None:
+            synsets = SynsetCollection()
         for sense in senses:
-            synsets.add(self.get_synset(sense.synset, lang=sense.lang, ctx=ctx))
+            if sense.synset not in synsets:
+                synsets.add(self.get_synset(sense.synset, lang=sense.lang, ctx=ctx))
+        return synsets
+
+    @with_ctx
+    def search_def(self, query, deep_select=True, ignore_case=True, lang='eng', synsets=None, ctx=None, **kwargs):
+        if ignore_case:
+            where = ['lower(def) LIKE ?', 'lang=?']
+            params = [query.lower(), lang]
+        else:
+            where = ['def LIKE ?', 'lang=?']
+            params = [query, lang]
+        synsetinfos = ctx.sdef.select(' AND '.join(where), params, columns=('synset',))
+        if synsets is None:
+            synsets = SynsetCollection()
+        for sinfo in synsetinfos:
+            if sinfo.synset not in synsets:
+                synsets.add(self.get_synset(sinfo.synset, lang=lang, ctx=ctx))
+        return synsets
+
+    @with_ctx
+    def search_ex(self, query, deep_select=True, ignore_case=True, lang='eng', synsets=None, ctx=None, **kwargs):
+        if ignore_case:
+            where = ['lower(def) LIKE ?', 'lang=?']
+            params = [query.lower(), lang]
+        else:
+            where = ['def LIKE ?', 'lang=?']
+            params = [query, lang]
+        synsetinfos = ctx.sex.select(' AND '.join(where), params, columns=('synset',))
+        if synsets is None:
+            synsets = SynsetCollection()
+        for sinfo in synsetinfos:
+            if sinfo.synset not in synsets:
+                synsets.add(self.get_synset(sinfo.synset, lang=lang, ctx=ctx))
         return synsets
 
     @with_ctx

@@ -46,6 +46,16 @@
             "level": "INFO",
             "handlers": ["file_handler_verbose"],
             "propagate": "no"
+        },
+        "test": {
+            "level": "INFO",
+            "handlers": ["file_handler_verbose"],
+            "propagate": "no"
+        },
+        "yawlib": {
+            "level": "INFO",
+            "handlers": ["file_handler_verbose"],
+            "propagate": "no"
         }
     },
 

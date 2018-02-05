@@ -42,12 +42,18 @@ __status__ = "Prototype"
 ########################################################################
 
 import unittest
+import logging
 from yawlib.helpers import get_omw
 from yawlib.common import WordnetFeatureNotSupported
+from yawlib.helpers import dump_synset
 
 ########################################################################
 
 omw = get_omw()
+
+
+def getLogger():
+    return logging.getLogger(__name__)
 
 
 ########################################################################
@@ -94,6 +100,15 @@ class TestOMWSQL(unittest.TestCase):
         self.assertEqual(defs, expected)
         self.assertEqual(sids, {'00607405-v', '00636921-n', '07048627-n', '00644583-v', '00877327-v', '05784242-n'})
 
+    def test_search_def_and_ex(self):
+        with omw.ctx() as ctx:
+            ss = omw.search_def('%友達%', lang='jpn', ctx=ctx)
+            for s in ss:
+                self.assertTrue('友達' in s.definition)
+            ss = omw.search_ex('%友達%', lang='jpn', ctx=ctx)
+            for s in ss:
+                self.assertTrue('友達' in ''.join(s.examples))
+
     def test_all_api(self):
         with omw.ctx() as ctx:
             # test get_synset() and get_synsets()
@@ -127,6 +142,13 @@ class TestOMWSQL(unittest.TestCase):
             hypos = omw.hyponyms(n02084071.ID, ctx=ctx)
             expected_hypos = {'01322604-n', '02111500-n', '02110806-n', '02111277-n', '02085272-n', '02113335-n', '02111129-n', '02085374-n', '02111626-n', '02084732-n', '02084861-n', '02113978-n', '02087122-n', '02103406-n', '02110341-n', '02110958-n', '02112826-n', '02112497-n', '90000574-n'}
             self.assertEqual(set(x.ID for x in hypos), expected_hypos)
+            # test search def and ex
+            synsets = omw.search_def('%superman%', ctx=ctx)
+            for s in synsets:
+                self.assertIn('superman', s.definition)
+            synsets = omw.search_ex('%superman%', ctx=ctx)
+            for s in synsets:
+                self.assertIn('superman', ' ||| '.join(s.examples).lower())
 
 
 ########################################################################

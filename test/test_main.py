@@ -43,14 +43,16 @@ __status__ = "Prototype"
 
 import os
 import unittest
+import logging
 from chirptext.leutile import TextReport
 from yawlib import GWordnetXML as GWNXML
 from yawlib import GWordnetSQLite as GWNSQL
 from yawlib.helpers import get_synset_by_id
 from yawlib.helpers import get_synset_by_sk
 from yawlib.helpers import get_synsets_by_term
-from yawlib.helpers import get_gwn
+from yawlib.helpers import get_gwn, get_omw
 from yawlib.helpers import dump_synset, dump_synsets
+from yawlib.helpers import smart_wn_search
 
 from yawlib import YLConfig
 
@@ -59,6 +61,11 @@ from yawlib import YLConfig
 TEST_DIR = os.path.dirname(__file__)
 TEST_DATA = os.path.join(TEST_DIR, 'data')
 MOCKUP_SYNSETS_DATA = os.path.join(TEST_DATA, 'test.xml')
+
+
+def getLogger():
+    return logging.getLogger(__name__)
+
 
 ########################################################################
 
@@ -75,7 +82,9 @@ class TestHelperMethods(unittest.TestCase):
         self.assertGreater(len(ss.lemmas), 0)
         self.assertGreater(len(ss.sensekeys), 0)
         self.assertGreater(len(ss.glosses), 0)
-        dump_synset(ss)
+        rp = TextReport.string()
+        dump_synset(ss, report_file=rp)
+        getLogger().debug(rp.content())
         pass
 
     def test_dump_synsets(self):
@@ -88,6 +97,14 @@ class TestHelperMethods(unittest.TestCase):
     def test_get_by_sk(self):
         ss = get_synset_by_sk(get_gwn(), 'test%2:41:00::', report_file=self.nullrep)
         self.assertIsNotNone(ss)
+
+    def test_search_wn_full_text(self):
+        rp = TextReport.string()
+        ss = smart_wn_search(get_omw(), '友達', report_file=rp, lang='jpn')
+        sids = {s.ID for s in ss}
+        self.assertTrue(ss)
+        self.assertEqual(len(sids), len(ss))
+        getLogger().debug(rp.content())
 
 
 class TestGWNXML(unittest.TestCase):

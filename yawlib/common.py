@@ -69,3 +69,9 @@ class SynsetNotFoundException(WordnetException):
 
     def __init__(self, synsetid):
         self.message = "Synset ID `{}' could not be found".format(synsetid)
+
+
+class InvalidSynsetID(WordnetException):
+
+    def __init__(self, synsetid):
+        self.message = "`{}' is not a valid synset ID".format(synsetid)
