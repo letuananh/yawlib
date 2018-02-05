@@ -116,18 +116,18 @@ class WordnetSQL(Wordnet3Schema):
 
     @with_ctx
     def sk2sid(self, sensekey, ctx=None):
-        return ctx.select_scalar('select synsetid from senses where sensekey=?', (sensekey,))
+        return ctx.select_scalar('select synsetid from senses where lower(sensekey)=?', (sensekey,))
 
     @with_ctx
     def get_by_key(self, sensekey, ctx=None, **kwargs):
         # get synset object
-        sid = self.sk2sid(sensekey, ctx=ctx)
+        sid = self.sk2sid(sensekey.lower(), ctx=ctx)
         return self.get_synset(sid, ctx=ctx)
 
     @with_ctx
     def get_by_keys(self, sensekeys, ctx=None, **kwargs):
-        query = 'sensekey IN ({})'.format(', '.join(len(sensekeys) * ['?']))
-        results = ctx.senses.select(query, sensekeys, columns=('synsetid',))
+        query = 'lower(sensekey) IN ({})'.format(', '.join(len(sensekeys) * ['?']))
+        results = ctx.senses.select(query, [s.lower() for s in sensekeys], columns=('synsetid',))
         # get synset object
         return self.get_synsets(set(s.synsetid for s in results), ctx=ctx)
 
