@@ -48,6 +48,7 @@ from puchikarui import Schema, with_ctx
 
 from yawlib.models import SynsetCollection, SynsetID
 from yawlib.common import SynsetNotFoundException, WordnetFeatureNotSupported
+from yawlib.common import WordnetException
 
 from .gwnmodels import GlossedSynset
 from .gwnmodels import GlossItem
@@ -189,18 +190,18 @@ class GWordnetSQLite(GWordnetSchema):
     @with_ctx
     def get_by_key(self, sensekey, ctx=None, **kwargs):
         # synset;
-        results = ctx.synset.select(where='id IN (SELECT sid FROM sensekey where sensekey=?)', values=(sensekey,))
+        results = ctx.synset.select(where='id IN (SELECT sid FROM sensekey where lower(sensekey)=?)', values=(sensekey.lower(),))
         if len(results) == 0:
-            raise Exception("Could not find any synset with provided key {}".format(sensekey))
+            raise SynsetNotFoundException("Could not find any synset with provided key {}".format(sensekey))
         elif len(results) > 1:
-            raise Exception("Found more than one synsetID with provided key {}".format(sensekey))
+            raise WordnetException("Found more than one synsetID with provided key {}".format(sensekey))
         else:
             return self.get_synset(results[0].ID, ctx=ctx)
 
     @with_ctx
     def get_by_keys(self, sensekeys, ctx=None, **kwargs):
-        where = 'id IN (SELECT sid FROM sensekey where sensekey IN (%s))' % ','.join(['?'] * len(sensekeys))
-        results = ctx.synset.select(where=where, values=sensekeys)
+        where = 'id IN (SELECT sid FROM sensekey where lower(sensekey) IN (%s))' % ','.join(['?'] * len(sensekeys))
+        results = ctx.synset.select(where=where, values=[k.lower() for k in sensekeys])
         return self.results_to_synsets(results, ctx=ctx, **kwargs)
 
     @with_ctx
@@ -222,6 +223,26 @@ class GWordnetSQLite(GWordnetSchema):
         # query synsetids
         results = ctx.synset.select(' AND '.join(query), params, columns=('ID',))
         return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
+
+    @with_ctx
+    def search_cat(self, query, cat='def', deep_select=True, ignore_case=True, synsets=None, ctx=None, **kwargs):
+        if ignore_case:
+            where = ['lower(gloss) LIKE ? AND cat=?']
+            params = [query.lower(), cat]
+        else:
+            where = ['gloss LIKE ? AND cat=?']
+            params = [query, cat]
+        # query synsetids
+        results = ctx.gloss_raw.select(' AND '.join(where), params, columns=('sid AS ID',))
+        return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
+
+    @with_ctx
+    def search_def(self, query, deep_select=True, ignore_case=True, synsets=None, ctx=None, **kwargs):
+        return self.search_cat(query, cat='def', deep_select=deep_select, ignore_case=ignore_case, synsets=synsets, ctx=ctx, **kwargs)
+
+    @with_ctx
+    def search_ex(self, query, deep_select=True, ignore_case=True, synsets=None, ctx=None, **kwargs):
+        return self.search_cat(query, cat='ex', deep_select=deep_select, ignore_case=ignore_case, synsets=synsets, ctx=ctx, **kwargs)
 
     @with_ctx
     def hypernyms(self, synsetid, deep_select=False, ctx=None):
