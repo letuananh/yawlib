@@ -45,7 +45,7 @@ import json
 import re
 import copy
 from chirptext.leutile import uniquify
-from .common import WordnetException
+from .common import WordnetException, InvalidSynsetID
 
 ########################################################################
 
@@ -89,7 +89,7 @@ class SynsetID(object):
     @staticmethod
     def from_string(synsetid):
         if synsetid is None:
-            raise Exception("synsetid cannot be None")
+            raise InvalidSynsetID("synsetid cannot be None")
         m = SynsetID.WNSQL_FORMAT.match(str(synsetid))
         if m:
             # WNSQL_FORMAT
@@ -106,7 +106,7 @@ class SynsetID(object):
                 pos = m.group('pos')
                 return SynsetID(offset, pos)
             else:
-                raise Exception("Invalid synsetid format (provided: {})".format(synsetid))
+                raise InvalidSynsetID("Invalid synsetid format (provided: {})".format(synsetid))
 
     def to_canonical(self):
         ''' Wordnet synset ID (canonical format: 12345678-x)
@@ -146,7 +146,7 @@ class SynsetID(object):
 
 class Synset(object):
 
-    def __init__(self, sid, keys=None, lemmas=None, defs=None, exes=None, tagcount=0, lemma=None):
+    def __init__(self, sid, keys=None, lemmas=None, defs=None, exes=None, tagcount=0, lemma=None, lang='eng'):
         self.synsetid = sid  # synsetid.setter
         self.__keys = keys if keys is not None else []
         self.lemmas = lemmas if lemmas is not None else []
@@ -155,6 +155,7 @@ class Synset(object):
         self.tagcount = tagcount
         if lemma is not None:
             self.lemma = lemma  # Canonical lemma
+        self.lang = lang
         pass
 
     @property
@@ -198,7 +199,7 @@ class Synset(object):
     @lemma.setter
     def lemma(self, value):
         if value is None:
-            raise Exception("Canonical lemma cannot be None")
+            raise WordnetException("Canonical lemma cannot be None")
         if self.lemmas is None:
             self.lemmas = [value]
         elif len(self.lemmas) == 0:
@@ -269,8 +270,14 @@ class Synset(object):
     def to_json_str(self):
         return json.dumps(self.to_json())
 
+    def __eq__(self, other):
+        return other is not None and isinstance(other, Synset) and self.ID == other.ID
+
     def __repr__(self):
         return str(self)
+
+    def __hash__(self):
+        return hash(self.ID)
 
     def __str__(self):
         return "Synset('{}')".format(self.synsetid)
@@ -279,13 +286,14 @@ class Synset(object):
 class SynsetCollection(object):
     ''' Synset collection which provides basic synset search function (by_sid, by_sk, etc.)
     '''
-    def __init__(self, synsets=None):
+    def __init__(self, synsets=None, lang='eng'):
         self.synsets = []
         self.sid_map = {}
         self.sk_map = {}
         if synsets:
             for synset in synsets:
                 self.add(synset)
+        self.lang = lang
 
     def add(self, synset):
         self.synsets.append(synset)
@@ -328,7 +336,8 @@ class SynsetCollection(object):
     def merge(self, another_scol):
         ''' Add synsets from another synset collection '''
         for synset in another_scol.synsets:
-            self.add(synset)
+            if synset.ID not in self:
+                self.add(synset)
         return self
 
     def __str__(self):
