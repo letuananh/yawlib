@@ -45,7 +45,7 @@ from collections import defaultdict as dd
 
 from yawlib.models import Synset
 from chirptext.leutile import StringTool
-from chirptext.texttaglib import TaggedSentence, Token
+from chirptext import texttaglib as ttl
 
 
 # -----------------------------------------------------------------------
@@ -136,7 +136,7 @@ class GlossedSynset(Synset):
                 tokens = [t.text for t in g]
                 while tokens[-1] == ';':
                     tokens.pop()
-                sent = TaggedSentence(r)
+                sent = ttl.Sentence(r)
                 sent.import_tokens(tokens)
             # seems ok ...
             for r, g in zip(raws, glosses):
@@ -147,7 +147,7 @@ class GlossedSynset(Synset):
         # split def raw if needed
         d = self.get_def()
         for idx, raw in enumerate(raws):
-            sent = TaggedSentence(raw)
+            sent = ttl.Sentence(raw)
             try:
                 tokens = [i.text for i in d.items]
                 sent.import_tokens(tokens)
@@ -162,7 +162,7 @@ class GlossedSynset(Synset):
                 continue
         while len(raws) > 0:
             raw = raws.pop()
-            s = TaggedSentence(raw)
+            s = ttl.Sentence(raw)
             for idx, g in enumerate(glosses):
                 tokens = [t.text for t in g.items]
                 while tokens[-1] == ';':
@@ -295,33 +295,34 @@ class Gloss:
 
     def to_ttl(self, doc=None):
         ''' Export to TextTagLib format (Read more: :mod:`~chirptext.texttaglib`) '''
+        sid = self.origid if self.origid else "{}{}_{}".format(self.synset.ID.offset, self.synset.ID.pos, self.cat)
         if doc is not None:
-            sent = doc.add_sent(text=self.text(), ID=self.origid)
+            sent = doc.new_sent(text=self.text(), ID=sid)
         else:
-            sent = TaggedSentence(text=self.text(), ID=self.origid)
+            sent = ttl.Sentence(text=self.text(), ID=sid)
         colls = dd(list)
         item_map = {}
         # import tokens
         for item in self.items:
-            tk = sent.add_token(label=item.text)
+            tk = sent.new_token(text=item.text)
             item_map[item.origid] = tk
             # import token features
             if item.pos:
-                tk.tag(label=item.pos, tagtype=Token.POS)
+                tk.pos = item.pos
             if item.lemma:
-                tk.tag(label=item.lemma, tagtype=Token.LEMMA)
+                tk.lemma = item.lemma
             if item.tag:
-                tk.tag(label=item.tag, tagtype="tag")
-            tk.tag(label=item.origid, tagtype="origid")
+                tk.new_tag(label=item.tag, tagtype="tag")
+            tk.new_tag(label=item.origid, tagtype="origid")
             if item.coll:
                 colls[item.coll].append(tk)  # mark this MWE
         # import concepts
         for tag in self.tags:
             if tag.coll:  # MWE
-                c = sent.add_concept(clemma=tag.lemma, tag=tag.sk, words=colls[tag.coll])
+                c = sent.new_concept(tag=tag.sk, clemma=tag.lemma, tokens=colls[tag.coll])
             else:
                 # single sense
-                c = sent.add_concept(clemma=tag.lemma, tag=tag.sk, words=(item_map[tag.item.origid],))
+                c = sent.new_concept(tag=tag.sk, clemma=tag.lemma, tokens=(item_map[tag.item.origid],))
             c.comment = tag.origid
         sent.fix_cfrom_cto()
         return sent
