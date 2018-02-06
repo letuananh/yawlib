@@ -48,7 +48,7 @@ import logging
 import json
 
 from chirptext import header
-from chirptext.texttaglib import TaggedDoc, TaggedSentence
+from chirptext import texttaglib as ttl
 from yawlib.glosswordnet import GWordnetXML
 
 ########################################################################
@@ -92,7 +92,7 @@ class TestGlossWordNetXML(unittest.TestCase):
         header("Test export GWN to JSON")
         xmlwn = GWordnetXML()
         xmlwn.read(MOCKUP_SYNSETS_DATA)
-        doc = TaggedDoc("~/tmp/doc", "glosstest")
+        doc = ttl.Document("glosstest", "~/tmp/doc")
         sc = 0
         synsets = list(xmlwn.synsets)
         for ss in synsets[-50:]:
@@ -112,7 +112,7 @@ class TestGlossWordNetXML(unittest.TestCase):
         inlines = io.StringIO(jsons)
         for line in inlines:
             j = json.loads(line)
-            sent = TaggedSentence.from_json(j)
+            sent = ttl.Sentence.from_json(j)
             print(sent)
 
     def validate_data(self):

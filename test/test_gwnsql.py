@@ -46,7 +46,7 @@ import logging
 import unittest
 from chirptext import Counter, header
 from chirptext.io import CSV
-from chirptext.texttaglib import TaggedSentence
+from chirptext import texttaglib as ttl
 from yawlib import YLConfig
 from yawlib import WordnetException
 from yawlib.glosswordnet import GWordnetXML
@@ -153,7 +153,7 @@ class TestGlossWordnetSQL(unittest.TestCase):
         raws = ss.get_orig().split()
         d = ss.get_def()
         for idx, r in enumerate(raws):
-            sent = TaggedSentence(r)
+            sent = ttl.Sentence(r)
             try:
                 tokens = [i.text for i in d.items]
                 sent.import_tokens(tokens)
@@ -182,7 +182,7 @@ class TestGlossWordnetSQL(unittest.TestCase):
             tokens = [t.text for t in g]
             while tokens[-1] == ';':
                 tokens.pop()
-            sent = TaggedSentence(r)
+            sent = ttl.Sentence(r)
             sent.import_tokens(tokens)
             print("{} --- {}".format(r, tokens))
         self.assertTrue(ss.match_surface(raws=raws))
