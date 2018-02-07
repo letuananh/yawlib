@@ -1,4 +1,6 @@
+chirptext >= 0.1a5
 fuzzywuzzy
 python-levenshtein
 lxml
 flask
+
