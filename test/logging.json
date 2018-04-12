@@ -42,21 +42,10 @@
             "handlers": ["file_handler_verbose"],
             "propagate": "no"
         },
-        "puchikarui.puchikarui": {
-            "level": "INFO",
-            "handlers": ["file_handler_verbose"],
-            "propagate": "no"
-        },
-        "test": {
-            "level": "INFO",
-            "handlers": ["file_handler_verbose"],
-            "propagate": "no"
-        },
-        "yawlib": {
-            "level": "INFO",
-            "handlers": ["file_handler_verbose"],
-            "propagate": "no"
-        }
+        "puchikarui.puchikarui": { "level": "INFO" },
+        "yawlib.glosswordnet": { "level": "INFO" },
+        "test": { "level": "INFO" },
+        "yawlib": { "level": "INFO" }
     },
 
     "root": {
