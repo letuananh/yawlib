@@ -72,8 +72,6 @@ def getLogger():
 
 class TestHelperMethods(unittest.TestCase):
 
-    nullrep = TextReport('/dev/null')
-
     def test_dump_synset(self):
         print("Test get synset by ID")
         gwn = get_gwn()
@@ -91,12 +89,14 @@ class TestHelperMethods(unittest.TestCase):
         dump_synsets(None)
 
     def test_get_by_term(self):
-        sses = get_synsets_by_term(GWNSQL(YLConfig.GWN30_DB), 'test', report_file=self.nullrep)
-        self.assertEqual(len(sses), 13)
+        with TextReport.null() as rp:
+            sses = get_synsets_by_term(GWNSQL(YLConfig.GWN30_DB), 'test', report_file=rp)
+            self.assertEqual(len(sses), 13)
 
     def test_get_by_sk(self):
-        ss = get_synset_by_sk(get_gwn(), 'test%2:41:00::', report_file=self.nullrep)
-        self.assertIsNotNone(ss)
+        with TextReport.null() as rp:
+            ss = get_synset_by_sk(get_gwn(), 'test%2:41:00::', report_file=rp)
+            self.assertIsNotNone(ss)
 
     def test_search_wn_full_text(self):
         rp = TextReport.string()

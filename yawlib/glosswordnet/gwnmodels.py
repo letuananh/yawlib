@@ -52,8 +52,11 @@ from chirptext import texttaglib as ttl
 # Models
 # -----------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
 REMAIN_PATTERN = re.compile('[" ;]')
+
+
+def getLogger():
+    return logging.getLogger(__name__)
 
 
 # -----------------------------------------------------------------------
@@ -128,8 +131,10 @@ class GlossedSynset(Synset):
         return keys
 
     def match_surface(self, raws=None):
+        ''' Match tokens in each gloss to original synset def+ex string '''
         raws = self.get_orig().split() if raws is None else list(raws)
-        glosses = list(self.glosses)
+        glosses = list(self.glosses)  # remaining glosses
+        logger = getLogger()
         try:
             # try to match normally first
             for r, g in zip(raws, glosses):
@@ -137,7 +142,7 @@ class GlossedSynset(Synset):
                 while tokens[-1] == ';':
                     tokens.pop()
                 sent = ttl.Sentence(r)
-                sent.import_tokens(tokens)
+                sent.tokens = tokens
             # seems ok ...
             for r, g in zip(raws, glosses):
                 g.surface = r
@@ -148,9 +153,9 @@ class GlossedSynset(Synset):
         d = self.get_def()
         for idx, raw in enumerate(raws):
             sent = ttl.Sentence(raw)
+            tokens = [i.text for i in d.items]
             try:
-                tokens = [i.text for i in d.items]
-                sent.import_tokens(tokens)
+                sent.tokens = tokens
                 # found the def raw
                 if "(" in raw:
                     new_part = raw.replace("(", ";(").split(";")
@@ -162,21 +167,26 @@ class GlossedSynset(Synset):
                 continue
         while len(raws) > 0:
             raw = raws.pop()
-            s = ttl.Sentence(raw)
             for idx, g in enumerate(glosses):
+                s = ttl.Sentence(raw)
                 tokens = [t.text for t in g.items]
+                # logger.debug("raw = {} | tokens = {}".format(s.text, tokens))
                 while tokens[-1] == ';':
                     tokens.pop()
                 try:
                     s.import_tokens(tokens)
                     g.surface = raw
                     glosses.pop(idx)  # remove this gloss as it's matched
+                    raw = None
                     break
                 except:
                     # move on to the next one
+                    # logger.exception("Failed to match: {} to {}".format(g.text(), tokens))
                     pass
+            if raw:
+                logger.warning("Could not match {} to anything | remaining glosses: {}".format(raw, [g.text() for g in glosses]))
         if len(glosses) > 0:
-            raise Exception("mismatched {}".format(glosses))
+            raise Exception("mismatched! Remaining glosses: {} | orig: {}".format([g.text() for g in glosses], self.get_orig()))
         return True
 
     def __getitem__(self, name):
@@ -297,9 +307,10 @@ class Gloss:
         ''' Export to TextTagLib format (Read more: :mod:`~chirptext.texttaglib`) '''
         sid = self.origid if self.origid else "{}{}_{}".format(self.synset.ID.offset, self.synset.ID.pos, self.cat)
         if doc is not None:
-            sent = doc.new_sent(text=self.text(), ID=sid)
+            sent = doc.new_sent(text=self.text())
         else:
-            sent = ttl.Sentence(text=self.text(), ID=sid)
+            sent = ttl.Sentence(text=self.text())
+        sent.new_tag(sid, tagtype='origid')
         colls = dd(list)
         item_map = {}
         # import tokens
