@@ -1,6 +1,5 @@
-chirptext >= 0.1a5
+lxml
 fuzzywuzzy
 python-levenshtein
-lxml
-flask
-
+chirptext>=0.1a16
+puchikarui>=0.1a1
