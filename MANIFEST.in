@@ -1,0 +1,4 @@
+include README.md
+include CHANGES.md
+recursive-include yawlib/data *.json
+recursive-include yawlib/glosswordnet/script *.sql

@@ -3,19 +3,11 @@
 
 '''
 Setup script for YAWLib.
+
 Latest version can be found at https://github.com/letuananh/yawlib
 
-Adapted from: https://github.com/letuananh/lelesk
-
-References:
-    Python documentation:
-        https://docs.python.org/
-    argparse module:
-        https://docs.python.org/3/howto/argparse.html
-    PEP 257 - Python Docstring Conventions:
-        https://www.python.org/dev/peps/pep-0257/
-
-@author: Le Tuan Anh <tuananh.ke@gmail.com>
+:copyright: (c) 2015 Le Tuan Anh <tuananh.ke@gmail.com>
+:license: MIT, see LICENSE for more details.
 '''
 
 # Copyright (c) 2015, Le Tuan Anh <tuananh.ke@gmail.com>
@@ -38,33 +30,15 @@ References:
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-__author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2015, yawlib"
-__credits__ = []
-__license__ = "MIT"
-__version__ = "0.1"
-__maintainer__ = "Le Tuan Anh"
-__email__ = "<tuananh.ke@gmail.com>"
-__status__ = "Prototype"
-
 ########################################################################
 
-from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
 import io
-import codecs
 import os
-import sys
-
-from uberapp import uberapp
-
-########################################################################
-
-
-here = os.path.abspath(os.path.dirname(__file__))
+from setuptools import setup
 
 
 def read(*filenames, **kwargs):
+    ''' Read contents of multiple files and join them together '''
     encoding = kwargs.get('encoding', 'utf-8')
     sep = kwargs.get('sep', '\n')
     buf = []
@@ -74,35 +48,48 @@ def read(*filenames, **kwargs):
     return sep.join(buf)
 
 
-long_description = read('README.md', 'CHANGES.md')
+readme_file = 'README.rst' if os.path.isfile('README.rst') else 'README.md'
+long_description = read(readme_file)
+pkg_info = {}
+exec(read('yawlib/__version__.py'), pkg_info)
 
 
 setup(
-    name='uberapp',
-    version=uberapp.__version__,
-    url='https://github.com/letuananh/pydemo',
-    license='MIT License',
-    author='Le Tuan Anh',
-    tests_require=[],
-    install_requires=[],
-    author_email='tuananh.ke@gmail.com',
-    description='An uber software which does not do anything useful',
+    name='yawlib',  # package file name (<package-name>-version.tar.gz)
+    version=pkg_info['__version__'],
+    url=pkg_info['__url__'],
+    project_urls={
+        "Bug Tracker": "https://github.com/letuananh/yawlib/issues",
+        "Source Code": "https://github.com/letuananh/yawlib/"
+    },
+    keywords="princeton wordnet glosstag omw",
+    license=pkg_info['__license__'],
+    author=pkg_info['__author__'],
+    tests_require=['lxml', 'fuzzywuzzy', 'python-levenshtein', 'chirptext>=0.1a16', 'puchikarui'],
+    install_requires=['lxml', 'fuzzywuzzy', 'python-levenshtein', 'chirptext>=0.1a16', 'puchikarui'],
+    author_email=pkg_info['__email__'],
+    description=pkg_info['__description__'],
     long_description=long_description,
-    packages=['uberapp'],
+    packages=['yawlib',
+              'yawlib.glosswordnet',
+              'yawlib.yawol',
+              'yawlib.yawol.django',
+              'yawlib.yawol.django.migrations'],
+    package_data={'yawlib': ['data/*.json',
+                             'glosswordnet/script/*.sql']},
     include_package_data=True,
     platforms='any',
     test_suite='test',
-    classifiers = [
-        'Programming Language :: Python',
-        'Development Status :: 0.1 - Alpha',
-        'Natural Language :: English',
-        'Environment :: Console Application',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        ]#,
-    #extras_require={
-        # 'testing': ['pytest'],
-    #}
+    # Reference: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+    classifiers=['Programming Language :: Python',
+                 'Development Status :: 2 - Pre-Alpha',
+                 'Natural Language :: English',
+                 'Environment :: Plugins',
+                 'Intended Audience :: Developers',
+                 'Intended Audience :: Science/Research',
+                 'License :: OSI Approved :: {}'.format(pkg_info['__license__']),
+                 'Operating System :: OS Independent',
+                 'Topic :: Text Processing',
+                 'Topic :: Text Processing :: Linguistic',
+                 'Topic :: Software Development :: Libraries :: Python Modules']
 )

@@ -25,6 +25,28 @@ These functions should return a list of synset objects
 - hyponyms(synsetid, deep_select=True)
 - hypehypo(synsetid, deep_select=True)
 
+* REST APIs
+** Flask
+To run Yawol Flask, use
+```bash
+# to debug, use
+# export FLASK_DEBUG=1
+python3 -m yawlib.yawol.app
+```
+*** Testing API
+To ensure that Yawol is running, visit this URL: http://localhost:5000/yawol/version
+(Change the port 5000 to your actual port)
+
+** Django
+To run Yawol Django, use
+```bash
+python3 manage.py runserver
+```
+
+*** Testing API
+To ensure that Yawol is running, visit this URL: http://localhost:8000/yawol/version
+(Change the port 8000 to your actual port)
+
 * Support datasets
 ** WordnetSQL
 ** GlossedWordnet

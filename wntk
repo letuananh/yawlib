@@ -5,4 +5,4 @@ if [ -z "$YAWLIB_HOME" ]; then
 fi
 cd ${YAWLIB_HOME}
 # setup alias
-python3 -m yawlib.wntk "$@"
+python3 -m yawlib "$@"
