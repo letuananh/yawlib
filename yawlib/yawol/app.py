@@ -47,23 +47,38 @@ __status__ = "Prototype"
 
 import json
 import logging
+
 import flask
 from flask import Flask, Response, abort
 from functools import wraps
 from flask import request
+from chirptext.cli import CLIApp, setup_logging
+
+from yawlib.config import read_config
 from yawlib import YLConfig
 from yawlib import SynsetID, SynsetCollection
 from yawlib import WordnetSQL as WSQL
 
 
 # ---------------------------------------------------------------------
-# CONFIGURATION
+# Configuration
 # ---------------------------------------------------------------------
-logger = logging.getLogger(__name__)
+
+def getLogger():
+    return logging.getLogger(__name__)
+
+
+cfg = read_config()
+logging_config_file = cfg.get('logging_config_file', 'logging.json')
+log_dir = cfg.get('log_dir', 'logs')
+setup_logging(logging_config_file, log_dir)
 app = Flask(__name__, static_url_path="")
 wsql = WSQL(YLConfig.WNSQL30_PATH)
 
 
+# ---------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------
 # Adopted from: http://flask.pocoo.org/snippets/79/
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
@@ -79,6 +94,9 @@ def jsonp(func):
     return decorated_function
 
 
+# ---------------------------------------------------------------------
+# Views
+# ---------------------------------------------------------------------
 @app.route('/yawol/synset/<synsetid>', methods=['GET'])
 @jsonp
 def get_synset(synsetid):
@@ -100,7 +118,7 @@ def search(query):
             return SynsetCollection().add(ss).to_json_str()
     except Exception as e:
         # not synsetid
-        logger.exception(e, "Invalid synset ID")
+        getLogger().exception(e, "Invalid synset ID")
         pass
     # try search by lemma
     synsets = wsql.get_synsets_by_lemma(query)
@@ -128,5 +146,19 @@ def version():
                        'server': 'yawol-flask/Flask-{}'.format(flask.__version__)})
 
 
+# ---------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------
+
+def run_app(cli, args):
+    print("Running Yawol-flask at http://{}:{} | DEBUG={}".format(args.host, args.port, args.debug))
+    app.run(host=args.host, port=args.port, debug=args.debug)
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    cli = CLIApp(desc='Yawol-Flask development server', logger=__name__)
+    cli.parser.add_argument('--port', default=5000, type=int)
+    cli.parser.add_argument('--host', default='0.0.0.0')
+    cli.parser.add_argument('--debug', default=False, action='store_true')
+    cli.parser.set_defaults(func=run_app)
+    cli.run()
