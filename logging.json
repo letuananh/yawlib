@@ -43,6 +43,10 @@
             "handlers": ["file_handler_important", "file_handler_verbose"],
             "propagate": "no"
         },
+        "chirptext": {
+          "level": "WARNING",
+          "handlers": ["file_handler_verbose"]
+        },
         "puchikarui.puchikarui": {
           "level": "WARNING",
           "handlers": ["file_handler_verbose"]
