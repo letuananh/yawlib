@@ -328,7 +328,7 @@ def show_info(cli, args):
     ''' Show configuration information
     '''
     report = TextReport(args.output) if 'output' in args else TextReport()
-    report.header("{} - Version: {}".format(version_info.__description__, version_info.__version_long__), level='h0')
+    report.header("{} - Version: {}".format(version_info.__description__, version_info.__version__), level='h0')
     report.header("Basic Configuration")
     report.print("YAWLIB_HOME       : {}".format(config.home_dir()))
     report.print("Configuration file: {}".format(config.config_file_path()))
