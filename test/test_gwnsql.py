@@ -45,7 +45,7 @@ import os
 import logging
 import unittest
 from chirptext import Counter, header
-from chirptext.io import CSV
+from chirptext.chio import CSV
 from chirptext import texttaglib as ttl
 from yawlib import YLConfig
 from yawlib import WordnetException

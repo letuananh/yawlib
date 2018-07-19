@@ -87,8 +87,11 @@ class SynsetID(object):
         self.pos = pos
 
     @staticmethod
-    def from_string(synsetid):
+    def from_string(synsetid, **kwargs):
+        ''' Parse a synsetID string to SynsetID object. When failed, return default argument is provided or an exception will be raised '''
         if synsetid is None:
+            if 'default' in kwargs:
+                return kwargs['default']
             raise InvalidSynsetID("synsetid cannot be None")
         m = SynsetID.WNSQL_FORMAT.match(str(synsetid))
         if m:
@@ -106,6 +109,8 @@ class SynsetID(object):
                 pos = m.group('pos')
                 return SynsetID(offset, pos)
             else:
+                if 'default' in kwargs:
+                    return kwargs['default']
                 raise InvalidSynsetID("Invalid synsetid format (provided: {})".format(synsetid))
 
     def to_canonical(self):
@@ -127,6 +132,8 @@ class SynsetID(object):
 
     def __eq__(self, other):
         # make sure that the other instance is a SynsetID object
+        if other and isinstance(other, Synset):
+            other = other.ID
         if other and not isinstance(other, SynsetID):
             other = SynsetID.from_string(str(other))
         return other is not None and self.offset == other.offset and self.pos == other.pos
