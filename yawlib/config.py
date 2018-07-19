@@ -89,6 +89,11 @@ def home_dir():
     return yhome if yhome else __yawlib_home
 
 
+def config_file_path():
+    ''' get config location '''
+    return _get_config_manager().locate_config()
+
+
 def get_file(file_key):
     _config = read_config()
     return _config.get(file_key).format(YAWLIB_HOME=home_dir())

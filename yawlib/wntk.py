@@ -188,6 +188,7 @@ def main():
 
     # show info
     task = app.add_task('info', func=show_info)
+    task.add_argument('-o', '--output', help='Write information to a text file')
     # run app
     app.run()
 
