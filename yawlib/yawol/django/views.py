@@ -50,17 +50,16 @@ import json
 import logging
 import django
 from django.http import HttpResponse, Http404
-from yawlib import YLConfig
 from yawlib import SynsetID, SynsetCollection
-from yawlib import WordnetSQL as WSQL
-from yawlib.omwsql import OMWSQL
+from yawlib.helpers import get_omw, get_wn
 
 # ---------------------------------------------------------------------
 # CONFIGURATION
 # ---------------------------------------------------------------------
 logger = logging.getLogger(__name__)
-wsql = WSQL(YLConfig.WNSQL30_PATH)
-omwsql = OMWSQL(YLConfig.OMW_DB) if os.path.isfile(YLConfig.OMW_DB) else None
+wsql = get_wn()
+omwsql = get_omw()
+print("OMW: {}".format(omwsql))
 
 
 def jsonp(func):
@@ -105,8 +104,8 @@ def search(request, query):
     Mapping: /yawol/search/<query>
     '''
     # assume that query is a synset?
-    try:
-        sid = SynsetID.from_string(query.strip())
+    sid = SynsetID.from_string(query.strip(), default=None)
+    if sid:
         ss = wsql.get_synset(sid)
         if ss is None and omwsql is not None:
             # try to search by OMW
@@ -115,22 +114,28 @@ def search(request, query):
             print("OMW SS", ss)
         if ss is not None:
             return SynsetCollection().add(ss).to_json()
-    except:
-        logger.exception("Cannot find by synsetID")
-        pass
     # try to search by lemma
     synsets = wsql.search(lemma=query)
-    if synsets is not None and len(synsets) > 0:
+    if synsets:
         logger.info("Query: {} - Results: {}".format(query, synsets))
         return synsets.to_json()
     else:
-        # try to search by sensekey
-        try:
-            ss = wsql.get_by_key(query)
-        except:
-            ss = None
-        if ss:
-            return SynsetCollection().add(ss).to_json()
+        if not synsets and omwsql is not None:
+            print("Try to search {} in OMW".format(query))
+            synsets = omwsql.search(lemma=query)
+            if synsets:
+                logger.info("Query: {} - Results: {}".format(query, synsets))
+                return synsets.to_json()
+            else:
+                logger.warning("Not found {} in OMW".format(query))
+        else:
+            # try to search by sensekey
+            try:
+                ss = wsql.get_by_key(query)
+            except:
+                ss = None
+            if ss:
+                return SynsetCollection().add(ss).to_json()
     # invalid query
     raise Http404('Invalid query')
 

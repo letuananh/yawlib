@@ -1,6 +1,0 @@
-[submodule "modules/puchikarui"]
-	path = modules/puchikarui
-	url = https://github.com/letuananh/puchikarui
-[submodule "modules/chirptext"]
-	path = modules/chirptext
-	url = https://github.com/letuananh/chirptext
