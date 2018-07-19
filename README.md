@@ -98,9 +98,17 @@ Note: Extract the glosstag folder and sqlite-30.db to ~/wordnet. The directory s
 
 Go to yawlib folder, execute the config script and then run wntk.sh to generate the glosstab DB file.
 ```
-cd ~/workspace
 git clone https://github.com/letuananh/yawlib
 cd yawlib
-bash config.sh
-./wntk.sh -c
+
+# create virtual environment
+python3 -m venv yawlib_py3
+. yawlib_py3/bin/activate
+
+# install required packages
+pip install -r requirements.txt
+pip install -r requirements-optional.txt
+
+# to show information
+python -m yawlib info
 ```
