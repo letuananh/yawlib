@@ -48,10 +48,16 @@ def read(*filenames, **kwargs):
     return sep.join(buf)
 
 
-readme_file = 'README.rst' if os.path.isfile('README.rst') else 'README.md'
+# readme_file = 'README.rst' if os.path.isfile('README.rst') else 'README.md'
+readme_file = 'README.md'
 long_description = read(readme_file)
 pkg_info = {}
 exec(read('yawlib/__version__.py'), pkg_info)
+
+
+with open('requirements.txt', 'r') as infile:
+    requirements = infile.read().splitlines()
+    print(requirements)
 
 
 setup(
@@ -65,11 +71,12 @@ setup(
     keywords="princeton wordnet glosstag omw",
     license=pkg_info['__license__'],
     author=pkg_info['__author__'],
-    tests_require=['lxml', 'fuzzywuzzy', 'python-levenshtein', 'chirptext>=0.1a16', 'puchikarui'],
-    install_requires=['lxml', 'fuzzywuzzy', 'python-levenshtein', 'chirptext>=0.1a16', 'puchikarui'],
+    tests_require=requirements,
+    install_requires=requirements,
     author_email=pkg_info['__email__'],
     description=pkg_info['__description__'],
     long_description=long_description,
+    long_description_content_type='text/markdown',
     packages=['yawlib',
               'yawlib.glosswordnet',
               'yawlib.yawol',
