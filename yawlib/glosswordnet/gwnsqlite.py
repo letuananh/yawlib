@@ -44,9 +44,9 @@ __status__ = "Prototype"
 import os
 import logging
 
-from puchikarui import Schema, with_ctx
+from puchikarui import Schema, with_ctx, escape_like
 
-from yawlib.models import SynsetCollection, SynsetID
+from yawlib.models import SynsetCollection, SynsetID, Synset
 from yawlib.common import SynsetNotFoundException, WordnetFeatureNotSupported
 from yawlib.common import WordnetException
 
@@ -211,18 +211,25 @@ class GWordnetSQLite(GWordnetSchema):
 
     @with_ctx
     def search(self, lemma, pos=None, deep_select=True, ignore_case=True, synsets=None, ctx=None, **kwargs):
+        like_phrase = ' LIKE ? '
+        if '%' in lemma or '_' in lemma:
+            like_phrase = " LIKE ? ESCAPE '@'"
+            lemma = escape_like(lemma)
         if ignore_case:
-            query = ['ID IN (SELECT sid FROM term WHERE lower(term) LIKE ?)']
+            query = ['ID IN (SELECT sid FROM term WHERE lower(term) {})'.format(like_phrase)]
             params = [lemma.lower()]
         else:
-            query = ['ID IN (SELECT sid FROM term WHERE term LIKE ?)']
+            query = ['ID IN (SELECT sid FROM term WHERE term {})'.format(like_phrase)]
             params = [lemma]
         if pos:
             query.append('pos = ?')
             params.append(pos)
         # query synsetids
         results = ctx.synset.select(' AND '.join(query), params, columns=('ID',))
-        return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
+        if deep_select:
+            return self.results_to_synsets(results, ctx=ctx, synsets=synsets)
+        else:
+            return SynsetCollection(synsets=(Synset(x.ID) for x in results))
 
     @with_ctx
     def search_cat(self, query, cat='def', deep_select=True, ignore_case=True, synsets=None, ctx=None, **kwargs):
