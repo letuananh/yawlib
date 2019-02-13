@@ -292,7 +292,7 @@ def get_gwnxml(args):
     if args.mockup:
         return GWNXML(args.mockup_files)
     else:
-        merged_folder = os.path.join(args.gloss_xml, 'merged')
+        merged_folder = os.path.join(os.path.expanduser(args.gloss_xml), 'merged')
         gwn_xml = GWNXML(glosstag_files(merged_folder))
         return gwn_xml
 
