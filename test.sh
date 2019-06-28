@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/bin/bash
 
 echo "Test YAWLib"
 # Alternative: test a specific file
