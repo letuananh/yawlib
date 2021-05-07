@@ -147,6 +147,11 @@ class TestGlossWordnetSQL(unittest.TestCase):
         ss = get_test_gwn().search('AD')
         self.assertGreater(len(ss), 0)
 
+    def test_shallow_search(self):
+        gwn = GWNSQL(YLConfig.GWN30_DB)
+        ss = gwn.search('dog', deep_select=False)
+        self.assertTrue(ss)
+
     def test_single_match(self):
         gwn = GWNSQL(YLConfig.GWN30_DB)
         ss = gwn.get_synset('r00008007')
