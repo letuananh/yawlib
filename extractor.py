@@ -321,7 +321,7 @@ def main():
     '''
     # It's easier to create a user-friendly console application by using argparse
     # See reference at the top of this script
-    parser = argparse.ArgumentParser(description="WordNet Toolkit - For accessing and manipulating WordNet")
+    Parser = argparse.ArgumentParser(description="WordNet Toolkit - For accessing and manipulating WordNet")
     add_wordnet_config(parser)
     add_logging_config(parser)
 

@@ -46,7 +46,7 @@ import os.path
 import itertools
 import logging
 
-from chirptext.leutile import TextReport, FileHelper
+from texttaglib.chirptext.leutile import TextReport, FileHelper
 
 from .models import SynsetID, SynsetCollection
 from yawlib import YLConfig

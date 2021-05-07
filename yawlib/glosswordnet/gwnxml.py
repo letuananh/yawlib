@@ -42,9 +42,10 @@ __status__ = "Prototype"
 # -----------------------------------------------------------------------
 
 import logging
-from lxml import etree
+# from lxml import etree
+from xml.etree import ElementTree as etree
 
-from chirptext.leutile import StringTool, Counter
+from texttaglib.chirptext.leutile import StringTool, Counter
 
 from yawlib.models import SynsetCollection
 

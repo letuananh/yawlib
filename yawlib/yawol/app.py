@@ -52,7 +52,7 @@ import flask
 from flask import Flask, Response, abort
 from functools import wraps
 from flask import request
-from chirptext.cli import CLIApp, setup_logging
+from texttaglib.chirptext.cli import CLIApp, setup_logging
 
 from yawlib.config import read_config
 from yawlib import YLConfig

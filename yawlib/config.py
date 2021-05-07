@@ -42,8 +42,8 @@ __status__ = "Prototype"
 import os
 import logging
 
-from chirptext import AppConfig
-from chirptext.chio import read_file, write_file
+from texttaglib.chirptext import AppConfig
+from texttaglib.chirptext.chio import read_file, write_file
 
 
 MY_DIR = os.path.dirname(__file__)

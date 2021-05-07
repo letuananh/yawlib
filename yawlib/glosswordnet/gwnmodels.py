@@ -44,8 +44,8 @@ import re
 from collections import defaultdict as dd
 
 from yawlib.models import Synset
-from chirptext.leutile import StringTool
-from chirptext import texttaglib as ttl
+from texttaglib.chirptext.leutile import StringTool
+from texttaglib.chirptext import ttl
 
 
 # -----------------------------------------------------------------------

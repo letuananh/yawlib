@@ -1,5 +1,1 @@
-lxml
-fuzzywuzzy
-python-levenshtein
-chirptext>=0.1a18
-puchikarui>=0.1a1
+texttaglib>=0.1.1a1

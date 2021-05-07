@@ -55,8 +55,8 @@ __status__ = "Prototype"
 import os.path
 import logging
 
-from chirptext.leutile import Timer, header, FileHelper
-from chirptext.cli import CLIApp, setup_logging
+from texttaglib.chirptext.leutile import Timer, header, FileHelper
+from texttaglib.chirptext.cli import CLIApp, setup_logging
 
 from .helpers import add_wordnet_config
 from .helpers import show_info

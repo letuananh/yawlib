@@ -44,7 +44,7 @@ __status__ = "Prototype"
 import json
 import re
 import copy
-from chirptext.leutile import uniquify
+from texttaglib.chirptext.leutile import uniquify
 from .common import WordnetException, InvalidSynsetID
 
 ########################################################################
