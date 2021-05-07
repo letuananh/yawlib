@@ -47,8 +47,8 @@ import unittest
 import logging
 import json
 
-from chirptext import header
-from chirptext import texttaglib as ttl
+from texttaglib.chirptext import header
+from texttaglib.chirptext import texttaglib as ttl
 from yawlib.glosswordnet import GWordnetXML
 
 ########################################################################

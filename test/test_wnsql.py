@@ -46,7 +46,7 @@ import logging
 import unittest
 
 from yawlib.helpers import get_wn
-from chirptext.cli import setup_logging
+from texttaglib.chirptext.cli import setup_logging
 
 ########################################################################
 

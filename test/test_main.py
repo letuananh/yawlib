@@ -44,7 +44,7 @@ __status__ = "Prototype"
 import os
 import unittest
 import logging
-from chirptext.leutile import TextReport
+from texttaglib.chirptext.leutile import TextReport
 from yawlib import GWordnetXML as GWNXML
 from yawlib import GWordnetSQLite as GWNSQL
 from yawlib.helpers import get_synset_by_id

@@ -44,9 +44,9 @@ __status__ = "Prototype"
 import os
 import logging
 import unittest
-from chirptext import Counter, header
-from chirptext.chio import CSV
-from chirptext import texttaglib as ttl
+from texttaglib.chirptext import Counter, header
+from texttaglib.chirptext.chio import CSV
+from texttaglib.chirptext import ttl
 from yawlib import YLConfig
 from yawlib import WordnetException
 from yawlib.glosswordnet import GWordnetXML

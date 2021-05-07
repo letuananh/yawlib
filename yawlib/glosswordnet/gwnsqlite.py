@@ -44,7 +44,7 @@ __status__ = "Prototype"
 import os
 import logging
 
-from puchikarui import Schema, with_ctx, escape_like
+from texttaglib.puchikarui import Schema, with_ctx, escape_like
 
 from yawlib.models import SynsetCollection, SynsetID, Synset
 from yawlib.common import SynsetNotFoundException, WordnetFeatureNotSupported

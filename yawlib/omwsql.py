@@ -40,7 +40,7 @@ __status__ = "Prototype"
 # -----------------------------------------------------------------------
 
 import logging
-from puchikarui import Schema, with_ctx
+from texttaglib.puchikarui import Schema, with_ctx
 from yawlib.models import SynsetID, Synset, SynsetCollection
 from yawlib.common import WordnetFeatureNotSupported, InvalidSynsetID
 

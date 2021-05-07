@@ -41,7 +41,7 @@ __status__ = "Prototype"
 
 import logging
 from collections import defaultdict as dd
-from puchikarui import Schema, with_ctx
+from texttaglib.puchikarui import Schema, with_ctx
 from yawlib.models import SynsetID, Synset, SynsetCollection
 
 
