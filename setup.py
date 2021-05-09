@@ -68,7 +68,7 @@ setup(
         "Bug Tracker": "https://github.com/letuananh/yawlib/issues",
         "Source Code": "https://github.com/letuananh/yawlib/"
     },
-    keywords="princeton wordnet glosstag omw",
+    keywords=["wordnet", "glosstag", "omw", "sqlite"],
     license=pkg_info['__license__'],
     author=pkg_info['__author__'],
     tests_require=requirements,
