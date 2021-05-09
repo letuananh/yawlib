@@ -59,6 +59,13 @@ from yawlib import WordnetSQL as WSQL
 from yawlib.common import InvalidSynsetID, WordnetFeatureNotSupported, SynsetNotFoundException
 from yawlib.omwsql import OMWSQL
 
+try:
+    from lxml import etree
+    _LXML_AVAILABLE = True
+except Exception:
+    _LXML_AVAILABLE = False
+    
+
 ########################################################################
 # CONFIGURATION
 ########################################################################
@@ -324,19 +331,30 @@ def add_wordnet_config(parser):
     parser.set_defaults(mockup_files=MOCKUP_SYNSETS_DATA)
 
 
+def _dir_flag(a_path):
+    return "OK" if os.path.isdir(os.path.expanduser(a_path)) else "missing"
+
+
+def _file_flag(a_path):
+    return "OK" if os.path.isfile(os.path.expanduser(a_path)) else "missing"
+
+
 def show_info(cli, args):
     ''' Show configuration information
     '''
     report = TextReport(args.output) if 'output' in args else TextReport()
     report.header("{} - Version: {}".format(version_info.__description__, version_info.__version__), level='h0')
+    home_flag = _dir_flag(config.home_dir())
+    cfg_file_flag = _file_flag(config.config_file_path())
     report.header("Basic Configuration")
-    report.print("YAWLIB_HOME       : {}".format(config.home_dir()))
-    report.print("Configuration file: {}".format(config.config_file_path()))
+    report.print(f"YAWLIB_HOME       : {config.home_dir()} [{home_flag}]")
+    report.print(f"Configuration file: {config.config_file_path()} [{cfg_file_flag}]")
     report.header("Data files")
-    report.print("GlossWordNet XML folder: %s" % args.gloss_xml)
-    report.print("GlossWordNet SQlite DB : %s" % args.glossdb)
-    report.print("Princeton WordnetSQL DB: %s" % args.wnsql)
-    report.print("OMW DB                 : %s" % args.omw)
+    _colsize = max(len(x) for x in (args.gloss_xml, args.glossdb, args.wnsql, args.omw) if x)
+    report.print(f"GlossWordNet XML folder: {args.gloss_xml.ljust(_colsize)} [{_dir_flag(args.gloss_xml)}]")
+    report.print(f"GlossWordNet SQlite DB : {args.glossdb.ljust(_colsize)} [{_file_flag(args.glossdb)}]")
+    report.print(f"Princeton WordnetSQL DB: {args.wnsql.ljust(_colsize)} [{_file_flag(args.wnsql)}]")
+    report.print(f"OMW DB                 : {args.omw.ljust(_colsize)} [{_file_flag(args.omw)}]")
     report.header("Other settings")
     report.print("Use mockup data        : %s" % args.mockup)
     if args.verbose:

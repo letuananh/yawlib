@@ -42,8 +42,12 @@ __status__ = "Prototype"
 # -----------------------------------------------------------------------
 
 import logging
-# from lxml import etree
-from xml.etree import ElementTree as etree
+try:
+    from lxml import etree
+    _LXML_AVAILABLE = True
+except Exception:
+    _LXML_AVAILABLE = False
+    from xml.etree import ElementTree as etree
 
 from texttaglib.chirptext.leutile import StringTool, Counter
 
@@ -181,6 +185,15 @@ class GWordnetXML:
         if lemma == 'purposefully ignored' and sk == "purposefully_ignored%0:00:00::":
             tag_obj.cat = 'PURPOSEFULLY_IGNORED'
 
+    def get_node_text(self, wf_node):
+        """ Return text value inside an XML node """
+        if _LXML_AVAILABLE:
+            return StringTool.strip(wf_node.xpath("string()"))
+        else:
+            # TODO: XML mixed content, don't use text attr here
+            return wf_node.text
+        
+
     def parse_wf(self, wf_node, gloss):
         ''' Parse a word feature node and then add to gloss object
         '''
@@ -192,7 +205,7 @@ class GWordnetXML:
         rdf = wf_node.get('rdf')
         origid = wf_node.get('id')
         sep = wf_node.get('sep')
-        text = StringTool.strip(wf_node.xpath("string()"))  # XML mixed content, don't use text attr here
+        text = self.get_node_text(wf_node)
         wf_obj = gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text, origid)
         # Then parse id tag if available
         for child in wf_node:
@@ -211,7 +224,7 @@ class GWordnetXML:
         rdf = cf_node.get('rdf')
         origid = cf_node.get('id')
         sep = cf_node.get('sep')
-        text = StringTool.strip(cf_node.xpath("string()"))
+        text = self.get_node_text(cf_node)
         cf_obj = gloss.add_gloss_item(tag, lemma, pos, cat, coll, rdf, origid, sep, text, 'coll:' + coll)
         # Parse glob info if it's available
         for child_node in cf_node:

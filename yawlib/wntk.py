@@ -59,7 +59,7 @@ from texttaglib.chirptext.leutile import Timer, header, FileHelper
 from texttaglib.chirptext.cli import CLIApp, setup_logging
 
 from .helpers import add_wordnet_config
-from .helpers import show_info
+from .helpers import show_info, _LXML_AVAILABLE
 from .helpers import get_gwn, get_gwnxml, get_omw, get_wn
 from .helpers import get_synset_by_id, get_synset_by_sk, get_synsets_by_term
 from .helpers import smart_wn_search
@@ -88,6 +88,10 @@ def get_logger():
 def convert(cli, args):
     ''' Convert Gloss WordNet XML into SQLite format
     '''
+    if not _LXML_AVAILABLE:
+        print("WARNING: lxml library is required for parsing XML")
+        exit()
+
     show_info(cli, args)
 
     if os.path.isfile(args.glossdb) and os.path.getsize(args.glossdb) > 0:
