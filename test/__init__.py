@@ -23,7 +23,7 @@ References:
 # Homepage: https://github.com/letuananh/yawlib
 
 import os
-from chirptext.cli import setup_logging
+from texttaglib.chirptext.cli import setup_logging
 
 
 TEST_DIR = os.path.dirname(__file__)
