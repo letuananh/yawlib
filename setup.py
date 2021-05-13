@@ -89,7 +89,7 @@ setup(
     test_suite='test',
     # Reference: https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=['Programming Language :: Python',
-                 'Development Status :: 2 - Pre-Alpha',
+                 'Development Status :: {}'.format(pkg_info['__status__']),
                  'Natural Language :: English',
                  'Environment :: Plugins',
                  'Intended Audience :: Developers',
