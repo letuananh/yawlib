@@ -17,8 +17,9 @@ Yawlib is available on [PyPI](https://pypi.org/project/yawlib/)
 pip install yawlib
 ```
 
-Download prebuilt database files are available on the author's [Open Science Framework project page: https://osf.io/9udjk/](https://osf.io/9udjk/) and extract them to your home folder at `~/wordnet/`.
-On Linux it should look something like
+Prebuilt database files are available on the author's [Open Science Framework project page: https://osf.io/9udjk/](https://osf.io/9udjk/).
+Download them and extract those to your home folder at `~/wordnet/`.
+On Linux it should look something like:
 
 ```
 /home/username/wordnet/
