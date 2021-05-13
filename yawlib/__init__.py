@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 '''
-YAWLib - Yet another WordNet library for Python
-
-Latest version can be found at https://github.com/letuananh/yawlib
-
-:copyright: (c) 2012 Le Tuan Anh <tuananh.ke@gmail.com>
-:license: MIT, see LICENSE for more details.
+Python library for accessing major wordnet releases using relational databases for high performance batch processing
 '''
+
+# This code is a part of yawlib library: https://github.com/letuananh/yawlib
+# :copyright: (c) 2014 Le Tuan Anh <tuananh.ke@gmail.com>
+# :license: MIT, see LICENSE for more details.
 
 from . import __version__ as version_info
 from .__version__ import __author__, __email__, __copyright__, __maintainer__

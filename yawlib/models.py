@@ -1,45 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Shared data models
-Latest version can be found at https://github.com/letuananh/yawlib
+"""
 
-Adapted from: https://github.com/letuananh/lelesk
-
-@author: Le Tuan Anh <tuananh.ke@gmail.com>
-'''
-
-# Copyright (c) 2014, Le Tuan Anh <tuananh.ke@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-__author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2014, lelesk"
-__credits__ = ["Le Tuan Anh"]
-__license__ = "MIT"
-__version__ = "0.1"
-__maintainer__ = "Le Tuan Anh"
-__email__ = "<tuananh.ke@gmail.com>"
-__status__ = "Prototype"
-
-########################################################################
+# This code is a part of yawlib library: https://github.com/letuananh/yawlib
+# :copyright: (c) 2014 Le Tuan Anh <tuananh.ke@gmail.com>
+# :license: MIT, see LICENSE for more details.
 
 import json
 import re
@@ -88,7 +56,7 @@ class SynsetID(object):
 
     @staticmethod
     def from_string(synsetid, **kwargs):
-        ''' Parse a synsetID string to SynsetID object. When failed, return default argument is provided or an exception will be raised '''
+        """ Parse a synsetID string to SynsetID object. When failed, return default argument is provided or an exception will be raised """
         if synsetid is None:
             if 'default' in kwargs:
                 return kwargs['default']
@@ -114,17 +82,17 @@ class SynsetID(object):
                 raise InvalidSynsetID("Invalid synsetid format (provided: {})".format(synsetid))
 
     def to_canonical(self):
-        ''' Wordnet synset ID (canonical format: 12345678-x)
-        '''
+        """ Wordnet synset ID (canonical format: 12345678-x)
+        """
         return "{offset}-{pos}".format(offset=self.offset, pos=self.pos)
 
     def to_wnsql(self):
-        '''WordNet SQLite synsetID format (112345678)
-           Reference: https://sourceforge.net/projects/wnsql/'''
+        """WordNet SQLite synsetID format (112345678)
+           Reference: https://sourceforge.net/projects/wnsql/"""
         return "{posnum}{offset}".format(offset=self.offset, posnum=POS.pos2num(self.pos))
 
     def to_gwnsql(self):
-        '''Gloss WordNet SQLite synsetID format (x12345678)'''
+        """Gloss WordNet SQLite synsetID format (x12345678)"""
         return "{pos}{offset}".format(offset=self.offset, pos=self.pos)
 
     def __hash__(self):
@@ -197,7 +165,7 @@ class Synset(object):
 
     @property
     def lemma(self):
-        ''' Synset canonical lemma '''
+        """ Synset canonical lemma """
         if self.lemmas is None or len(self.lemmas) == 0:
             return None
         else:
@@ -236,12 +204,12 @@ class Synset(object):
     # Aliases
     @property
     def synsetid(self):
-        ''' An alias of synset.ID '''
+        """ An alias of synset.ID """
         return self.__sid
 
     @synsetid.setter
     def synsetid(self, value):
-        ''' An alias of synset.ID '''
+        """ An alias of synset.ID """
         self.ID = value
 
     @property
@@ -250,12 +218,12 @@ class Synset(object):
 
     @property
     def defs(self):
-        ''' An alias of synset.definitions '''
+        """ An alias of synset.definitions """
         return self.definitions
 
     @property
     def exes(self):
-        ''' An alias of synset.examples '''
+        """ An alias of synset.examples """
         return self.examples
 
     def get_tokens(self):
@@ -291,8 +259,8 @@ class Synset(object):
 
 
 class SynsetCollection(object):
-    ''' Synset collection which provides basic synset search function (by_sid, by_sk, etc.)
-    '''
+    """ Synset collection which provides basic synset search function (by_sid, by_sk, etc.)
+    """
     def __init__(self, synsets=None, lang='eng'):
         self.synsets = []
         self.sid_map = {}
@@ -341,7 +309,7 @@ class SynsetCollection(object):
         return len(self.synsets)
 
     def merge(self, another_scol):
-        ''' Add synsets from another synset collection '''
+        """ Add synsets from another synset collection """
         for synset in another_scol.synsets:
             if synset.ID not in self:
                 self.add(synset)
@@ -355,13 +323,3 @@ class SynsetCollection(object):
 
     def to_json_str(self):
         return json.dumps(self.to_json())
-
-
-########################################################################
-
-def main():
-    print("This is a library, not a tool")
-
-
-if __name__ == "__main__":
-    main()

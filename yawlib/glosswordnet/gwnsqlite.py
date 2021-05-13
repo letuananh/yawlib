@@ -1,45 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Gloss WordNet SQLite Data Access Object - Access Gloss WordNet in SQLite format
-Latest version can be found at https://github.com/letuananh/yawlib
+"""
 
-Adapted from: https://github.com/letuananh/lelesk
-
-@author: Le Tuan Anh <tuananh.ke@gmail.com>
-'''
-
-# Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-__author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2014, yawlib"
-__credits__ = []
-__license__ = "MIT"
-__version__ = "0.1"
-__maintainer__ = "Le Tuan Anh"
-__email__ = "<tuananh.ke@gmail.com>"
-__status__ = "Prototype"
-
-# -----------------------------------------------------------------------
+# This code is a part of yawlib library: https://github.com/letuananh/yawlib
+# :copyright: (c) 2014 Le Tuan Anh <tuananh.ke@gmail.com>
+# :license: MIT, see LICENSE for more details.
 
 import os
 import logging
@@ -92,14 +60,14 @@ class GWordnetSQLite(GWordnetSchema):
 
     @with_ctx
     def insert_synset(self, synset, ctx=None):
-        ''' Helper method for storing a single synset
-        '''
+        """ Helper method for storing a single synset
+        """
         self.insert_synsets([synset], ctx=ctx)
 
     @with_ctx
     def insert_synsets(self, synsets, ctx=None):
-        ''' Store synsets with related information (sensekeys, terms, gloss, etc.)
-        '''
+        """ Store synsets with related information (sensekeys, terms, gloss, etc.)
+        """
         # synset;
         for synset in synsets:
             sid = synset.ID.to_gwnsql()
@@ -180,7 +148,7 @@ class GWordnetSQLite(GWordnetSchema):
 
     @with_ctx
     def get_synsets(self, synsetids, ctx=None, **kwargs):
-        ''' Get synsets by synsetids '''
+        """ Get synsets by synsetids """
         synsets = SynsetCollection()
         for sid in synsetids:
             ss = self.get_synset(sid, ctx=ctx, **kwargs)
@@ -265,7 +233,7 @@ class GWordnetSQLite(GWordnetSchema):
 
     @with_ctx
     def tagged_sensekeys(self, ctx=None):
-        ''' Get all sensekeys used for tagging '''
+        """ Get all sensekeys used for tagging """
         results = ctx.sensetag.select(columns=['sk'])
         return set((x.sk for x in results))
 

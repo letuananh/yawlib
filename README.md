@@ -1,15 +1,13 @@
-YAWlib - Yet Another WordNet library for Python
-===============
+# YAWlib - Yet Another WordNet library for Python
 
 A Python library for accessing major WordNet releases using relational databases for high performance batch processing.
-
-Supporting Wordnets:
 
 - Princeton Wordnet 3.0
 - NTU Open Multilingual WordNet
 - Gloss WordNet
+- and more to be added in future versions
 
-# Installation
+## Installation
 
 Yawlib is available on [PyPI](https://pypi.org/project/yawlib/)
 
@@ -17,8 +15,9 @@ Yawlib is available on [PyPI](https://pypi.org/project/yawlib/)
 pip install yawlib
 ```
 
-Download prebuilt database files are available on the author's [Open Science Framework project page: https://osf.io/9udjk/](https://osf.io/9udjk/) and extract them to your home folder at `~/wordnet/`.
-On Linux it should look something like
+Prebuilt database files are available on the author's [Open Science Framework project page: https://osf.io/9udjk/](https://osf.io/9udjk/).
+Download them and extract those to your home folder at `~/wordnet/`.
+On Linux it should look something like:
 
 ```
 /home/username/wordnet/
@@ -49,7 +48,7 @@ To verify that yawlib is working properly, you can use the `info` command.
 python3 -m yawlib info
 ```
 
-# Command-line tools
+## Command-line tools
 
 `yawlib` includes a command-line tool for querying wordnets directly from terminal.
 
@@ -87,10 +86,11 @@ Looking for synsets by term (Provided: research | pos = None)
 Found 4 synset(s)
 ```
 
-# Development
+## Development
 
 Go to yawlib folder, execute the config script and then run wntk.sh to generate the glosstab DB file.
-```
+
+```bash
 git clone https://github.com/letuananh/yawlib
 cd yawlib
 
@@ -147,7 +147,7 @@ The run the `create` command to generate the database
 python -m yawlib create
 ```
 
-# Original sources
+## Original sources
 
 - WordNet 3.0 SQLite: https://sourceforge.net/projects/wnsql/files/wnsql3/sqlite/3.0/
 - WordNet glosstag (XML): http://wordnet.princeton.edu/glosstag.shtml

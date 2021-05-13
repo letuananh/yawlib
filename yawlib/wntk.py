@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 YAWLib console application
-Latest version can be found at https://github.com/letuananh/yawlib
 
 Usage:
     # Search sysets by term (word form) = `love' and POS is verb
@@ -17,40 +16,11 @@ Usage:
 
     # Create SQLite database for searching
     python3 wntk.py -c -i ~/wordnet/glosstag -g ~/wordnet/gwn.db
+"""
 
-This script is used to be a part of lelesk project (https://github.com/letuananh/lelesk)
-
-@author: Le Tuan Anh <tuananh.ke@gmail.com>
-'''
-
-# Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-__author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2016, yawlib"
-__credits__ = []
-__license__ = "MIT"
-__version__ = "0.1"
-__maintainer__ = "Le Tuan Anh"
-__email__ = "<tuananh.ke@gmail.com>"
-__status__ = "Prototype"
+# This code is a part of yawlib library: https://github.com/letuananh/yawlib
+# :copyright: (c) 2014 Le Tuan Anh <tuananh.ke@gmail.com>
+# :license: MIT, see LICENSE for more details.
 
 import os.path
 import logging
@@ -86,8 +56,8 @@ def get_logger():
 # -----------------------------------------------------------------------
 
 def convert(cli, args):
-    ''' Convert Gloss WordNet XML into SQLite format
-    '''
+    """ Convert Gloss WordNet XML into SQLite format
+    """
     if not _LXML_AVAILABLE:
         print("WARNING: lxml library is required for parsing XML")
         exit()
@@ -125,27 +95,27 @@ def get_wn_profile(cli, args):
 
 
 def search_by_id(cli, args):
-    ''' Retrieve synset information by synsetid '''
+    """ Retrieve synset information by synsetid """
     wn = get_wn_profile(cli, args)
     get_synset_by_id(wn, args.synsetid, compact=not args.detail, lang=args.lang)
 
 
 def search_by_key(cli, args):
-    ''' Retrieve synset information by sensekey'''
+    """ Retrieve synset information by sensekey"""
     wn = get_wn_profile(cli, args)
     get_synset_by_sk(wn, args.sensekey, compact=not args.detail, lang=args.lang)
     pass
 
 
 def search_by_lemma(cli, args):
-    ''' Retrieve synset information by lemma (term)'''
+    """ Retrieve synset information by lemma (term)"""
     wn = get_wn_profile(cli, args)
     get_synsets_by_term(wn, args.lemma, args.pos, compact=not args.detail, lang=args.lang)
     pass
 
 
 def search_everywhere(cli, args):
-    ''' Search for lemma and definitions'''
+    """ Search for lemma and definitions"""
     wn = get_wn_profile(cli, args)
     smart_wn_search(wn, args.query, args.pos, compact=not args.detail, lang=args.lang)
     pass
@@ -156,7 +126,7 @@ def search_everywhere(cli, args):
 ##############################################################
 
 def main():
-    '''Wordnet toolkit - CLI main() '''
+    """Wordnet toolkit - CLI main() """
     setup_logging('logging.json', 'logs')
     app = CLIApp(desc="WordNet Toolkit - For accessing and manipulating WordNet", logger=__name__)
     add_wordnet_config(app.parser)

@@ -1,45 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Gloss WordNet XML Data Access Object - Access Gloss WordNet in XML format
-Latest version can be found at https://github.com/letuananh/yawlib
+"""
 
-Adapted from: https://github.com/letuananh/lelesk
-
-@author: Le Tuan Anh <tuananh.ke@gmail.com>
-'''
-
-# Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-__author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2014, yawlib"
-__credits__ = []
-__license__ = "MIT"
-__version__ = "0.1"
-__maintainer__ = "Le Tuan Anh"
-__email__ = "<tuananh.ke@gmail.com>"
-__status__ = "Prototype"
-
-# -----------------------------------------------------------------------
+# This code is a part of yawlib library: https://github.com/letuananh/yawlib
+# :copyright: (c) 2014 Le Tuan Anh <tuananh.ke@gmail.com>
+# :license: MIT, see LICENSE for more details.
 
 import logging
 try:
@@ -66,8 +34,8 @@ from .gwnmodels import GlossRaw
 
 
 class GWordnetXML:
-    ''' GWordNet XML Data Access Object
-    '''
+    """ GWordNet XML Data Access Object
+    """
     def __init__(self, filenames=None, memory_save=False, verbose=False):
         self.synsets = SynsetCollection()
         self.memory_save = memory_save
@@ -77,14 +45,14 @@ class GWordnetXML:
             self.readfiles(filenames)
 
     def readfiles(self, files):
-        ''' Read from multiple XML files
-        '''
+        """ Read from multiple XML files
+        """
         for filename in files:
             self.read(filename)
 
     def read(self, filename):
-        ''' Read all synsets from an XML file
-        '''
+        """ Read all synsets from an XML file
+        """
         logging.info('Loading %s' % filename)
         with open(filename, 'rb') as infile:
             tree = etree.iterparse(infile)
@@ -131,8 +99,8 @@ class GWordnetXML:
         return synset
 
     def parse_gloss(self, a_node, gloss):
-        ''' Parse a def node or ex node in Gloss WordNet
-        '''
+        """ Parse a def node or ex node in Gloss WordNet
+        """
         # What to be expected in a node? aux/mwf/wf/cf/qf
         # mwf <- wf | cf
         # aux <- mwf | qf | wf | cf
@@ -142,14 +110,14 @@ class GWordnetXML:
         pass
 
     def parse_node(self, a_node, gloss):
-        ''' Parse node in a def node or an ex node.
+        """ Parse node in a def node or an ex node.
             There are 5 possible tags:
             wf : single-word form
             cf : collocation form
             mwf: multi-word form
             qf : single- and double-quoted forms
             aux: auxiliary info
-        '''
+        """
         if a_node.tag == 'wf':
             return self.parse_wf(a_node, gloss)
         elif a_node.tag == 'cf':
@@ -165,8 +133,8 @@ class GWordnetXML:
         pass
 
     def tag_glossitem(self, id_node, glossitem, tag_obj):
-        ''' Parse ID element and tag a glossitem
-        '''
+        """ Parse ID element and tag a glossitem
+        """
         sk = StringTool.strip(id_node.get('sk'))
         origid = StringTool.strip(id_node.get('id'))
         coll = StringTool.strip(id_node.get('coll'))
@@ -195,8 +163,8 @@ class GWordnetXML:
         
 
     def parse_wf(self, wf_node, gloss):
-        ''' Parse a word feature node and then add to gloss object
-        '''
+        """ Parse a word feature node and then add to gloss object
+        """
         tag = wf_node.get('tag') if not self.memory_save else ''
         lemma = wf_node.get('lemma') if not self.memory_save else ''
         pos = wf_node.get('pos')
@@ -214,8 +182,8 @@ class GWordnetXML:
         return wf_obj
 
     def parse_cf(self, cf_node, gloss):
-        ''' Parse a word feature node and then add to gloss object
-        '''
+        """ Parse a word feature node and then add to gloss object
+        """
         tag = cf_node.get('tag') if not self.memory_save else ''
         lemma = StringTool.strip(cf_node.get('lemma')) if not self.memory_save else ''
         pos = cf_node.get('pos')
