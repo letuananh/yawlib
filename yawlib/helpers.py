@@ -1,46 +1,12 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Useful functions for working with synsets
-Latest version can be found at https://github.com/letuananh/yawlib
+"""
 
-Usage:
-
-    [TODO] WIP
-
-Adapted from: https://github.com/letuananh/lelesk
-
-@author: Le Tuan Anh <tuananh.ke@gmail.com>
-'''
-
-# Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-__author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2016, yawlib"
-__credits__ = []
-__license__ = "MIT"
-__version__ = "0.1"
-__maintainer__ = "Le Tuan Anh"
-__email__ = "<tuananh.ke@gmail.com>"
-__status__ = "Prototype"
+# This code is a part of yawlib library: https://github.com/letuananh/yawlib
+# :copyright: (c) 2014 Le Tuan Anh <tuananh.ke@gmail.com>
+# :license: MIT, see LICENSE for more details.
 
 import os.path
 import itertools
@@ -82,7 +48,7 @@ def getLogger():
 
 
 def get_synset_by_id(wn, synsetid_str, report_file=None, compact=True, lang=None):
-    ''' Search synset in WordNet Gloss Corpus by synset ID'''
+    """ Search synset in WordNet Gloss Corpus by synset ID"""
     if report_file is None:
         report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by synsetid (Provided: %s)" % synsetid_str)
@@ -98,7 +64,7 @@ def get_synset_by_id(wn, synsetid_str, report_file=None, compact=True, lang=None
 
 
 def get_synset_by_sk(wn, sk, report_file=None, compact=True, lang=None):
-    ''' Search synset in WordNet Gloss Corpus by sensekey'''
+    """ Search synset in WordNet Gloss Corpus by sensekey"""
     if report_file is None:
         report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by sensekey (Provided: %s)" % sk)
@@ -109,7 +75,7 @@ def get_synset_by_sk(wn, sk, report_file=None, compact=True, lang=None):
 
 
 def get_synsets_by_term(wn, t, pos=None, report_file=None, compact=True, lang=None, with_eng=True):
-    ''' Search synset in WordNet Gloss Corpus by term'''
+    """ Search synset in WordNet Gloss Corpus by term"""
     if report_file is None:
         report_file = TextReport()  # Default to stdout
     report_file.print("Looking for synsets by term (Provided: %s | pos = %s)" % (t, pos))
@@ -129,7 +95,7 @@ def get_synsets_by_term(wn, t, pos=None, report_file=None, compact=True, lang=No
 
 
 def smart_wn_search(wn, query, pos=None, report_file=None, compact=True, lang='eng', with_eng=True):
-    ''' Search synset in WordNet Gloss Corpus by term'''
+    """ Search synset in WordNet Gloss Corpus by term"""
     if report_file is None:
         report_file = TextReport()  # Default to stdout
     report_file.print("Search Wordnet: Query=%s | POS=%s" % (query, pos))
@@ -180,12 +146,12 @@ def search_wn_full_text(wn, query, pos=None, lang='eng', auto_wrap=True, ctx=Non
 
 
 def dump_synsets(*synsets, report_file=None, compact=True):
-    ''' Dump a SynsetCollection to stdout
+    """ Dump a SynsetCollection to stdout
 
     Arguments:
         *synsets     -- Lists of synsets to dump
         report_file -- An instance of TextReport
-    '''
+    """
     if report_file is None:
         report_file = TextReport()  # Default to stdout
 
@@ -202,7 +168,7 @@ def dump_synsets(*synsets, report_file=None, compact=True):
 
 
 def dump_synset(*synset_langs, compact_gloss=False, compact_tags=False, more_compact=True, report_file=None, compact=True):
-    ''' Print synset details for debugging purpose
+    """ Print synset details for debugging purpose
 
     Arguments:
         synset_langs  -- Synset objects (in different languages) to dump
@@ -211,7 +177,7 @@ def dump_synset(*synset_langs, compact_gloss=False, compact_tags=False, more_com
         more_compact  -- Don't dump full details of synset
         report_file   -- Report file to write to
 
-    '''
+    """
     if report_file is None:
         report_file = TextReport()  # Default to stdout
     if synset_langs is None or len(synset_langs) == 0:
@@ -322,7 +288,7 @@ def get_omw(args=None):
 
 
 def add_wordnet_config(parser):
-    '''Where to find different wordnets data'''
+    """Where to find different wordnets data"""
     parser.add_argument('-i', '--gloss_xml', help='Path to Gloss WordNet folder', default=YLConfig.GWN30_PATH)
     parser.add_argument('-w', '--wnsql', help='Path to WordNet SQLite 3.0 DB', default=YLConfig.WNSQL30_PATH)
     parser.add_argument('-g', '--glossdb', help='Path to Gloss WordNet SQLite DB', default=YLConfig.GWN30_DB)
@@ -340,8 +306,8 @@ def _file_flag(a_path):
 
 
 def show_info(cli, args):
-    ''' Show configuration information
-    '''
+    """ Show configuration information
+    """
     report = TextReport(args.output) if 'output' in args else TextReport()
     report.header("{} - Version: {}".format(version_info.__description__, version_info.__version__), level='h0')
     home_flag = _dir_flag(config.home_dir())

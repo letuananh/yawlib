@@ -1,43 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Gloss WordNet Data Transfer Object
-Latest version can be found at https://github.com/letuananh/yawlib
+"""
 
-Adapted from: https://github.com/letuananh/lelesk
-
-@author: Le Tuan Anh <tuananh.ke@gmail.com>
-'''
-
-# Copyright (c) 2016, Le Tuan Anh <tuananh.ke@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-__author__ = "Le Tuan Anh <tuananh.ke@gmail.com>"
-__copyright__ = "Copyright 2014, yawlib"
-__credits__ = []
-__license__ = "MIT"
-__version__ = "0.1"
-__maintainer__ = "Le Tuan Anh"
-__email__ = "<tuananh.ke@gmail.com>"
-__status__ = "Prototype"
+# This code is a part of yawlib library: https://github.com/letuananh/yawlib
+# :copyright: (c) 2014 Le Tuan Anh <tuananh.ke@gmail.com>
+# :license: MIT, see LICENSE for more details.
 
 import logging
 import re
@@ -64,8 +34,8 @@ def getLogger():
 # -----------------------------------------------------------------------
 
 class GlossedSynset(Synset):
-    ''' Each synset object comes with sensekeys (ref: SenseKey), terms (ref: Term), and 3 glosses (ref: GlossRaw).
-    '''
+    """ Each synset object comes with sensekeys (ref: SenseKey), terms (ref: Term), and 3 glosses (ref: GlossRaw).
+    """
 
     def __init__(self, sid, keys=None, lemmas=None, defs=None, exes=None):
         super().__init__(sid, keys, lemmas, defs, exes)
@@ -74,13 +44,13 @@ class GlossedSynset(Synset):
 
     @property
     def definition(self):
-        ''' Override Synset.definition '''
+        """ Override Synset.definition """
         def_obj = self.get_def()
         return None if def_obj is None else def_obj.surface
 
     @property
     def examples(self):
-        ''' Override Synset.examples '''
+        """ Override Synset.examples """
         return [ex.surface for ex in self.get_examples()]
 
     def get_def(self):
@@ -112,7 +82,7 @@ class GlossedSynset(Synset):
         return orig.gloss if orig is not None else ''
 
     def get_orig(self):
-        ''' Get orig gloss (aux + def + examples) '''
+        """ Get orig gloss (aux + def + examples) """
         for gr in self.raw_glosses:
             if gr.cat == 'orig':
                 return gr
@@ -131,7 +101,7 @@ class GlossedSynset(Synset):
         return keys
 
     def match_surface(self, raws=None):
-        ''' Match tokens in each gloss to original synset def+ex string '''
+        """ Match tokens in each gloss to original synset def+ex string """
         raws = self.get_orig().split() if raws is None else list(raws)
         glosses = list(self.glosses)  # remaining glosses
         logger = getLogger()
@@ -203,9 +173,9 @@ class GlossedSynset(Synset):
 
 
 class GlossRaw:
-    ''' Raw glosses extracted from WordNet Gloss Corpus.
+    """ Raw glosses extracted from WordNet Gloss Corpus.
         Each synset has a orig_gloss, a text_gloss and a wsd_gloss
-    '''
+    """
 
     # Categories
     ORIG = 'orig'
@@ -304,7 +274,7 @@ class Gloss:
         return StringTool.detokenize((x.text for x in self.items))
 
     def to_ttl(self, doc=None):
-        ''' Export to TextTagLib format (Read more: :mod:`~chirptext.texttaglib`) '''
+        """ Export to TextTagLib format (Read more: :mod:`~chirptext.texttaglib`) """
         sid = self.origid if self.origid else "{}{}_{}".format(self.synset.ID.offset, self.synset.ID.pos, self.cat)
         if doc is not None:
             sent = doc.new_sent(text=self.text())
@@ -346,8 +316,8 @@ class Gloss:
 
 
 class GlossItem:
-    ''' A word token (belong to a gloss)
-    '''
+    """ A word token (belong to a gloss)
+    """
     def __init__(self, gloss, tag, lemma, pos, cat, coll, rdf, origid, sep=None, text=None, itemid=-1):
         self.itemid = itemid
         self.gloss = gloss
@@ -367,11 +337,11 @@ class GlossItem:
         return self.text if self.text else self.lemma
 
     def get_gramwords(self, nopunc=True):
-        '''
+        """
         Return grammatical words from lemma
         E.g.
         prefer%2|preferred%3 => ['prefer', 'preferred']
-        '''
+        """
         if nopunc and self.cat == 'punc':
             return set()
         lemmata = set()
@@ -392,8 +362,8 @@ class GlossItem:
 
 
 class GlossGroup:
-    ''' A group tag (i.e. labelled GlossItem group)
-    '''
+    """ A group tag (i.e. labelled GlossItem group)
+    """
 
     def __init__(self, label=''):
         self.label = label
@@ -401,8 +371,8 @@ class GlossGroup:
 
 
 class SenseTag:
-    ''' Sense annotation object
-    '''
+    """ Sense annotation object
+    """
     def __init__(self, item, cat, tag, glob, glemma, glob_id, coll, origid, sid, sk, lemma, tagid=-1):
         self.tagid = tagid         # tag id
         self.cat = cat             # coll, tag, etc.

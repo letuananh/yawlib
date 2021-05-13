@@ -57,7 +57,6 @@ exec(read('yawlib/__version__.py'), pkg_info)
 
 with open('requirements.txt', 'r') as infile:
     requirements = infile.read().splitlines()
-    print(requirements)
 
 
 setup(
